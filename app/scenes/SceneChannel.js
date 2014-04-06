@@ -10,6 +10,7 @@ SceneSceneChannel.loadingState;
 SceneSceneChannel.loadingDataTryMax = 15;
 SceneSceneChannel.loadingDataTry;
 SceneSceneChannel.loadingDataTimeout;
+SceneSceneChannel.responseToken;
 
 function sleep(millis, callback) {
     setTimeout(function()
@@ -60,6 +61,7 @@ SceneSceneChannel.prototype.handleFocus = function () {
     
     SceneSceneChannel.Player.SetDisplayArea(0, 0, 1280, 720);
     
+    SceneSceneChannel.loadingState = SceneSceneChannel.STATE_LOADING_TOKEN;
     SceneSceneChannel.loadData();
 };
 
@@ -194,14 +196,20 @@ SceneSceneChannel.loadDataError = function()
 	}
 };
 
-SceneSceneChannel.loadDataSuccess = function(responseText)
+SceneSceneChannel.loadDataSuccess = function(aresponse)
 {
-	SceneSceneChannel.showDialog("Opening");
-	
-	var response = JSON.parse(responseText);
-    var url = 'http://usher.twitch.tv/select/' + SceneSceneBrowser.selectedChannel + '.json?type=any&nauthsig=' + response.sig + '&nauth=' + escape(response.token);
-	
-	SceneSceneChannel.Player.Play(url + '|COMPONENT=HLS');  
+	if (SceneSceneChannel.loadingState == SceneSceneChannel.STATE_LOADING_TOKEN)
+	{
+		SceneSceneChannel.responseToken = JSON.parse(aresponse);
+		SceneSceneChannel.loadingState = SceneSceneChannel.STATE_LOADING_PLAYLIST;
+		SceneSceneChannel.loadData();
+	}
+	else
+	{
+		var url = window.URL.createObjectURL(aresponse);
+		SceneSceneChannel.Player.Play(url + '|COMPONENT=HLS'); 
+		SceneSceneChannel.showDialog("Opening"); 
+	}
 };
 
 SceneSceneChannel.loadDataRequest = function()
@@ -211,12 +219,30 @@ SceneSceneChannel.loadDataRequest = function()
 		var dialog_title = "";
 		if (SceneSceneChannel.loadingDataTry > 0)
 		{
-			dialog_title = "Retrying (" + (SceneSceneChannel.loadingDataTry + 1) + "/" + SceneSceneChannel.loadingDataTryMax + ")";
+			if (SceneSceneChannel.loadingState == SceneSceneChannel.STATE_LOADING_TOKEN)
+			{
+				dialog_title = "Requesting token";
+			}
+			else
+			{
+				dialog_title = "Requesting playlist";
+			}
+			dialog_title += ". Retrying (" + (SceneSceneChannel.loadingDataTry + 1) + "/" + SceneSceneChannel.loadingDataTryMax + ")";
 		}
 		SceneSceneChannel.showDialog(dialog_title);
 		
 		var xmlHttp = new XMLHttpRequest();
-		var theUrl = 'http://api.twitch.tv/api/channels/' + SceneSceneBrowser.selectedChannel + '/access_token';
+		var theUrl;
+		if (SceneSceneChannel.loadingState == SceneSceneChannel.STATE_LOADING_TOKEN)
+		{
+			theUrl = 'http://api.twitch.tv/api/channels/' + SceneSceneBrowser.selectedChannel + '/access_token';
+		}
+		else
+		{
+			theUrl = 'http://usher.twitch.tv/select/' + SceneSceneBrowser.selectedChannel
+				+ '.json?type=any&nauthsig=' + SceneSceneChannel.responseToken.sig
+				+ '&nauth=' + escape(SceneSceneChannel.responseToken.token);
+		}
 		
 		xmlHttp.ontimeout = function()
 		{
@@ -230,7 +256,14 @@ SceneSceneChannel.loadDataRequest = function()
 				{
 					try
 					{
-						SceneSceneChannel.loadDataSuccess(xmlHttp.responseText);
+						if (SceneSceneChannel.loadingState == SceneSceneChannel.STATE_LOADING_TOKEN)
+						{
+							SceneSceneChannel.loadDataSuccess(xmlHttp.response, xmlHttp.responseText);
+						}
+						else
+						{
+							SceneSceneChannel.loadDataSuccess(xmlHttp.response, xmlHttp.response);
+						}
 					}
 					catch (err)
 					{
@@ -245,6 +278,10 @@ SceneSceneChannel.loadDataRequest = function()
 			}
 		};
 	    xmlHttp.open("GET", theUrl, true);
+	    if (SceneSceneChannel.loadingState == SceneSceneChannel.STATE_LOADING_PLAYLIST)
+		{
+			xmlHttp.responseType = "blob";
+		}
 		xmlHttp.timeout = SceneSceneChannel.loadingDataTimeout;
 	    xmlHttp.send(null);
 	}
