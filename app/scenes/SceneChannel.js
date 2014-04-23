@@ -154,6 +154,9 @@ SceneSceneChannel.prototype.handleFocus = function () {
 	$("#stream_info_viewers").text("");
 	$("#stream_info_icon").attr("src", "");
 	SceneSceneChannel.updateStreamInfo();
+	
+	$("#chat_container").html('<iframe id="chat_frame" width="100%" height="147%" frameborder="0" scrolling="no" style="z-order:0;" src="http://twitch.tv/chat/embed?channel=' + SceneSceneBrowser.selectedChannel + '&amp;popout_chat=true"></iframe>');
+    
     
     SceneSceneChannel.streamInfoTimer = window.setInterval(SceneSceneChannel.updateStreamInfo, 10000);
     
@@ -216,8 +219,16 @@ SceneSceneChannel.prototype.handleKeyDown = function (keyCode) {
 				SceneSceneChannel.hidePanel();
 				break;
 			case sf.key.UP:
+				if (SceneSceneChannel.isPanelShown())
+				{
+					$('chat_frame').scrollTop("100");
+				}
 				break;
 			case sf.key.DOWN:
+				if (SceneSceneChannel.isPanelShown())
+				{
+					$('chat_frame').scrollBottom("100");
+				}
 				break;
 			case sf.key.ENTER:
 				if (SceneSceneChannel.isPanelShown())
