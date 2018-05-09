@@ -533,7 +533,7 @@ SceneSceneChannel.loadDataRequest = function()
 		var theUrl;
 		if (SceneSceneChannel.state == SceneSceneChannel.STATE_LOADING_TOKEN)
 		{
-			theUrl = 'http://api.twitch.tv/api/channels/' + SceneSceneBrowser.selectedChannel + '/access_token';
+			theUrl = 'https://api.twitch.tv/api/channels/' + SceneSceneBrowser.selectedChannel + '/access_token';
 		}
 		else
 		{
