@@ -1,9 +1,19 @@
-smarttv-twitch
-==============
-This is an app for Samsung SmartTV's designed to watch twitch.tv broadcasts.
+##About
+Unofficial app for legacy Samsung SmartTV's which plays Twitch live broadcasts.
 
-Installation
-==============
+##Installation
+
+###Official Samsung instructions
+
+[Testing Your Application on a TV for 2014](https://developer.samsung.com/tv/develop/legacy-platform-library/art00121/index)
+
+[Testing Your Application on a TV for 2013](https://developer.samsung.com/tv/develop/legacy-platform-library/d20/index)
+
+[Testing Your Application on a TV for 2011](https://developer.samsung.com/tv/develop/legacy-platform-library/art00013/index)
+
+
+###Comments
+
 You have to run some kind of web server or a specific app for installing SmartTV apps like SammyWidgets.
 
 On your TV, go to Menu->Smart Features->Samsung Account and type name "develop". 
