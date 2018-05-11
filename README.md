@@ -24,3 +24,11 @@ For 2014 models "More apps" button might be absent, if so try: long press the en
 
 For models released before 2013 you might want to use these instructions instead:
 From the SmartHUB main screen, click the "Tools" button on the remote. Only from the "Tools" menu, navigate to "Settings", and from there to "Development". (You still have to be logged in as 'develop')
+
+---
+"How to" videos:
+E Series: https://www.youtube.com/watch?v=fOll1bEBrdY
+F Series: https://www.youtube.com/watch?v=1S0EypFB5rI
+H Series: https://www.youtube.com/watch?v=0z8bJ3g6BDU
+
+Also the zip file for installation cannot have a folder with the files, it needs to have ALL the files and subfolders in the root folder... (I think that if you download the release zip file should be fine)
