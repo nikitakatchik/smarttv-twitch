@@ -16,7 +16,7 @@ Unofficial app for legacy Samsung SmartTV's which plays Twitch live broadcasts.
 
 You have to run some kind of web server or a specific app for installing SmartTV apps like SammyWidgets.
 
-On your TV, go to Menu->Smart Features->Samsung Account and type name "develop". 
+On your TV, go to Menu->Smart Features->Samsung Account and type name "develop".
 
 Then go to SmartHUB, click "More Apps" button, then click "Options" button and choose "IP Setting", put the IP address of your web server and finally choose "Start App Sync" option. Twitch app has to be installed now.
 

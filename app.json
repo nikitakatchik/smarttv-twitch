@@ -1,10 +1,20 @@
 {
- "files": [],
- "scenes": [
-  "SceneChannel",
-  "SceneBrowser"
- ],
- "theme": "base",
- "modules": ["ime"],
- "languages" : ["en",  "de", "ru", "es", "pt-br", "uk", "fr"]
+    "files": [],
+    "scenes": [
+        "SceneChannel",
+        "SceneBrowser"
+    ],
+    "theme": "base",
+    "modules": [
+        "ime"
+    ],
+    "languages": [
+        "en",
+        "de",
+        "ru",
+        "es",
+        "pt-br",
+        "uk",
+        "fr"
+    ]
 }
