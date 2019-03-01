@@ -21,12 +21,12 @@
   <dcont>y</dcont>
   <widgetname>Twitch</widgetname>
   <description></description>
-  <width>1920</width>
-  <height>1080</height>
+  <width>1280</width>
+  <height>720</height>
   <author>
-    <name></name>
+    <name>SpaceOgre</name>
     <email></email>
-    <link></link>
+    <link>https://github.com/SpaceOgre/smarttv-twitch</link>
     <organization></organization>
   </author>
 </widget>
