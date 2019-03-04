@@ -254,7 +254,7 @@ SceneSceneBrowser.loadDataRequest = function () {
             if (xmlHttp.readyState === 4) {
                 if (xmlHttp.status === 200) {
                     try {
-                        if (SceneSceneBrowser.mode == SceneSceneBrowser.MODE_ALL) {
+                        if (SceneSceneBrowser.mode == SceneSceneBrowser.MODE_FOLLOWED_CHANNELS) {
                             SceneSceneBrowser.loadDataSuccessFollowedChannels(xmlHttp.responseText)
                         } else {
                             SceneSceneBrowser.loadDataSuccess(xmlHttp.responseText);
