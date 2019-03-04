@@ -201,12 +201,12 @@ SceneSceneBrowser.loadDataSuccess = function (responseText) {
 SceneSceneBrowser.loadDataSuccessFollowedChannels = function (responseText) {
     var response = $.parseJSON(responseText);
     var followed_channels = [];
-    for (let index = 0; index < response_items; index++) {
+    for (let index = 0; index < response.follows.length; index++) {
         followed_channels.push(response.follows[index].channel.name);
     }
 
     var xmlHttp = new XMLHttpRequest();
-    var theUrl = 'https://api.twitch.tv/kraken/streams?channels=' + encodeURIComponent(followed_channels.join(','));
+    var theUrl = 'https://api.twitch.tv/kraken/streams?channel=' + encodeURIComponent(followed_channels.join(','));
     xmlHttp.ontimeout = function () { };
     xmlHttp.onreadystatechange = function () {
         if (xmlHttp.readyState === 4) {
