@@ -287,7 +287,7 @@ SceneSceneBrowser.loadData = function () {
 
     SceneSceneBrowser.loadingData = true;
     SceneSceneBrowser.loadingDataTry = 0;
-    SceneSceneBrowser.loadingDataTimeout = 500;
+    SceneSceneBrowser.loadingDataTimeout = Config.webRequestTimeout;
 
     SceneSceneBrowser.loadDataRequest();
 };
