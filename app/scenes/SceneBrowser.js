@@ -429,6 +429,23 @@ SceneSceneBrowser.initLanguage = function () {
     $('.label_username').text(Config.data.username);
 };
 
+SceneSceneBrowser.initUserIcon = function () {
+    var xmlHttp = new XMLHttpRequest();
+    var theUrl = 'https://api.twitch.tv/kraken/users/' + encodeURIComponent(Config.data.username);
+    xmlHttp.ontimeout = function () { };
+    xmlHttp.onreadystatechange = function () {
+        if (xmlHttp.readyState === 4) {
+            var user = $.parseJSON(xmlHttp.responseText);
+            if (user.logo && user.logo !== '') {
+                $('#user_icon').attr('src', user.logo);
+            }
+        }
+    };
+    xmlHttp.open("GET", theUrl, true);
+    xmlHttp.timeout = SceneSceneBrowser.loadingDataTimeout;
+    xmlHttp.setRequestHeader('Client-ID', 'anwtqukxvrtwxb4flazs2lqlabe3hqv');
+    xmlHttp.send(null);
+}
 
 SceneSceneBrowser.prototype.initialize = function () {
     alert("SceneSceneBrowser.initialize()");
@@ -440,6 +457,7 @@ SceneSceneBrowser.prototype.initialize = function () {
 
     SceneSceneBrowser.loadingData = false;
     if (Config.data.username && Config.data.username !== '') {
+        SceneSceneBrowser.initUserIcon();
         SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_FOLLOWED_CHANNELS);
     } else {
         SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_ALL);

@@ -215,7 +215,8 @@
 
 <body>
 
-  <img style="float: left; width: 8%; padding-left: 3%; padding-top: 2.0%; padding-bottom: 1.5%;" src="images/twitchlogo.png" />
+  <img style="float: left; width: 8%; padding-left: 3%; padding-top: 2.0%; padding-bottom: 1.5%;"
+    src="images/twitchlogo.png" />
 
   <div style="float: right; padding-top: 3.0%;">
     <div id="tip_icon_channels" class="tip_icon" style="background-color: #ff3333">A</div>
@@ -228,7 +229,7 @@
     <div class="tip_label label_refresh">STR_REFRESH</div>
 
     <div class="tip_icon" style="background-color: #6441a5; margin-right: 30px">
-      <img style="width: 30px; margin-top: 6px;" src="images/user.png" />
+      <img id="user_icon" style="width: 30px; margin-top: 6px;" src="images/user.png" />
     </div>
     <div class="tip_label label_username"></div>
   </div>
@@ -242,12 +243,14 @@
     <div id="dialog_loading_text" style="display: inline-block; font-size: 200%; color: white;"></div>
   </div>
 
-  <table id="stream_table" style="width: 100%; padding-top: 4%; padding-left: 2%; padding-right: 2%; border: 0; table-layout: fixed;">
+  <table id="stream_table"
+    style="width: 100%; padding-top: 4%; padding-left: 2%; padding-right: 2%; border: 0; table-layout: fixed;">
 
   </table>
 
   <div id="streamname_frame" class="openchannel">
-    <input id="streamname_input" class="channelname label_placeholder_open" type="text" placeholder="STR_PLACEHOLDER_OPEN" />
+    <input id="streamname_input" class="channelname label_placeholder_open" type="text"
+      placeholder="STR_PLACEHOLDER_OPEN" />
     <div id="streamname_button" class="button_go label_open">STR_OPEN</div>
   </div>
 
