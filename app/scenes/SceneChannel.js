@@ -506,7 +506,7 @@ SceneSceneChannel.loadDataRequest = function () {
 
 SceneSceneChannel.loadData = function () {
     SceneSceneChannel.loadingDataTry = 0;
-    SceneSceneChannel.loadingDataTimeout = 500;
+    SceneSceneChannel.loadingDataTimeout = Config.webRequestTimeout;
 
     SceneSceneChannel.loadDataRequest();
 };
