@@ -439,8 +439,11 @@ SceneSceneBrowser.prototype.initialize = function () {
     SceneSceneBrowser.initLanguage();
 
     SceneSceneBrowser.loadingData = false;
-
-    SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_ALL);
+    if (Config.data.username && Config.data.username !== '') {
+        SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_FOLLOWED_CHANNELS);
+    } else {
+        SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_ALL);
+    }
 };
 
 
