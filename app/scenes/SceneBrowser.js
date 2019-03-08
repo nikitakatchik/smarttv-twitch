@@ -9,7 +9,8 @@ SceneSceneBrowser.MODE_NONE = -1;
 SceneSceneBrowser.MODE_ALL = 0;
 SceneSceneBrowser.MODE_GAMES = 1;
 SceneSceneBrowser.MODE_GAMES_STREAMS = 2;
-SceneSceneBrowser.MODE_GO = 3;
+SceneSceneBrowser.MODE_FOLLOWED_CHANNELS = 3;
+SceneSceneBrowser.MODE_GO = 4; //Obsolete
 
 SceneSceneBrowser.mode = SceneSceneBrowser.MODE_NONE;
 SceneSceneBrowser.gameSelected = null;
@@ -173,12 +174,10 @@ SceneSceneBrowser.loadDataSuccess = function (responseText) {
 
             if (SceneSceneBrowser.mode == SceneSceneBrowser.MODE_GAMES) {
                 var game = response.top[cursor];
-
                 cell = SceneSceneBrowser.createCell(row_id, t, game.game.name, game.game.box.large, game.game.name, addCommas(game.viewers) + ' Viewers', '', true);
             }
             else {
                 var stream = response.streams[cursor];
-
                 cell = SceneSceneBrowser.createCell(row_id, t, stream.channel.name, stream.preview.medium, stream.channel.status, stream.channel.display_name, addCommas(stream.viewers) + ' Viewers', false);
             }
 
@@ -199,6 +198,32 @@ SceneSceneBrowser.loadDataSuccess = function (responseText) {
     });
 };
 
+SceneSceneBrowser.loadDataSuccessFollowedChannels = function (responseText) {
+    var response = $.parseJSON(responseText);
+    var followed_channels = [];
+    for (var index = 0; index < response.follows.length; index++) {
+        followed_channels.push(response.follows[index].channel.name);
+    }
+
+    var xmlHttp = new XMLHttpRequest();
+    var theUrl = 'https://api.twitch.tv/kraken/streams?channel=' + encodeURIComponent(followed_channels.join(','));
+    xmlHttp.ontimeout = function () { };
+    xmlHttp.onreadystatechange = function () {
+        if (xmlHttp.readyState === 4) {
+            if (xmlHttp.status === 200) {
+                SceneSceneBrowser.loadDataSuccess(xmlHttp.responseText);
+            }
+            else {
+                SceneSceneBrowser.loadDataError();
+            }
+        }
+    };
+    xmlHttp.open("GET", theUrl, true);
+    xmlHttp.timeout = SceneSceneBrowser.loadingDataTimeout;
+    xmlHttp.setRequestHeader('Client-ID', 'anwtqukxvrtwxb4flazs2lqlabe3hqv');
+    xmlHttp.send(null);
+}
+
 SceneSceneBrowser.loadDataRequest = function () {
     try {
         var dialog_title = "";
@@ -217,23 +242,27 @@ SceneSceneBrowser.loadDataRequest = function () {
         else if (SceneSceneBrowser.mode === SceneSceneBrowser.MODE_GAMES_STREAMS) {
             theUrl = 'https://api.twitch.tv/kraken/streams?game=' + encodeURIComponent(SceneSceneBrowser.gameSelected) + '&limit=' + SceneSceneBrowser.ItemsLimit + '&offset=' + offset;
         }
+        else if (SceneSceneBrowser.mode === SceneSceneBrowser.MODE_FOLLOWED_CHANNELS) {
+            theUrl = 'https://api.twitch.tv/kraken/users/' + encodeURIComponent(Config.data.username) + '/follows/channels?sortby=last_broadcast&direction=desc&limit=' + SceneSceneBrowser.ItemsLimit + '&offset=' + offset;
+        }
         else {
             theUrl = 'https://api.twitch.tv/kraken/streams?limit=' + SceneSceneBrowser.ItemsLimit + '&offset=' + offset;
         }
 
-        xmlHttp.ontimeout = function () {
-
-        };
+        xmlHttp.ontimeout = function () { };
         xmlHttp.onreadystatechange = function () {
             if (xmlHttp.readyState === 4) {
                 if (xmlHttp.status === 200) {
                     try {
-                        SceneSceneBrowser.loadDataSuccess(xmlHttp.responseText);
+                        if (SceneSceneBrowser.mode == SceneSceneBrowser.MODE_FOLLOWED_CHANNELS) {
+                            SceneSceneBrowser.loadDataSuccessFollowedChannels(xmlHttp.responseText)
+                        } else {
+                            SceneSceneBrowser.loadDataSuccess(xmlHttp.responseText);
+                        }
                     }
                     catch (err) {
                         SceneSceneBrowser.showDialog("loadDataSuccess() exception: " + err.name + ' ' + err.message);
                     }
-
                 }
                 else {
                     SceneSceneBrowser.loadDataError();
@@ -258,7 +287,7 @@ SceneSceneBrowser.loadData = function () {
 
     SceneSceneBrowser.loadingData = true;
     SceneSceneBrowser.loadingDataTry = 0;
-    SceneSceneBrowser.loadingDataTimeout = 500;
+    SceneSceneBrowser.loadingDataTimeout = Config.webRequestTimeout;
 
     SceneSceneBrowser.loadDataRequest();
 };
@@ -290,7 +319,7 @@ SceneSceneBrowser.switchMode = function (mode) {
 
         $("#tip_icon_channels").removeClass('tip_icon_active');
         $("#tip_icon_games").removeClass('tip_icon_active');
-        $("#tip_icon_open").removeClass('tip_icon_active');
+        $("#tip_icon_followed_channels").removeClass('tip_icon_active');
         $("#tip_icon_refresh").removeClass('tip_icon_active');
 
         if (mode == SceneSceneBrowser.MODE_ALL) {
@@ -305,11 +334,13 @@ SceneSceneBrowser.switchMode = function (mode) {
             $("#tip_icon_games").addClass('tip_icon_active');
             SceneSceneBrowser.refresh();
         }
-        else if (mode == SceneSceneBrowser.MODE_GO) {
-            $("#tip_icon_open").addClass('tip_icon_active');
-            SceneSceneBrowser.clean();
-            SceneSceneBrowser.showInput();
-            SceneSceneBrowser.refreshInputFocus();
+        else if (mode == SceneSceneBrowser.MODE_FOLLOWED_CHANNELS) {
+            $("#tip_icon_followed_channels").addClass('tip_icon_active');
+            SceneSceneBrowser.refresh();
+            // TODO: Lägg in switch så man kan byta mellan follow/goto eller ta bara bort
+            // SceneSceneBrowser.clean();
+            // SceneSceneBrowser.showInput();
+            // SceneSceneBrowser.refreshInputFocus();
         }
     }
 };
@@ -325,11 +356,9 @@ SceneSceneBrowser.clean = function () {
 SceneSceneBrowser.refresh = function () {
     if (SceneSceneBrowser.mode != SceneSceneBrowser.MODE_GO) {
         SceneSceneBrowser.clean();
-
         SceneSceneBrowser.loadData();
     }
 };
-
 
 SceneSceneBrowser.removeFocus = function () {
     $('#thumbnail_' + SceneSceneBrowser.cursorY + '_' + SceneSceneBrowser.cursorX).removeClass('stream_thumbnail_focused');
@@ -392,11 +421,31 @@ SceneSceneBrowser.initLanguage = function () {
     //set correct labels
     $('.label_channels').html(STR_CHANNELS);
     $('.label_games').html(STR_GAMES);
-    $('.label_open').html(STR_OPEN);
+    $('.label_followed_channels').html(STR_FOLLOWED_CHANNELS);
     $('.label_refresh').html(STR_REFRESH);
     $('.label_placeholder_open').attr("placeholder", STR_PLACEHOLDER_OPEN);
+
+    //Should probably be somewhere else, does not realy have anything to do with language
+    $('.label_username').text(Config.data.username);
 };
 
+SceneSceneBrowser.initUserIcon = function () {
+    var xmlHttp = new XMLHttpRequest();
+    var theUrl = 'https://api.twitch.tv/kraken/users/' + encodeURIComponent(Config.data.username);
+    xmlHttp.ontimeout = function () { };
+    xmlHttp.onreadystatechange = function () {
+        if (xmlHttp.readyState === 4) {
+            var user = $.parseJSON(xmlHttp.responseText);
+            if (user.logo && user.logo !== '') {
+                $('#user_icon').attr('src', user.logo);
+            }
+        }
+    };
+    xmlHttp.open("GET", theUrl, true);
+    xmlHttp.timeout = SceneSceneBrowser.loadingDataTimeout;
+    xmlHttp.setRequestHeader('Client-ID', 'anwtqukxvrtwxb4flazs2lqlabe3hqv');
+    xmlHttp.send(null);
+}
 
 SceneSceneBrowser.prototype.initialize = function () {
     alert("SceneSceneBrowser.initialize()");
@@ -407,8 +456,12 @@ SceneSceneBrowser.prototype.initialize = function () {
     SceneSceneBrowser.initLanguage();
 
     SceneSceneBrowser.loadingData = false;
-
-    SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_ALL);
+    if (Config.data.username && Config.data.username !== '') {
+        SceneSceneBrowser.initUserIcon();
+        SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_FOLLOWED_CHANNELS);
+    } else {
+        SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_ALL);
+    }
 };
 
 
@@ -535,7 +588,7 @@ SceneSceneBrowser.prototype.handleKeyDown = function (keyCode) {
             SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_GAMES);
             break;
         case sf.key.YELLOW:
-            SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_GO);
+            SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_FOLLOWED_CHANNELS);
             break;
         case sf.key.BLUE:
             SceneSceneBrowser.refresh();
