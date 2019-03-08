@@ -27,4 +27,4 @@ From the SmartHUB main screen, click the "Tools" button on the remote. Only from
 
 ### Followed Channels
 
-To get access your followed channels you have to unpack the Twitch.zip from releases and edit the app/script/config.js file and enter your username. Then repack everything as Twitch.zip. I'm planing to add support for this from inside the app in the future.
+To get access your followed channels you have to unpack the Twitch_XX_YYYYMMDD.zip from releases and edit the app/script/config.js file and enter your username. Then repack everything as Twitch_XX_YYYYMMDD.zip. I'm planing to add support for this from inside the app in the future.
