@@ -202,7 +202,7 @@ SceneSceneBrowser.loadDataSuccessFollowedChannels = function (responseText) {
     var response = $.parseJSON(responseText);
     var followed_channels = [];
     for (var index = 0; index < response.follows.length; index++) {
-        followed_channels.push(response.follows[index].channel.name);
+        followed_channels.push(response.follows[index].channel._id);
     }
 
     var xmlHttp = new XMLHttpRequest();
