@@ -4,5 +4,5 @@ var Config = {
     },
     webRequestTimeout: 1000,
     //fileName: curWidget.id + "_config.db",
-    version: 3.8
+    version: 3.9
 };
