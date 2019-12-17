@@ -244,7 +244,7 @@ SceneSceneBrowser.loadDataRequest = function () {
             theUrl = 'https://api.twitch.tv/kraken/streams?game=' + encodeURIComponent(SceneSceneBrowser.gameSelected) + '&limit=' + SceneSceneBrowser.ItemsLimit + '&offset=' + offset;
         }
         else if (SceneSceneBrowser.mode === SceneSceneBrowser.MODE_FOLLOWED_CHANNELS) {
-            theUrl = 'https://api.twitch.tv/kraken/users/' + encodeURIComponent(Config.data.username) + '/follows/channels?sortby=last_broadcast&direction=desc&limit=' + SceneSceneBrowser.ItemsLimit + '&offset=' + offset;
+            theUrl = 'https://api.twitch.tv/kraken/users/' + encodeURIComponent(Config.data.userid) + '/follows/channels?sortby=last_broadcast&direction=desc&limit=' + SceneSceneBrowser.ItemsLimit + '&offset=' + offset;
         }
         else {
             theUrl = 'https://api.twitch.tv/kraken/streams?limit=' + SceneSceneBrowser.ItemsLimit + '&offset=' + offset;
@@ -431,15 +431,23 @@ SceneSceneBrowser.initLanguage = function () {
     $('.label_username').text(Config.data.username);
 };
 
-SceneSceneBrowser.initUserIcon = function () {
+SceneSceneBrowser.initUserIdAndIcon = function () {
     var xmlHttp = new XMLHttpRequest();
-    var theUrl = 'https://api.twitch.tv/kraken/users/' + encodeURIComponent(Config.data.username);
+    var theUrl = 'https://api.twitch.tv/kraken/users?login=' + encodeURIComponent(Config.data.username);
+    if (Config.data.userid !== null) {
+        var theUrl = 'https://api.twitch.tv/kraken/users/' + encodeURIComponent(Config.data.userid);
+    }
     xmlHttp.ontimeout = function () { };
     xmlHttp.onreadystatechange = function () {
         if (xmlHttp.readyState === 4) {
             var user = $.parseJSON(xmlHttp.responseText);
             if (user.logo && user.logo !== '') {
                 $('#user_icon').attr('src', user.logo);
+            }
+
+            //Set userid if it is have not been set manually in config.js
+            if (userid === null && user._id && user._id !== '') {
+                Config.data.userid = user._id;
             }
         }
     };
@@ -460,7 +468,7 @@ SceneSceneBrowser.prototype.initialize = function () {
 
     SceneSceneBrowser.loadingData = false;
     if (Config.data.username && Config.data.username !== '') {
-        SceneSceneBrowser.initUserIcon();
+        SceneSceneBrowser.initUserIdAndIcon();
         SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_FOLLOWED_CHANNELS);
     } else {
         SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_ALL);
