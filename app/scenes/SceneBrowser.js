@@ -426,9 +426,6 @@ SceneSceneBrowser.initLanguage = function () {
     $('.label_followed_channels').html(STR_FOLLOWED_CHANNELS);
     $('.label_refresh').html(STR_REFRESH);
     $('.label_placeholder_open').attr("placeholder", STR_PLACEHOLDER_OPEN);
-
-    //Should probably be somewhere else, does not realy have anything to do with language
-    $('.label_username').text(Config.data.username);
 };
 
 SceneSceneBrowser.initUserIdAndIcon = function () {
@@ -446,9 +443,16 @@ SceneSceneBrowser.initUserIdAndIcon = function () {
             }
 
             //Set userid if it is have not been set manually in config.js
-            if (userid === null && user._id && user._id !== '') {
+            if (Config.data.userid === '' && user._id && user._id !== '') {
                 Config.data.userid = user._id;
             }
+
+            if (Config.data.username === '') {
+                Config.data.username = user.name;
+            }
+
+            //Should probably be somewhere else, does not realy have anything to do with language
+            $('.label_username').text(Config.data.username);
         }
     };
     xmlHttp.open("GET", theUrl, true);
@@ -467,7 +471,7 @@ SceneSceneBrowser.prototype.initialize = function () {
     SceneSceneBrowser.initLanguage();
 
     SceneSceneBrowser.loadingData = false;
-    if (Config.data.username && Config.data.username !== '') {
+    if ((Config.data.username && Config.data.username !== '') || (Config.data.userid && Config.data.userid !== '')) {
         SceneSceneBrowser.initUserIdAndIcon();
         SceneSceneBrowser.switchMode(SceneSceneBrowser.MODE_FOLLOWED_CHANNELS);
     } else {

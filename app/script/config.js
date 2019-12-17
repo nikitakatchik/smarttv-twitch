@@ -1,7 +1,7 @@
 var Config = {
     data: {
         username: 'spaceogre',
-        userid: null
+        userid: ''
     },
     webRequestTimeout: 1000,
     //fileName: curWidget.id + "_config.db",
