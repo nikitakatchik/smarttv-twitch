@@ -439,6 +439,7 @@ SceneSceneChannel.updateStreamInfo = function()
     xmlHttp.open("GET", 'https://api.twitch.tv/kraken/streams/' + SceneSceneBrowser.selectedChannel, true);
 	xmlHttp.timeout = 10000;
 	xmlHttp.setRequestHeader('Client-ID', 'anwtqukxvrtwxb4flazs2lqlabe3hqv');
+	xmlHttp.setRequestHeader('Accept', 'application/vnd.twitchtv.v5+json');
     xmlHttp.send(null);
 };
 
@@ -567,7 +568,8 @@ SceneSceneChannel.loadDataRequest = function()
 		};
 	    xmlHttp.open("GET", theUrl, true);
 		xmlHttp.timeout = SceneSceneChannel.loadingDataTimeout;
-		xmlHttp.setRequestHeader('Client-ID', 'anwtqukxvrtwxb4flazs2lqlabe3hqv');
+		xmlHttp.setRequestHeader('Client-ID', 'kimne78kx3ncx6brgo4mv6wki5h1ko');
+		xmlHttp.setRequestHeader('Accept', 'application/vnd.twitchtv.v5+json');
 	    xmlHttp.send(null);
 	}
 	catch (error)

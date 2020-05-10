@@ -285,6 +285,7 @@ SceneSceneBrowser.loadDataRequest = function()
 	    xmlHttp.open("GET", theUrl, true);
 		xmlHttp.timeout = SceneSceneBrowser.loadingDataTimeout;
 		xmlHttp.setRequestHeader('Client-ID', 'anwtqukxvrtwxb4flazs2lqlabe3hqv');
+		xmlHttp.setRequestHeader('Accept', 'application/vnd.twitchtv.v5+json');
 	    xmlHttp.send(null);
 	}
 	catch (error)
