@@ -1,5 +1,5 @@
 ## About
-Unofficial app for legacy Samsung SmartTV's which plays Twitch live broadcasts.
+Unofficial app for pre-Tizen Samsung SmartTV's which plays Twitch live broadcasts.
 
 ## Installation
 
