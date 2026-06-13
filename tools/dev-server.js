@@ -55,15 +55,28 @@ function serveFile(res, file) {
 // playlists, segments) routes back through this relay too. This is what makes
 // the whole chain work from a browser/old-TV origin: the client only ever
 // touches the relay, never Twitch directly.
-function rewriteM3u8(body, selfBase) {
-  return body.split('\n').map((raw) => {
-    const line = raw.replace(/\r$/, '');
-    if (line && line[0] !== '#' && /^https?:\/\//.test(line)) {
-      return selfBase + '/relay?url=' + encodeURIComponent(line);
-    }
-    return line.replace(/URI="([^"]+)"/g, (m, u) =>
-      /^https?:\/\//.test(u) ? 'URI="' + selfBase + '/relay?url=' + encodeURIComponent(u) + '"' : m);
-  }).join('\n');
+function rewriteM3u8(text, selfBase, baseUrl) {
+  function wrap(u) {
+    var abs;
+    try { abs = new URL(u, baseUrl).href; } catch (e) { return u; }
+    return selfBase + '/relay?url=' + encodeURIComponent(abs);
+  }
+  var NL = String.fromCharCode(10), CR = String.fromCharCode(13);
+  var lines = text.split(NL), out = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line.charAt(line.length - 1) === CR) { line = line.slice(0, -1); }
+    out.push((line && line.charAt(0) !== '#') ? wrap(line) : line);
+  }
+  return out.join(NL);
+}
+
+function hostAllowed(host) {
+  var doms = ['ttvnw.net', 'twitch.tv', 'jtvnw.net'];
+  for (var i = 0; i < doms.length; i++) {
+    if (host === doms[i] || host.slice(-(doms[i].length + 1)) === '.' + doms[i]) { return true; }
+  }
+  return false;
 }
 
 // Forward a Twitch request through Node (no browser Origin header => no 403).
@@ -86,7 +99,7 @@ async function relay(req, res, target, selfBase) {
     // If it's an HLS playlist, rewrite nested URLs through the relay.
     const text = buf.length < 2_000_000 ? buf.toString('utf8') : '';
     if (text.indexOf('#EXTM3U') === 0) {
-      send(res, upstream.status, rewriteM3u8(text, selfBase),
+      send(res, upstream.status, rewriteM3u8(text, selfBase, target),
         { 'Content-Type': 'application/vnd.apple.mpegurl' });
     } else {
       send(res, upstream.status, buf, { 'Content-Type': ctype });
@@ -109,6 +122,9 @@ const server = http.createServer((req, res) => {
   if (u.pathname === '/relay') {
     const target = u.searchParams.get('url');
     if (!target) { return send(res, 400, 'missing url'); }
+    var tUrl;
+    try { tUrl = new URL(target); } catch (e) { return send(res, 400, 'bad url'); }
+    if (tUrl.protocol !== 'https:' || !hostAllowed(tUrl.hostname)) { return send(res, 403, 'forbidden host'); }
     const selfBase = 'http://' + (req.headers.host || ('localhost:' + PORT));
     return relay(req, res, target, selfBase);
   }

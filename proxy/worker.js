@@ -56,23 +56,42 @@ async function getAppToken(env) {
   return cachedToken;
 }
 
-function rewriteM3u8(text, selfBase) {
-  return text.split('\n').map((raw) => {
-    const line = raw.replace(/\r$/, '');
-    if (line && line[0] !== '#' && /^https?:\/\//.test(line)) {
-      return selfBase + '/relay?url=' + encodeURIComponent(line);
-    }
-    return line.replace(/URI="([^"]+)"/g, (m, u) =>
-      /^https?:\/\//.test(u) ? `URI="${selfBase}/relay?url=${encodeURIComponent(u)}"` : m);
-  }).join('\n');
+function rewriteM3u8(text, selfBase, baseUrl) {
+  function wrap(u) {
+    var abs;
+    try { abs = new URL(u, baseUrl).href; } catch (e) { return u; }
+    return selfBase + '/relay?url=' + encodeURIComponent(abs);
+  }
+  var NL = String.fromCharCode(10), CR = String.fromCharCode(13);
+  var lines = text.split(NL), out = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line.charAt(line.length - 1) === CR) { line = line.slice(0, -1); }
+    out.push((line && line.charAt(0) !== '#') ? wrap(line) : line);
+  }
+  return out.join(NL);
 }
 
 function cors(headers = {}) { return { ...CORS, ...headers }; }
+
+function hostAllowed(host) {
+  var doms = ['ttvnw.net', 'twitch.tv', 'jtvnw.net'];
+  for (var i = 0; i < doms.length; i++) {
+    if (host === doms[i] || host.slice(-(doms[i].length + 1)) === '.' + doms[i]) { return true; }
+  }
+  return false;
+}
 
 async function handleRelay(request, selfBase) {
   const url = new URL(request.url);
   const target = url.searchParams.get('url');
   if (!target) { return new Response('missing url', { status: 400, headers: cors() }); }
+
+  let tUrl;
+  try { tUrl = new URL(target); } catch (e) { return new Response('bad url', { status: 400, headers: cors() }); }
+  if (tUrl.protocol !== 'https:' || !hostAllowed(tUrl.hostname)) {
+    return new Response('forbidden host', { status: 403, headers: cors() });
+  }
 
   const headers = {};
   const cid = request.headers.get('client-id');
@@ -81,7 +100,11 @@ async function handleRelay(request, selfBase) {
   if (ctype) { headers['Content-Type'] = ctype; }
 
   const init = { method: request.method, headers };
-  if (request.method === 'POST') { init.body = await request.arrayBuffer(); }
+  if (request.method === 'POST') {
+    var cl = parseInt(request.headers.get('content-length') || '0', 10);
+    if (cl > 262144) { return new Response('payload too large', { status: 413, headers: cors() }); }
+    init.body = await request.arrayBuffer();
+  }
 
   const upstream = await fetch(target, init);
   const upType = upstream.headers.get('content-type') || 'application/octet-stream';
@@ -89,7 +112,7 @@ async function handleRelay(request, selfBase) {
   const text = buf.byteLength < 3_000_000 ? new TextDecoder().decode(buf) : '';
 
   if (text.startsWith('#EXTM3U')) {
-    return new Response(rewriteM3u8(text, selfBase), {
+    return new Response(rewriteM3u8(text, selfBase, target), {
       status: upstream.status,
       headers: cors({ 'Content-Type': 'application/vnd.apple.mpegurl' }),
     });
