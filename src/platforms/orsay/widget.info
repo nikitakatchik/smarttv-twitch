@@ -1,0 +1,6 @@
+# Orsay widget placement / compositing sidecar (INI-style).
+Application Position = 0,0
+Application Size = 1280x720
+Screen Number = 1
+Screen Resolution = 1280x720
+Use Alpha Blending? = Yes

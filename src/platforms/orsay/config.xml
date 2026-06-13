@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Legacy "Orsay" widget manifest (2011–2014 Samsung Smart TV).
+     This is the pre-Tizen schema; it is NOT the W3C/Tizen config.xml. -->
+<widget xmlns="http://www.samsung.com/">
+  <cpname></cpname>
+  <cplogo></cplogo>
+  <cpauthjs></cpauthjs>
+  <ThumbIcon>assets/icon/icon_106_87.png</ThumbIcon>
+  <BigThumbIcon>assets/icon/icon_115_95.png</BigThumbIcon>
+  <ListIcon>assets/icon/icon_85_70.png</ListIcon>
+  <BigListIcon>assets/icon/icon_95_78.png</BigListIcon>
+  <category></category>
+  <autoUpdate>n</autoUpdate>
+  <ver>4.0</ver>
+  <mgrver></mgrver>
+  <fullwidget>y</fullwidget>
+  <type>user</type>
+  <srcctl>y</srcctl>
+  <ticker>n</ticker>
+  <childlock>n</childlock>
+  <videomute>n</videomute>
+  <dcont>y</dcont>
+  <widgetname>Twitch</widgetname>
+  <description>Unofficial Twitch live viewer for pre-Tizen Samsung Smart TVs.</description>
+  <width>1280</width>
+  <height>720</height>
+  <author>
+    <name>Nikita Katchik</name>
+    <email></email>
+    <link>https://github.com/nikitakatchik/smarttv-twitch</link>
+    <organization></organization>
+  </author>
+</widget>

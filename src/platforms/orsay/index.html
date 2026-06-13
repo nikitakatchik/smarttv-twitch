@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Twitch</title>
+  <link rel="stylesheet" href="ui/styles.css">
+
+  <!-- Legacy "Common API" (lightweight; NOT the heavy AppsFramework).
+       $MANAGER_WIDGET is substituted by the TV at install time. -->
+  <script type="text/javascript" src="$MANAGER_WIDGET/Common/API/Widget.js"></script>
+  <script type="text/javascript" src="$MANAGER_WIDGET/Common/API/Plugin.js"></script>
+</head>
+<body>
+  <!-- INFOLINK player renders behind the DOM/UI layer. -->
+  <object id="tw-orsay-player" border="0" classid="clsid:SAMSUNG-INFOLINK-PLAYER"
+          style="position:absolute;left:0;top:0;width:0;height:0;z-index:0;"></object>
+
+  <div id="app"></div>
+
+  <!-- core (ordered; no bundler / ES modules on this engine) -->
+  <script src="core/polyfill.js"></script>
+  <script src="core/util.js"></script>
+  <script src="core/dom.js"></script>
+  <script src="core/keys.js"></script>
+  <script src="core/config.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/http.js"></script>
+  <script src="lang/en.js"></script>
+  <script src="lang/de.js"></script>
+  <script src="lang/ru.js"></script>
+  <script src="lang/es.js"></script>
+  <script src="lang/fr.js"></script>
+  <script src="lang/pt-br.js"></script>
+  <script src="lang/uk.js"></script>
+  <script src="lang/sv.js"></script>
+  <script src="core/twitch/playlist.js"></script>
+  <script src="core/twitch/usher.js"></script>
+  <script src="core/twitch/gql.js"></script>
+  <script src="core/twitch/helix.js"></script>
+  <script src="core/twitch/api.js"></script>
+  <script src="core/scene-manager.js"></script>
+  <script src="core/scenes/browser-scene.js"></script>
+  <script src="core/scenes/channel-scene.js"></script>
+  <script src="core/app.js"></script>
+
+  <!-- orsay platform adapter -->
+  <script src="platform/player.js"></script>
+  <script src="platform/keys.js"></script>
+  <script src="platform/system.js"></script>
+  <script src="platform/boot.js"></script>
+</body>
+</html>
