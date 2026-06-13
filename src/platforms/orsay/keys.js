@@ -2,7 +2,7 @@
  * platforms/orsay/keys.js — legacy remote keyCodes -> canonical keys.
  *
  * These numeric codes are the Samsung "Maple Legacy" values and are stable
- * across the 2011 D / 2012 E / 2013 F / 2014 H generations (the same values
+ * across the 2013 F / 2014 H Orsay generations (the same values
  * Common.API.TVKeyValue exposes). Hard-coded so the adapter doesn't depend on
  * the legacy Common API being present.
  */

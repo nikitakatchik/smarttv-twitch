@@ -1,15 +1,18 @@
 /*
- * tools/lib/zip.js — a ~60-line dependency-free ZIP writer (STORE method).
+ * tools/lib/zip.js — a small dependency-free ZIP writer.
  *
- * Old Samsung "develop"-account App Sync and USB installs expect a .zip; a
- * stored (uncompressed) zip is a perfectly valid zip and lets us package the
- * widget with zero npm dependencies. Not a general-purpose zip lib — just
- * enough to write small static trees.
+ * Old Samsung "develop"-account App Sync and USB installs expect a .zip, and a
+ * stored (uncompressed) zip is a perfectly valid zip — so the default keeps the
+ * widget package STORE for maximum compatibility with the ancient Maple unzip.
+ * Pass { deflate: true } for the desktop host package (which bundles a ~90 MB
+ * Node runtime); DEFLATE comes from Node's built-in zlib, so still zero npm
+ * dependencies. Not a general-purpose zip lib — just enough for our trees.
  */
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 const CRC_TABLE = (function () {
   const t = new Uint32Array(256);
@@ -27,8 +30,12 @@ function crc32(buf) {
   return (crc ^ 0xFFFFFFFF) >>> 0;
 }
 
-// files: [{ name: 'core/util.js', data: Buffer }] -> a zip Buffer.
-function zip(files) {
+// files: [{ name: 'core/util.js', data: Buffer, mode? }] -> a zip Buffer.
+// opts.deflate compresses entries (method 8) via zlib. Optional per-file `mode`
+// is a Unix st_mode (e.g. 0o100755) recorded in the external attributes so
+// executables stay runnable straight out of the archive.
+function zip(files, opts) {
+  const deflate = !!(opts && opts.deflate);
   const parts = [];
   const central = [];
   let offset = 0;
@@ -37,34 +44,47 @@ function zip(files) {
     const name = Buffer.from(f.name.replace(/\\/g, '/'), 'utf8');
     const data = f.data;
     const crc = crc32(data);
+    const hasMode = typeof f.mode === 'number';
+
+    // Raw DEFLATE stream (no zlib header) is exactly zip method 8. Fall back to
+    // STORE if compression doesn't actually shrink the entry.
+    let method = 0;
+    let body = data;
+    if (deflate && data.length) {
+      const z = zlib.deflateRawSync(data, { level: 9 });
+      if (z.length < data.length) { method = 8; body = z; }
+    }
 
     const local = Buffer.alloc(30);
     local.writeUInt32LE(0x04034b50, 0);
     local.writeUInt16LE(20, 4);
-    local.writeUInt16LE(0, 8);            // method 0 = store
+    local.writeUInt16LE(method, 8);
     local.writeUInt16LE(0, 10);           // time
     local.writeUInt16LE(0x21, 12);        // date = 1980-01-01
     local.writeUInt32LE(crc, 14);
-    local.writeUInt32LE(data.length, 18); // compressed = uncompressed
-    local.writeUInt32LE(data.length, 22);
+    local.writeUInt32LE(body.length, 18); // compressed size
+    local.writeUInt32LE(data.length, 22); // uncompressed size
     local.writeUInt16LE(name.length, 26);
-    parts.push(local, name, data);
+    parts.push(local, name, body);
 
     const cd = Buffer.alloc(46);
     cd.writeUInt32LE(0x02014b50, 0);
-    cd.writeUInt16LE(20, 4);
+    // "version made by": host 3 (Unix) when a mode is given, so it's honored.
+    cd.writeUInt16LE(hasMode ? (3 << 8) | 20 : 20, 4);
     cd.writeUInt16LE(20, 6);
-    cd.writeUInt16LE(0, 10);              // method
+    cd.writeUInt16LE(method, 10);
     cd.writeUInt16LE(0, 12);
     cd.writeUInt16LE(0x21, 14);
     cd.writeUInt32LE(crc, 16);
-    cd.writeUInt32LE(data.length, 20);
+    cd.writeUInt32LE(body.length, 20);
     cd.writeUInt32LE(data.length, 24);
     cd.writeUInt16LE(name.length, 28);
+    // external file attributes: Unix mode in the high 16 bits.
+    cd.writeUInt32LE(hasMode ? (f.mode & 0xffff) * 0x10000 : 0, 38);
     cd.writeUInt32LE(offset, 42);         // local header offset
     central.push(cd, name);
 
-    offset += local.length + name.length + data.length;
+    offset += local.length + name.length + body.length;
   }
 
   const cdBuf = Buffer.concat(central);

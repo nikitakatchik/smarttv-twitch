@@ -5,7 +5,7 @@
                       │                core/ (ES5)               │
                       │  app · scene-manager · scenes · keys ·   │
                       │  i18n · dom · http · twitch/{api,gql,     │
-                      │  helix,usher,playlist}                   │
+                      │  usher,playlist}                         │
                       └───────────────┬─────────────────────────┘
                                       │ depends only on an "adapter"
         ┌─────────────────────────────┼─────────────────────────────┐
@@ -17,12 +17,12 @@
 ```
 
 The core is **platform-agnostic ES5** and talks to exactly one abstraction —
-the **adapter** — so the browser harness, a 2011 Orsay TV and a 2024 Tizen TV
+the **adapter** — so the browser harness, a 2013 Orsay TV and a 2024 Tizen TV
 all run byte-for-byte the same `core/`.
 
 ## Module loading
 
-No bundler, no ES modules — a 2011 WebKit can't do either. Every file is an
+No bundler, no ES modules — a 2013 Orsay WebKit can't do either. Every file is an
 IIFE that hangs off a global `TW` object, loaded with ordered `<script>` tags.
 `tools/build.js` copies `core/ ui/ lang/ assets/` plus one platform's files
 into `dist/<platform>/` with a stable relative layout (`core/`, `ui/`, `lang/`,
@@ -45,7 +45,7 @@ adapter = {
 ## Data flow: browse
 
 ```
-scene → TW.api.topStreams(cursor) → backend (gql | helix) → normalized items
+scene → TW.api.topStreams(cursor) → backend (gql) → normalized items
                                                               { login, title, viewers, thumb, … }
 ```
 
@@ -71,29 +71,26 @@ INFOLINK each discover renditions differently — the scene only ever calls
 ## The Twitch integration (and the CORS/TLS reality)
 
 The original app died when Twitch shut down the **Kraken v5 API (Feb 2022)**.
-The rebuild uses two interchangeable backends:
+The rebuild talks to **Twitch's public GraphQL** (`gql.twitch.tv` with the
+public web Client-ID — the Streamlink/yt-dlp approach): browse + the live
+`PlaybackAccessToken` with no user login, no API key, no backend. Verified
+working 2026.
 
-- **GraphQL (default, no backend).** `gql.twitch.tv` with the public web
-  Client-ID — the Streamlink/yt-dlp approach. Browse + the live
-  `PlaybackAccessToken` with no user login. Verified working 2026.
-- **Helix (official).** Requires `Client-Id` + OAuth `Bearer` on every call,
-  so the secret lives in the [relay/worker](../proxy/), never the client.
+Twitch's hosts behave differently in a browser, which is the whole reason the
+dev harness needs help — TVs don't, because native players send no `Origin`:
 
-Three hosts behave differently, and the design follows the measured reality:
-
-| Host | CORS for a non-Twitch browser origin | Old-TV TLS (no SNI) |
-| ---- | ------------------------------------ | ------------------- |
-| `gql.twitch.tv` | `Access-Control-Allow-Origin: *` ✅ | ❌ needs relay |
-| `usher.ttvnw.net` | no ACAO ❌ | ❌ needs relay |
-| `*.playlist.ttvnw.net` | **403** for non-Twitch origins ❌ | ❌ needs relay |
-| `*.cloudfront.hls.ttvnw.net` (segments) | `*` ✅ | ❌ needs relay |
+| Host | CORS for a non-Twitch browser origin |
+| ---- | ------------------------------------ |
+| `gql.twitch.tv` | `Access-Control-Allow-Origin: *` ✅ |
+| `usher.ttvnw.net` | no ACAO ❌ |
+| `*.playlist.ttvnw.net` | **403** for non-Twitch origins ❌ |
+| `*.cloudfront.hls.ttvnw.net` (segments) | `*` ✅ |
 
 **Native players (AVPlay, INFOLINK) send no browser `Origin`**, so they sail
-past the CORS gates — which is why Tizen plays Twitch directly. **Browsers and
-old no-SNI TVs don't**, so they go through the relay, whose key trick is
+past the CORS gates and play Twitch directly — Tizen and Orsay both. Only the
+**browser harness** is CORS-bound, so `npm start` routes HLS playback through a
+small **dev-only CORS proxy** (`tools/lib/dev-proxy.js`), whose key trick is
 **rewriting the m3u8 playlists** so every nested fetch (variant playlist,
-segment) routes back through the relay too. That single mechanism makes the
-harness, a 2011 D-series and a Helix deployment all work.
+segment) routes back through it too. Nothing ships it.
 
-See [the proxy README](../proxy/README.md) and
-[`twitch-tv-verified-facts`](PLATFORMS.md) for the measurements.
+See [`docs/PLATFORMS.md`](PLATFORMS.md) for the measured per-host behaviour.

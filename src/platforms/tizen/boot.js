@@ -2,7 +2,7 @@
  * platforms/tizen/boot.js — start the Tizen web app.
  *
  * Tizen plays through the native AVPlay (no browser Origin), and browse hits
- * gql.twitch.tv which sends permissive CORS — so no relay is needed. The UI is
+ * gql.twitch.tv which sends permissive CORS — so it reaches Twitch directly. The UI is
  * authored on a 1280x720 stage and scaled to the panel's 1920x1080 in
  * index.html.
  */

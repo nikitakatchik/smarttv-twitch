@@ -1,7 +1,7 @@
 <h1 align="center">📺 Twellie</h1>
 
 <p align="center">
-  <b>An unofficial viewer for Twitch on any Samsung Smart TV — from a 2011 Orsay set to a 2024 Tizen panel.</b> <br />
+  <b>An unofficial viewer for Twitch on any Samsung Smart TV — from a 2013 Orsay set to a 2024 Tizen panel.</b> <br />
   Not affiliated with Twitch, Samsung, or Tizen.
 </p>
 
@@ -18,15 +18,15 @@
 - 🎚️ **Quality switching** — Auto down to 160p, picked from the real renditions.
 - 🧭 **Made for a remote** — D-pad grid, color buttons, the works. No mouse.
 - 🌍 **8 languages** — English, Deutsch, Русский, Español, Português, Українська, Français, Svenska.
-- 🧩 **One core, three targets** — Orsay (2011–2014), Tizen (2015+), and a browser harness.
-- 🪶 **Zero runtime dependencies** — hand-written ES5 that runs on a 2011 WebKit *and* a 2024 Chromium WebView.
+- 🧩 **One core, three targets** — Orsay (2013–2014), Tizen (2015+), and a browser harness.
+- 🪶 **Zero runtime dependencies** — hand-written ES5 that runs on a 2013 Orsay WebKit *and* a 2024 Chromium WebView.
 - 💻 **Test without a TV** — `npm start` plays real Twitch on your laptop.
 
 ## 📺 Supported TVs
 
 | Year | Series | Platform | Player | Status |
 | ---- | ------ | -------- | ------ | ------ |
-| 2011–2014 | D / E / F / H | Orsay / Maple | `INFOLINK` | ✅ *via [relay](proxy/)* |
+| 2013–2014 | F / H | Orsay | `INFOLINK` | ✅ *direct* |
 | 2015–2024+ | J / K / M / N / R / T / U … | Tizen | `AVPlay` | ✅ |
 | any | — | Browser (dev) | hls.js | 🧪 |
 
@@ -38,17 +38,33 @@ Download the package for your TV from the
 [**latest release**](https://github.com/nikitakatchik/smarttv-twitch/releases/latest),
 then follow the guide for your model year.
 
-| Your TV | Download | Guide |
-| ------- | -------- | ----- |
+| Your TV | Install | Guide |
+| ------- | ------- | ----- |
 | **2015 and newer** — Tizen (J · K · M · N · R · T · U …) | [⬇ twellie-tizen.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-tizen.zip) | [Tizen guide →](docs/install/tizen.md) |
-| **2013–2014** — Orsay (F · H) | [⬇ twellie-orsay-host.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host.zip) | [F / H guide →](docs/install/orsay-2013-2014.md) |
-| **2011–2012** — Orsay (D · E) | [⬇ twellie-orsay-host.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host.zip) | [D / E guide →](docs/install/orsay-2011-2012.md) |
+| **2013–2014** — Orsay (F · H) | [installer ↓](#-orsay-installer) | [F / H guide →](docs/install/orsay-2013-2014.md) |
 
-> **Why a "host" download for older TVs?** Samsung TVs from 2011–2014 can't open
-> a modern (TLS/SNI) connection to Twitch, so they need a helper. The host is a
-> tiny app you run on any computer on the same Wi-Fi: it installs Twellie onto
-> the TV and relays Twitch for it while you watch — one command, nothing to build.
-> Tizen TVs talk to Twitch directly and need none of this.
+> Older **2011–2012** (D / E) Orsay sets aren't supported — their MAPLE engine and
+> aged TLS make them the weakest, least reliable targets.
+
+### 💻 Orsay installer
+
+Orsay TVs (2013–2014) sideload apps over your Wi-Fi from a computer, so you run a
+small **installer** once. It's a self-contained app that bundles a **signed,
+unmodified copy of Node** — nothing to install, and no security warning to click
+through. It detects your computer's IP and pushes Twellie onto the TV; once it's
+installed you **close the installer** and the TV streams Twitch directly.
+(Tizen TVs sideload via Tizen Studio and need none of this.)
+
+> Most F/H sets reach Twitch directly. Very old firmware whose TLS can't is not
+> supported. See the [guide](docs/install/orsay-2013-2014.md).
+
+Grab the one for your computer — each always points at the newest release:
+
+| Your computer | Download |
+| ------------- | -------- |
+| **macOS** (Apple Silicon · M1–M4) | [⬇ twellie-orsay-host-macos-arm64.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-macos-arm64.zip) |
+| **macOS** (Intel) | [⬇ twellie-orsay-host-macos-x64.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-macos-x64.zip) |
+| **Windows** (64-bit) | [⬇ twellie-orsay-host-windows-x64.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-windows-x64.zip) |
 
 
 ## 🗺️ Roadmap
@@ -56,7 +72,7 @@ then follow the guide for your model year.
 - [x] Survive the Kraken apocalypse (migrate off the dead v5 API)
 - [x] Tizen (2015+) target
 - [x] Browser dev-harness with real playback
-- [x] Pluggable GraphQL / Helix backends + serverless relay
+- [x] Public GraphQL backend — no API key, no backend, no proxy
 - [ ] 💬 Live chat overlay (revive the long-abandoned IRC experiment)
 - [ ] 🔐 Logged-in mode (followed channels, sub-only streams)
 - [ ] 📼 VODs & clips

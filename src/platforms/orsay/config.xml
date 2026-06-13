@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Legacy "Orsay" widget manifest (2011–2014 Samsung Smart TV).
+<!-- Legacy "Orsay" widget manifest (2013–2014 Samsung Smart TV).
      This is the pre-Tizen schema; it is NOT the W3C/Tizen config.xml. -->
 <widget xmlns="http://www.samsung.com/">
   <cpname></cpname>

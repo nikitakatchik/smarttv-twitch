@@ -6,8 +6,8 @@
  *
  * Mounts the shared tree so the SAME relative paths the packaged builds use
  * (core/, ui/, lang/, assets/, platform/) resolve in development, and exposes
- * `/relay?url=<target>` (see tools/lib/relay.js) so the browser harness can
- * reach Twitch despite CORS — the local stand-in for the production relay.
+ * `/proxy?url=<target>` (see tools/lib/dev-proxy.js) so the browser harness can
+ * play Twitch despite CORS. DEV-ONLY: no shipped TV build uses any of this.
  *
  *   http://localhost:8080
  */
@@ -16,7 +16,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { relayHttp, CORS } = require('./lib/relay');
+const { proxyHttp, CORS } = require('./lib/dev-proxy');
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
@@ -55,10 +55,10 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'OPTIONS') { return send(res, 204, '', CORS); }
 
-  if (u.pathname === '/relay') {
+  if (u.pathname === '/proxy') {
     const target = u.searchParams.get('url');
     if (!target) { return send(res, 400, 'missing url'); }
-    return relayHttp(req, res, target, 'http://' + (req.headers.host || ('localhost:' + PORT)));
+    return proxyHttp(req, res, target, 'http://' + (req.headers.host || ('localhost:' + PORT)));
   }
 
   if (u.pathname === '/' || u.pathname === '') { return serveFile(res, INDEX); }
@@ -74,5 +74,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log('Twellie harness:    http://localhost:' + PORT);
-  console.log('Relay endpoint:     http://localhost:' + PORT + '/relay?url=<twitch url>');
+  console.log('Dev CORS proxy:     http://localhost:' + PORT + '/proxy?url=<twitch url>');
 });

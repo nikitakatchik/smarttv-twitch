@@ -65,3 +65,21 @@ jobs:
           name: twellie-packages
           path: dist/release/*.zip
           if-no-files-found: error
+
+  # The desktop host bundles the signed Node runtime per OS/arch, so prove it
+  # packages on the OSes we ship it for. (Intel macOS is built only at release.)
+  host-binary:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build native host binary
+        run: npm run host:bin
+      - name: Assert a host package was produced
+        run: node -e "const f=require('fs').readdirSync('dist/release').filter(n=>n.startsWith('twellie-orsay-host-')); if(!f.length){console.error('no host binary built');process.exit(1)} console.log('built',f)"

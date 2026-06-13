@@ -1,11 +1,15 @@
 /*
- * tools/lib/relay.js — the Twitch relay, shared by the dev server and the host.
+ * tools/lib/dev-proxy.js — DEV-ONLY CORS proxy for the browser harness.
  *
- * Uses Node's https module (NOT global fetch) on purpose: fetch emits an
- * ExperimentalWarning on Node 18/20, and the host app must run clean for
- * non-developers. Forwards a request to Twitch from the server (no browser
- * Origin header, modern TLS/SNI) and rewrites HLS playlist bodies so every
- * nested fetch (variant playlists, segments) routes back through the relay.
+ * Only the dev server (tools/dev-server.js, `npm start`) uses this. Browsers
+ * enforce CORS that native TV players don't, and Twitch's usher/playlist hosts
+ * send no Access-Control-Allow-Origin — so the harness can't fetch the HLS
+ * chain directly. This forwards the request server-side and rewrites HLS
+ * playlist bodies so every nested fetch (variant playlists, segments) routes
+ * back through the proxy too. NOT shipped in any TV build; real TVs play direct.
+ *
+ * Uses Node's https module (not global fetch) to avoid the ExperimentalWarning
+ * on older Node, and keeps an allowlist so it isn't an open proxy.
  */
 'use strict';
 
@@ -37,7 +41,7 @@ function rewriteM3u8(text, selfBase, baseUrl) {
     if (line && line.charAt(0) !== '#') {
       let abs;
       try { abs = new URL(line, baseUrl).href; } catch (e) { out.push(line); continue; }
-      out.push(selfBase + '/relay?url=' + encodeURIComponent(abs));
+      out.push(selfBase + '/proxy?url=' + encodeURIComponent(abs));
     } else {
       out.push(line);
     }
@@ -70,8 +74,8 @@ function fetchUpstream(target, method, headers, body) {
   });
 }
 
-// Handle a GET/POST /relay?url=<target> request on a Node http server.
-async function relayHttp(req, res, target, selfBase) {
+// Handle a GET/POST /proxy?url=<target> request on a Node http server.
+async function proxyHttp(req, res, target, selfBase) {
   function send(status, body, type) {
     res.writeHead(status, Object.assign({ 'Content-Type': type || 'text/plain' }, CORS));
     res.end(body);
@@ -97,8 +101,8 @@ async function relayHttp(req, res, target, selfBase) {
       send(up.status, up.body, up.type || 'application/octet-stream');
     }
   } catch (e) {
-    send(502, 'relay error: ' + e.message);
+    send(502, 'proxy error: ' + e.message);
   }
 }
 
-module.exports = { relayHttp, hostAllowed, rewriteM3u8, CORS };
+module.exports = { proxyHttp, hostAllowed, rewriteM3u8, CORS };

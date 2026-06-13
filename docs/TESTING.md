@@ -30,8 +30,8 @@ npm start            # http://localhost:8080
 This runs the **entire app** in Chrome/Firefox/Safari with:
 
 - live Twitch browse (top streams, games, search-by-open),
-- **real HLS playback via hls.js** (the dev server's relay rewrites the
-  playlists so the whole chain works despite Twitch's CORS),
+- **real HLS playback via hls.js** (a dev-only CORS proxy in the dev server
+  rewrites the playlists so the whole chain works despite Twitch's CORS),
 - a **virtual remote** (on-screen D-pad + keyboard) mapped to TV key codes, so
   you exercise the exact key handling the TVs use.
 
@@ -43,9 +43,8 @@ Useful query overrides:
 
 ```
 ?lang=de                       UI language
-?backend=proxy&proxy=https://… test the official Helix path
-?relay=https://…workers.dev    test your deployed relay
-?relay=none                    attempt direct (playback usually CORS-blocked)
+?proxy=https://…               use a specific dev CORS proxy
+?proxy=none                    no proxy (direct; playback usually CORS-blocked)
 ```
 
 Because the harness drives the same `core/` as the TVs, a bug you see here is a
@@ -90,29 +89,28 @@ Manager** (author + distributor cert tied to the TV's DUID).
 > stubs the TV APIs — fine for a static layout glance, useless for the player.
 > Use the harness instead.
 
-## 4. Orsay / pre-Tizen TVs (2011–2014) 🕹️
+## 4. Orsay TVs (2013–2014) 🕹️
 
-No reliable emulator on a modern Mac. On a real legacy panel:
+No reliable emulator on a modern Mac. On a real F/H panel (2011–2012 D/E are not
+supported):
 
-1. **Deploy the relay first** ([proxy/](../proxy/)) and set `relayBase` in
-   `src/platforms/orsay/boot.js` — pre-2017 TVs can't reach Twitch's TLS/SNI
-   endpoints without it.
-2. `npm run build:orsay` → `dist/orsay/`, then install via either:
-   - **USB**: format a USB stick FAT32, create a root folder `userwidget`, drop
-     the packaged widget inside, insert into the TV → it imports into Smart Hub.
-     (Most reliable across model years.)
-   - **Develop account / IP App Sync**: log into Smart Hub as user `develop`,
-     point its server IP at a PC serving the widget, then *Start App Sync*.
+1. **Install with the installer.** `npm run host:bin` (or grab the release zip)
+   gives the self-contained installer; run it, log into Smart Hub as user
+   `develop`, point the **App-Sync server IP** at the machine, and *Start App
+   Sync*. (`npm run host` does the same from source.) USB `userwidget` install
+   is disabled on most F/H firmware, so use App-Sync.
+2. **Watch.** The app connects to Twitch **directly**; most F/H sets reach it
+   fine. A panel whose firmware can't negotiate modern TLS isn't supported.
 
-Menu paths vary by firmware (Internet@TV on 2011–2012, Smart Hub on 2013–2014).
+Menu paths vary by firmware (Smart Hub on 2013–2014).
 
 ## 5. Which buttons to check on-device
 
 | Generation | Verify | Most likely to need tweaks |
 | --- | --- | --- |
 | Tizen 2015+ | AVPlay starts, quality switch, color buttons (needs `registerKey`), Back exits | quality track labels, `ADAPTIVE_INFO` syntax per year |
-| Orsay 2014 (H) | INFOLINK plays `|COMPONENT=HLS`, color buttons, relay reachable | screensaver via Common API |
-| Orsay 2011 (D) | JSON polyfill loads, relay reachable, basic nav | MAPLE CSS quirks, on-screen IME |
+| Orsay 2014 (H) | INFOLINK plays `|COMPONENT=HLS`, color buttons, Twitch reachable | screensaver via Common API |
+| Orsay 2013 (F) | basic nav, INFOLINK playback, modern-TLS reach | on-screen IME, CSS quirks |
 
 ## 6. No TV at all? 💸
 

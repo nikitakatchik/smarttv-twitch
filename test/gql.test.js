@@ -20,7 +20,7 @@ function makeApp(responder) {
   const g = loadCore([
     'core/polyfill.js', 'core/util.js', 'core/config.js', 'core/http.js',
     'core/twitch/usher.js', 'core/twitch/playlist.js', 'core/twitch/gql.js',
-    'core/twitch/helix.js', 'core/twitch/api.js',
+    'core/twitch/api.js',
   ], { XMLHttpRequest: XHR });
   return { TW: g.TW, log: XHR.log };
 }

@@ -10,17 +10,52 @@ permissions:
   contents: write
 
 jobs:
+  # The Orsay host bundles the signed Node runtime, so it's packaged per target
+  # OS/arch. setup-node provides the official signed/notarized Node builds, which
+  # we ship unmodified so they keep their signature (no Gatekeeper/SmartScreen).
+  host-binaries:
+    name: host (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, label: macOS arm64 }   # Apple Silicon
+          - { os: macos-13,     label: macOS x64 }      # Intel
+          - { os: windows-latest, label: Windows x64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build native host binary
+        run: npm run host:bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: host-${{ matrix.os }}
+          path: dist/release/twellie-orsay-host-*.zip
+          if-no-files-found: error
+
   release:
+    needs: host-binaries
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Verify
         run: npm run lint && npm test
-      - name: Package releases
+      - name: Package platform releases
         run: npm run release
+      - name: Download host binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: host-*
+          path: dist/host-bins
+          merge-multiple: true
+      - name: Gather all assets
+        run: cp dist/host-bins/*.zip dist/release/
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:

@@ -1,11 +1,11 @@
 /*!
  * core/polyfill.js — minimal ES5 shims for the oldest targets.
  *
- * The 2011 "D-series" TVs run the MAPLE engine (a Gecko 1.8.1 / Firefox-2-era
- * runtime) which predates native JSON and several Array methods. Everything we
- * ship is hand-written ES5, but these few shims let the exact same bundle run
- * on a 2011 panel and a 2024 Tizen WebView alike. All are no-ops where the
- * platform already provides the feature, so they are safe to load everywhere.
+ * The 2013–2014 "Orsay" TVs run an old WebKit (~535–537). Everything we ship is
+ * hand-written ES5, and these few shims (JSON, a couple of Array/Function
+ * helpers) defensively backfill anything an old build might miss — so the exact
+ * same bundle runs on an old Orsay panel and a 2024 Tizen WebView alike. All are
+ * no-ops where the platform already provides the feature, safe to load anywhere.
  */
 (function (global) {
   'use strict';

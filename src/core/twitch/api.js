@@ -1,12 +1,11 @@
 /*!
  * core/twitch/api.js — the one API surface the app talks to.
  *
- * Picks the configured backend (public GraphQL or Helix-via-proxy) for browse
- * data, and owns the playback handshake (access token -> usher master URL).
- * Quality/variant handling is intentionally left to each platform's player
- * adapter, because hls.js, Tizen AVPlay and Orsay INFOLINK each discover
- * renditions differently; fetchVariants() is provided for adapters (Orsay)
- * that parse the master playlist themselves.
+ * Browse data comes from Twitch's public GraphQL; this also owns the playback
+ * handshake (access token -> usher master URL). Quality/variant handling is
+ * intentionally left to each platform's player adapter, because hls.js, Tizen
+ * AVPlay and Orsay INFOLINK each discover renditions differently; fetchVariants()
+ * is provided for adapters (Orsay) that parse the master playlist themselves.
  */
 (function (global) {
   'use strict';
@@ -14,9 +13,7 @@
   var TW = global.TW;
   TW.twitch = TW.twitch || {};
 
-  function backend() {
-    return TW.config.api.backend === 'proxy' ? TW.twitch.helix : TW.twitch.gql;
-  }
+  function backend() { return TW.twitch.gql; }
 
   var api = {
     backendName: function () { return backend().name; },
@@ -36,8 +33,6 @@
 
     /**
      * Resolve a channel to a playable usher master-playlist URL.
-     * The playback token always comes from GraphQL (Helix can't mint one);
-     * the backend's playbackToken() handles that delegation.
      */
     playbackUrl: function (channel, onOk, onFail) {
       backend().playbackToken(channel, function (token) {

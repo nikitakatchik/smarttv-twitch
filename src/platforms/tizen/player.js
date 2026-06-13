@@ -4,7 +4,7 @@
  * HTML5 <video> can't play HLS on Tizen, so live streams go through
  * webapis.avplay: open -> setDisplayRect -> setListener -> prepareAsync ->
  * play. Because AVPlay is a NATIVE player it sends no browser Origin header,
- * so it plays the usher master URL directly (no relay needed). Quality comes
+ * so it plays the usher master URL directly. Quality comes
  * from AVPlay's own track list (getTotalTrackInfo / setSelectTrack), so we
  * never have to fetch the playlist from the CORS-enforcing WebView.
  */

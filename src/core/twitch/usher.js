@@ -1,23 +1,11 @@
 /*!
- * core/twitch/usher.js — build the usher HLS URL + the optional relay wrapper.
+ * core/twitch/usher.js — build the usher HLS master-playlist URL.
  */
 (function (global) {
   'use strict';
 
   var TW = global.TW;
   TW.twitch = TW.twitch || {};
-
-  /**
-   * If config.api.relayBase is set, route any Twitch target through it:
-   *   <relayBase>/relay?url=<encoded target>
-   * This is how a 2011 TV (no SNI) and the in-browser harness reach Twitch
-   * despite TLS / CORS limits. With no relay configured, returns url unchanged.
-   */
-  function relayUrl(url) {
-    var base = TW.config.api.relayBase;
-    if (!base) { return url; }
-    return base.replace(/\/$/, '') + '/relay?url=' + encodeURIComponent(url);
-  }
 
   /**
    * Build the usher master-playlist URL from a {value, signature} access token.
@@ -37,10 +25,8 @@
       'supported_codecs=h264',
       'playlist_include_framerate=true'
     ];
-    var url = TW.config.api.usherBase + encodeURIComponent(channel) + '.m3u8?' + p.join('&');
-    return relayUrl(url);
+    return TW.config.api.usherBase + encodeURIComponent(channel) + '.m3u8?' + p.join('&');
   }
 
   TW.twitch.usher = { build: buildUsherUrl };
-  TW.twitch.relayUrl = relayUrl;
 })(this);

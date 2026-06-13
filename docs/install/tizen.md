@@ -6,8 +6,8 @@ For Samsung Smart TVs from **2015 onward** — model years J, K, M, N, R, T, U�
 > Twellie is an **unofficial** viewer for Twitch. Not affiliated with Twitch,
 > Samsung, or Tizen.
 
-Tizen TVs play Twitch **directly** — no host or relay needed. You sideload the
-app as a signed `.wgt` using Samsung's free Tizen Studio.
+Tizen TVs play Twitch **directly** — no installer or helper needed. You sideload
+the app as a signed `.wgt` using Samsung's free Tizen Studio.
 
 ## You need
 

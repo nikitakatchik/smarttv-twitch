@@ -11,10 +11,7 @@
       name: 'orsay',
       config: {
         screen: { width: 1280, height: 720 }
-        // IMPORTANT: pre-2017 Samsung TVs cannot complete a modern TLS/SNI
-        // handshake to Twitch's HTTPS-only endpoints. To make the app reach
-        // Twitch on real legacy hardware, deploy the relay (see proxy/) and set:
-        //   , api: { relayBase: 'https://your-relay.example.workers.dev' }
+        // 2013–2014 Orsay panels reach Twitch directly; nothing else to set.
       },
       keys: TW.platform.keys,
       createPlayer: TW.platform.createPlayer,

@@ -5,10 +5,10 @@
  * contract the TV adapters do, so the channel scene can't tell the difference.
  * Browsers enforce a CORS policy that native TV players don't, and Twitch's
  * usher/playlist hosts don't send Access-Control-Allow-Origin for arbitrary
- * origins — so the harness plays through the relay (the dev server, by
- * default), whose playlist rewriting routes the whole chain back through
- * itself. The master URL arrives already relay-wrapped (see TW.twitch.usher),
- * so hls.js/Safari just follow it; no custom loader required.
+ * origins — so the harness routes the HLS master URL through the dev server's
+ * CORS proxy (TW.platform.proxyBase), whose playlist rewriting then carries the
+ * whole variant/segment chain back through itself. DEV-ONLY: real TV players
+ * play the usher URL directly.
  */
 (function (global) {
   'use strict';
@@ -41,8 +41,15 @@
     TW.dom.on(video, 'playing', function () { cb.onBufferingComplete(); cb.onPlaying(); });
     TW.dom.on(video, 'ended', function () { cb.onEnded(); });
 
+    // Dev-only: route the HLS chain through the dev server's CORS proxy.
+    function viaProxy(url) {
+      var base = TW.platform.proxyBase;
+      return base ? base.replace(/\/$/, '') + '/proxy?url=' + encodeURIComponent(url) : url;
+    }
+
     return {
-      load: function (masterUrl) {
+      load: function (rawUrl) {
+        var masterUrl = viaProxy(rawUrl);
         if (Hls && Hls.isSupported()) {
           hls = new Hls({ lowLatencyMode: true });
           hls.on(Hls.Events.MANIFEST_PARSED, function () {
@@ -65,8 +72,7 @@
           hls.loadSource(masterUrl);
           hls.attachMedia(video);
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          // masterUrl is already relay-wrapped (TW.twitch.usher); Safari follows
-          // the rewritten playlists itself.
+          // masterUrl is proxy-wrapped; Safari follows the rewritten playlists.
           video.src = masterUrl;
           video.play();
           publishQualities();

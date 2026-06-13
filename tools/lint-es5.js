@@ -3,10 +3,10 @@
  * tools/lint-es5.js — guard the TV-targeted code against ES6+ syntax.
  *
  * The shared core and the Orsay/Tizen adapters must run on engines as old as
- * 2011 MAPLE (Gecko 1.8.1). This greps those files for constructs that simply
+ * 2013 Orsay WebKit (~535). This greps those files for constructs that simply
  * break there — arrow functions, let/const, template literals, fetch,
  * Promise, classList, spread — and fails the build if any appear. The browser
- * harness, the proxy worker, the tests and these tools are exempt (they run on
+ * harness, the tests and these tools are exempt (they run on
  * modern engines).
  */
 'use strict';

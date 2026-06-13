@@ -8,7 +8,7 @@
  * expects (core/ ui/ lang/ assets/ platform/), so the package runs unchanged:
  *   - Orsay:  zip dist/orsay/ into the widget archive.
  *   - Tizen:  `tizen build-web` + `tizen package -t wgt` over dist/tizen/.
- *   - web:    static-host dist/web/ (behind a relay) or just use `npm start`.
+ *   - web:    static-host dist/web/ or just use `npm start`.
  *
  * Importable: require('./build').build('orsay') returns the output dir.
  */

@@ -18,12 +18,10 @@
   TW.twitch = TW.twitch || {};
 
   function thumbUrl(login) {
-    return TW.twitch.relayUrl(
-      'https://static-cdn.jtvnw.net/previews-ttv/live_user_' + login + '-320x180.jpg');
+    return 'https://static-cdn.jtvnw.net/previews-ttv/live_user_' + login + '-320x180.jpg';
   }
   function boxUrl(name) {
-    return TW.twitch.relayUrl(
-      'https://static-cdn.jtvnw.net/ttv-boxart/' + encodeURIComponent(name) + '-285x380.jpg');
+    return 'https://static-cdn.jtvnw.net/ttv-boxart/' + encodeURIComponent(name) + '-285x380.jpg';
   }
 
   // Twitch GraphQL caps connection `first` arguments at 30.
@@ -31,7 +29,7 @@
 
   function post(query, onData, onFail) {
     var headers = { 'Client-ID': TW.config.api.clientId };
-    TW.http.postJson(TW.twitch.relayUrl(TW.config.api.gqlUrl), headers, { query: query },
+    TW.http.postJson(TW.config.api.gqlUrl, headers, { query: query },
       function (json) {
         // A GraphQL error (e.g. a bad argument) yields data:null + errors[];
         // treat that as a failure rather than rendering an empty grid.
@@ -116,7 +114,7 @@
         var u = data.user || {};
         onOk({
           display: u.displayName || login,
-          logo: u.profileImageURL ? TW.twitch.relayUrl(u.profileImageURL) : '',
+          logo: u.profileImageURL || '',
           title: (u.stream && u.stream.title) || '',
           viewers: (u.stream && u.stream.viewersCount) || 0,
           online: !!u.stream

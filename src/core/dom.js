@@ -1,8 +1,8 @@
 /*!
- * core/dom.js — a ~1 KB DOM helper that works from MAPLE (2011) to Tizen.
+ * core/dom.js — a ~1 KB DOM helper that works from old Orsay WebKit to Tizen.
  *
  * Deliberately avoids classList, querySelectorAll, dataset and other things
- * that are missing or flaky on 2011-era WebKit. className is manipulated as a
+ * that are missing or flaky on old Orsay WebKit. className is manipulated as a
  * plain string; attributes are read with getAttribute.
  */
 (function (global) {

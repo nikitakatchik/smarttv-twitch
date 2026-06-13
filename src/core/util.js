@@ -2,7 +2,7 @@
  * core/util.js — the TW namespace root + tiny helpers.
  *
  * Every module hangs off the global `TW` object and the files are loaded with
- * ordered <script> tags (no bundler / ES modules: a 2011 WebKit can't do them).
+ * ordered <script> tags (no bundler / ES modules: old Orsay WebKit can't do them).
  */
 (function (global) {
   'use strict';

@@ -5,9 +5,9 @@ Thanks for helping keep Twitch alive on old TVs! 💜
 ## Ground rules
 
 1. **TV code must be ES5.** Everything under `src/core`, `src/lang` and
-   `src/platforms/{orsay,tizen}` runs on engines as old as 2011 MAPLE. No arrow
-   functions, `let`/`const`, template literals, `fetch`, `Promise`, `classList`
-   or `class`. `npm run lint` enforces it. (The harness, the worker, the tests
+   `src/platforms/{orsay,tizen}` runs on engines as old as 2013 Orsay WebKit. No
+   arrow functions, `let`/`const`, template literals, `fetch`, `Promise`,
+   `classList` or `class`. `npm run lint` enforces it. (The harness, the tests
    and `tools/` may use modern JS.)
 2. **No runtime dependencies.** If you reach for an npm package for the app
    itself, there's probably a smaller hand-rolled way.

@@ -1,5 +1,5 @@
 /*!
- * platforms/orsay/player.js — pre-Tizen INFOLINK player adapter (2011–2014).
+ * platforms/orsay/player.js — pre-Tizen INFOLINK player adapter (2013–2014).
  *
  * The legacy <object classid="clsid:SAMSUNG-INFOLINK-PLAYER"> plugin plays HLS
  * when you append "|COMPONENT=HLS" to the .m3u8 URL. Its event callbacks are a
@@ -65,8 +65,7 @@
         active = { cb: cb };
         master = masterUrl;
         play(masterUrl);
-        // Parse renditions for the quality menu (best-effort; needs the relay
-        // on TVs that can't fetch usher directly).
+        // Parse renditions for the quality menu (best-effort).
         TW.api.fetchVariants(masterUrl, function (list) {
           variants = list || [];
           qualities = ['Auto'];
