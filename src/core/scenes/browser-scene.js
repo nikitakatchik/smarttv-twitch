@@ -19,6 +19,7 @@
     this.mode = -1;
     this.items = [];
     this.cells = [];
+    this.rowEls = [];
     this.cursor = null;        // pagination cursor (null = start, false = ended)
     this.loading = false;
     this.x = 0;
@@ -91,6 +92,7 @@
   P.clean = function () {
     this.items = [];
     this.cells = [];
+    this.rowEls = [];
     this.cursor = null;
     this.x = 0;
     this.y = 0;
@@ -135,17 +137,18 @@
   P.appendCells = function (fromIndex) {
     var cols = TW.config.columns;
     var grid = dom.get('tw-grid');
-    var row = null;
+    // Place each item in row floor(i/cols); reuse the row if it already exists
+    // so a page that starts mid-row (e.g. 30 items, 4 columns) continues the
+    // previous page's last row instead of leaving it short. Rows are tracked
+    // explicitly rather than via grid.lastChild, which on some old WebKit is an
+    // implicit <tbody> rather than the <tr>.
     for (var i = fromIndex; i < this.items.length; i++) {
-      if ((i % cols) === 0) { row = dom.create('tr'); grid.appendChild(row); }
+      var ri = Math.floor(i / cols);
+      var row = this.rowEls[ri];
+      if (!row) { row = dom.create('tr'); grid.appendChild(row); this.rowEls[ri] = row; }
       var cell = this.createCell(this.items[i]);
       row.appendChild(cell);
       this.cells[i] = cell;
-    }
-    // pad the last row so the table layout stays even
-    if (row) {
-      var rem = this.items.length % cols;
-      if (rem !== 0) { for (var p = rem; p < cols; p++) { row.appendChild(dom.create('td', 'tw-cell')); } }
     }
   };
 

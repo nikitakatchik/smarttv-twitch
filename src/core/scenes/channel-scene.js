@@ -153,8 +153,11 @@
 
   P.applyQuality = function () {
     this.playingIndex = this.qualityIndex;
-    this.showDialog('');
     if (this.player.selectQuality) { this.player.selectQuality(this.qualityIndex); }
+    this.hidePanel();
+    // No forced spinner here: a platform that re-buffers on a quality switch
+    // (Orsay re-plays the variant URL) drives the spinner via its own
+    // onBufferingStart/Complete callbacks; hls.js and AVPlay switch seamlessly.
   };
 
   P.shutdown = function () { TW.app.goToBrowser(); };
