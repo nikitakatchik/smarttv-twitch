@@ -38,3 +38,6 @@ Thumbs.db
 .cproject
 RemoteSystemsTempFiles/
 Logs/
+
+# Claude Code launch config
+.claude/
