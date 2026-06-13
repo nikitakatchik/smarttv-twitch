@@ -1,0 +1,105 @@
+/*!
+ * ui/styles.css — one stylesheet for all three targets.
+ *
+ * Authored against a 1280x720 stage (#app). Each platform's index.html scales
+ * the stage to its native resolution (Orsay 960x540 / 1280x720, Tizen
+ * 1920x1080, harness 1280x720). Avoids flexbox/grid/vw — none are safe on
+ * 2011-era WebKit — using absolute positioning, percentages and table layout.
+ */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  background: #0e0e10;
+  color: #efeff1;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 300;
+}
+
+#app { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; }
+
+.tw-scene { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+
+/* --- top bar ------------------------------------------------------------ */
+.tw-topbar { position: absolute; left: 0; top: 0; width: 100%; height: 84px; }
+.tw-logo { position: absolute; left: 36px; top: 22px; height: 40px; }
+.tw-tips { position: absolute; right: 36px; top: 30px; }
+.tw-tip { margin-left: 26px; font-size: 20px; color: #dedee3; }
+.tw-tip-active { color: #fff; text-decoration: underline; }
+.tw-dot {
+  display: inline-block; width: 26px; height: 26px; line-height: 26px;
+  text-align: center; border-radius: 4px; color: #fff; font-weight: 700; font-size: 15px;
+  vertical-align: middle;
+}
+.tw-red { background: #eb0400; } .tw-green { background: #46a200; }
+.tw-yellow { background: #c8b500; color: #111; } .tw-blue { background: #1f69ff; }
+
+/* --- grid --------------------------------------------------------------- */
+.tw-grid-wrap { position: absolute; left: 0; top: 92px; width: 100%; height: 628px; overflow: auto; }
+.tw-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.tw-cell { width: 25%; padding: 10px; vertical-align: top; }
+.tw-cell-inner { position: relative; }
+.tw-thumb {
+  width: 100%; display: block; background: #18181b;
+  border: 3px solid transparent; border-radius: 4px; box-sizing: border-box;
+}
+.tw-cell-game .tw-thumb { width: auto; max-height: 240px; margin: 0 auto; }
+.tw-focused { border-color: #fff; outline: 3px solid #9147ff; }
+.tw-meta {
+  position: absolute; left: 8px; right: 8px; bottom: 8px;
+  background: rgba(0, 0, 0, 0.62); padding: 6px 8px; border-radius: 3px;
+}
+.tw-meta-title {
+  font-size: 19px; color: #fff; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.tw-meta-sub {
+  font-size: 16px; color: #c8c8cf; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; margin-top: 2px;
+}
+
+/* --- open / search ------------------------------------------------------ */
+.tw-open { position: absolute; left: 20%; top: 30%; width: 60%; text-align: center; }
+.tw-open-input {
+  width: 100%; height: 76px; font-size: 34px; text-align: center;
+  border: 0; border-radius: 4px; box-sizing: border-box; background: #fff; color: #111;
+}
+.tw-open-input.tw-focused { outline: 4px solid #9147ff; }
+.tw-open-go {
+  display: inline-block; margin-top: 28px; padding: 18px 60px; font-size: 28px;
+  background: #9147ff; color: #fff; border-radius: 4px;
+}
+.tw-open-go.tw-focused { background: #772ce8; outline: 4px solid #fff; }
+
+/* --- player overlay ----------------------------------------------------- */
+.tw-panel {
+  position: absolute; right: 0; top: 0; width: 25%; height: 100%;
+  background: rgba(35, 21, 71, 0.92); box-sizing: border-box; padding: 24px; z-index: 5;
+}
+.tw-panel-logo { height: 34px; }
+.tw-panel-head { margin-top: 26px; }
+.tw-panel-icon { width: 56px; height: 56px; border-radius: 50%; vertical-align: middle; background: #18181b; }
+.tw-panel-name { font-size: 24px; margin-top: 12px; }
+.tw-panel-viewers { font-size: 18px; color: #cdc8e0; margin-top: 4px; }
+.tw-panel-title { font-size: 18px; color: #e6e2f5; margin-top: 22px; line-height: 1.35; }
+.tw-panel-quality { margin-top: 30px; font-size: 22px; }
+.tw-quality-name { color: #fff; margin-left: 10px; }
+.tw-quality-arrows i { font-style: normal; margin-left: 8px; font-size: 16px; }
+
+/* --- loading spinner ---------------------------------------------------- */
+.tw-loading { position: absolute; left: 0; top: 42%; width: 100%; text-align: center; z-index: 6; }
+.tw-loading-text { display: inline-block; margin-left: 14px; font-size: 30px; vertical-align: middle; }
+.tw-spinner { display: inline-block; vertical-align: middle; }
+.tw-spinner i {
+  display: inline-block; width: 22px; height: 22px; margin: 0 3px; border-radius: 50%;
+  background: #fff;
+  -webkit-animation: tw-bounce 1.4s infinite ease-in-out both;
+  animation: tw-bounce 1.4s infinite ease-in-out both;
+}
+.tw-spinner i:nth-child(1) { -webkit-animation-delay: -0.32s; animation-delay: -0.32s; }
+.tw-spinner i:nth-child(2) { -webkit-animation-delay: -0.16s; animation-delay: -0.16s; }
+@-webkit-keyframes tw-bounce { 0%, 80%, 100% { -webkit-transform: scale(0); } 40% { -webkit-transform: scale(1); } }
+@keyframes tw-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
