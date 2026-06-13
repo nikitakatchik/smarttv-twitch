@@ -1,0 +1,38 @@
+{
+  "name": "smarttv-twitch",
+  "version": "4.0.0",
+  "description": "Unofficial Twitch app for Samsung Smart TVs — one ES5 core, three targets: Orsay (2011–2014), Tizen (2015+), and a desktop browser harness.",
+  "keywords": [
+    "twitch",
+    "samsung",
+    "smart-tv",
+    "tizen",
+    "orsay",
+    "maple",
+    "hls",
+    "iptv"
+  ],
+  "homepage": "https://github.com/nikitakatchik/smarttv-twitch#readme",
+  "bugs": "https://github.com/nikitakatchik/smarttv-twitch/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nikitakatchik/smarttv-twitch.git"
+  },
+  "license": "GPL-3.0-or-later",
+  "author": "Nikita Katchik",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node tools/dev-server.js",
+    "dev": "node tools/dev-server.js",
+    "test": "node --test test/",
+    "lint": "node tools/lint-es5.js",
+    "build": "node tools/build.js",
+    "build:orsay": "node tools/build.js orsay",
+    "build:tizen": "node tools/build.js tizen",
+    "build:web": "node tools/build.js web"
+  },
+  "devDependencies": {}
+}
