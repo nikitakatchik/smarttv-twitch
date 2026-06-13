@@ -99,7 +99,7 @@
     },
 
     streamsByGame: function (game, limit, cursor, onOk, onFail) {
-      var q = '{ game(name: "' + String(game.name).replace(/"/g, '\\"') + '") { streams(first: ' +
+      var q = '{ game(name: "' + String(game.name).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '") { streams(first: ' +
         cap(limit) + afterClause(cursor) + ') { edges { cursor node { ' +
         'id title viewersCount broadcaster { login displayName } game { name } } } } } }';
       post(q, function (data) {
@@ -110,7 +110,7 @@
     // Non-fatal: only powers the player overlay. Uses a couple of standard but
     // not-live-verified fields; failure just leaves the overlay blank.
     streamInfo: function (login, onOk, onFail) {
-      var q = '{ user(login: "' + login.replace(/"/g, '\\"') + '") { displayName ' +
+      var q = '{ user(login: "' + login.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '") { displayName ' +
         'profileImageURL(width: 150) stream { title viewersCount } } }';
       post(q, function (data) {
         var u = data.user || {};
@@ -126,7 +126,7 @@
 
     // Live HLS access token (value + signature) — no user OAuth.
     playbackToken: function (channel, onOk, onFail) {
-      var q = '{ streamPlaybackAccessToken(channelName: "' + channel.replace(/"/g, '\\"') +
+      var q = '{ streamPlaybackAccessToken(channelName: "' + channel.replace(/\\/g, '\\\\').replace(/"/g, '\\"') +
         '", params: { platform: "web", playerBackend: "mediaplayer", playerType: "site" }) ' +
         '{ value signature } }';
       post(q, function (data) {
