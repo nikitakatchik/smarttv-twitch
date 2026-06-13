@@ -32,7 +32,9 @@
     "build": "node tools/build.js",
     "build:orsay": "node tools/build.js orsay",
     "build:tizen": "node tools/build.js tizen",
-    "build:web": "node tools/build.js web"
+    "build:web": "node tools/build.js web",
+    "host": "node tools/host.js",
+    "release": "node tools/release.js"
   },
   "devDependencies": {}
 }

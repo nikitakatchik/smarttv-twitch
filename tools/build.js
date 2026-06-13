@@ -9,6 +9,8 @@
  *   - Orsay:  zip dist/orsay/ into the widget archive.
  *   - Tizen:  `tizen build-web` + `tizen package -t wgt` over dist/tizen/.
  *   - web:    static-host dist/web/ (behind a relay) or just use `npm start`.
+ *
+ * Importable: require('./build').build('orsay') returns the output dir.
  */
 'use strict';
 
@@ -18,11 +20,13 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
 const DIST = path.join(ROOT, 'dist');
+const ALL = ['orsay', 'tizen', 'web'];
 const PLATFORM_FILES = new Set(['index.html', 'config.xml', 'widget.info']);
 
 function copyDir(src, dst) {
   fs.mkdirSync(dst, { recursive: true });
   for (const e of fs.readdirSync(src, { withFileTypes: true })) {
+    if (e.name === '.DS_Store') { continue; }
     const s = path.join(src, e.name);
     const d = path.join(dst, e.name);
     if (e.isDirectory()) { copyDir(s, d); }
@@ -30,10 +34,11 @@ function copyDir(src, dst) {
   }
 }
 
-function build(platform) {
+// Assemble one platform into outDir (default dist/<platform>) and return it.
+function build(platform, outDir) {
   const pdir = path.join(SRC, 'platforms', platform);
   if (!fs.existsSync(pdir)) { throw new Error('unknown platform: ' + platform); }
-  const out = path.join(DIST, platform);
+  const out = outDir || path.join(DIST, platform);
   fs.rmSync(out, { recursive: true, force: true });
 
   for (const dir of ['core', 'ui', 'lang', 'assets']) {
@@ -44,14 +49,23 @@ function build(platform) {
     fs.mkdirSync(path.dirname(dst), { recursive: true });
     fs.copyFileSync(path.join(pdir, e), dst);
   }
-  console.log('built ' + platform + ' -> ' + path.relative(ROOT, out));
+  return out;
 }
 
-const target = process.argv[2];
-const all = ['orsay', 'tizen', 'web'];
-try {
-  (target ? [target] : all).forEach(build);
-} catch (e) {
-  console.error('build failed: ' + e.message);
-  process.exit(1);
+function buildAll(target) {
+  (target ? [target] : ALL).forEach((p) => {
+    const out = build(p);
+    console.log('built ' + p + ' -> ' + path.relative(ROOT, out));
+  });
+}
+
+module.exports = { build, buildAll, ALL, ROOT, SRC, DIST };
+
+if (require.main === module) {
+  try {
+    buildAll(process.argv[2]);
+  } catch (e) {
+    console.error('build failed: ' + e.message);
+    process.exit(1);
+  }
 }

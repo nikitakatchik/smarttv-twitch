@@ -6,18 +6,17 @@
  *
  * Mounts the shared tree so the SAME relative paths the packaged builds use
  * (core/, ui/, lang/, assets/, platform/) resolve in development, and exposes
- * a `/relay?url=<target>` endpoint that forwards Twitch requests without a
- * browser Origin header — the local stand-in for the production relay, used
- * when a stream's variant-playlist host 403s non-Twitch origins.
+ * `/relay?url=<target>` (see tools/lib/relay.js) so the browser harness can
+ * reach Twitch despite CORS — the local stand-in for the production relay.
  *
- *   Plain:  http://localhost:8080
- *   Relay:  http://localhost:8080/?relay=http://localhost:8080
+ *   http://localhost:8080
  */
 'use strict';
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { relayHttp, CORS } = require('./lib/relay');
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
@@ -51,82 +50,15 @@ function serveFile(res, file) {
   });
 }
 
-// Rewrite the URLs inside an HLS playlist so every nested fetch (variant
-// playlists, segments) routes back through this relay too. This is what makes
-// the whole chain work from a browser/old-TV origin: the client only ever
-// touches the relay, never Twitch directly.
-function rewriteM3u8(text, selfBase, baseUrl) {
-  function wrap(u) {
-    var abs;
-    try { abs = new URL(u, baseUrl).href; } catch (e) { return u; }
-    return selfBase + '/relay?url=' + encodeURIComponent(abs);
-  }
-  var NL = String.fromCharCode(10), CR = String.fromCharCode(13);
-  var lines = text.split(NL), out = [];
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
-    if (line.charAt(line.length - 1) === CR) { line = line.slice(0, -1); }
-    out.push((line && line.charAt(0) !== '#') ? wrap(line) : line);
-  }
-  return out.join(NL);
-}
-
-function hostAllowed(host) {
-  var doms = ['ttvnw.net', 'twitch.tv', 'jtvnw.net'];
-  for (var i = 0; i < doms.length; i++) {
-    if (host === doms[i] || host.slice(-(doms[i].length + 1)) === '.' + doms[i]) { return true; }
-  }
-  return false;
-}
-
-// Forward a Twitch request through Node (no browser Origin header => no 403).
-async function relay(req, res, target, selfBase) {
-  try {
-    const headers = {};
-    if (req.headers['client-id']) { headers['Client-ID'] = req.headers['client-id']; }
-    if (req.headers['content-type']) { headers['Content-Type'] = req.headers['content-type']; }
-    let body;
-    if (req.method === 'POST') {
-      body = await new Promise((resolve) => {
-        const chunks = []; req.on('data', (c) => chunks.push(c));
-        req.on('end', () => resolve(Buffer.concat(chunks)));
-      });
-    }
-    const upstream = await fetch(target, { method: req.method, headers, body });
-    const ctype = upstream.headers.get('content-type') || 'application/octet-stream';
-    const buf = Buffer.from(await upstream.arrayBuffer());
-
-    // If it's an HLS playlist, rewrite nested URLs through the relay.
-    const text = buf.length < 2_000_000 ? buf.toString('utf8') : '';
-    if (text.indexOf('#EXTM3U') === 0) {
-      send(res, upstream.status, rewriteM3u8(text, selfBase, target),
-        { 'Content-Type': 'application/vnd.apple.mpegurl' });
-    } else {
-      send(res, upstream.status, buf, { 'Content-Type': ctype });
-    }
-  } catch (e) {
-    send(res, 502, 'relay error: ' + e.message);
-  }
-}
-
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://localhost');
 
-  if (req.method === 'OPTIONS') {
-    return send(res, 204, '', {
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Client-ID, Content-Type'
-    });
-  }
+  if (req.method === 'OPTIONS') { return send(res, 204, '', CORS); }
 
   if (u.pathname === '/relay') {
     const target = u.searchParams.get('url');
     if (!target) { return send(res, 400, 'missing url'); }
-    var tUrl;
-    try { tUrl = new URL(target); } catch (e) { return send(res, 400, 'bad url'); }
-    if (tUrl.protocol !== 'https:' || !hostAllowed(tUrl.hostname)) { return send(res, 403, 'forbidden host'); }
-    const selfBase = 'http://' + (req.headers.host || ('localhost:' + PORT));
-    return relay(req, res, target, selfBase);
+    return relayHttp(req, res, target, 'http://' + (req.headers.host || ('localhost:' + PORT)));
   }
 
   if (u.pathname === '/' || u.pathname === '') { return serveFile(res, INDEX); }
@@ -141,6 +73,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log('Twitch TV harness:  http://localhost:' + PORT);
-  console.log('With CORS relay:    http://localhost:' + PORT + '/?relay=http://localhost:' + PORT);
+  console.log('Twellie harness:    http://localhost:' + PORT);
+  console.log('Relay endpoint:     http://localhost:' + PORT + '/relay?url=<twitch url>');
 });
