@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 380" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f1235"/>
+      <stop offset="1" stop-color="#0e0e10"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#18181b"/>
+      <stop offset="1" stop-color="#0e0e10"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="380" rx="14" fill="url(#bg)"/>
+
+  <!-- title block -->
+  <text x="60" y="120" fill="#fff" font-size="46" font-weight="700">Twitch <tspan fill="#9147ff">for Samsung TV</tspan></text>
+  <text x="62" y="158" fill="#bdbdc7" font-size="19">Live Twitch on every Samsung Smart TV — 2011 Orsay to modern Tizen.</text>
+  <g font-size="13" fill="#cfc6ea">
+    <rect x="62" y="186" width="118" height="26" rx="13" fill="#9147ff"/><text x="121" y="204" text-anchor="middle" fill="#fff" font-weight="600">one ES5 core</text>
+    <rect x="190" y="186" width="120" height="26" rx="13" fill="#2a2540"/><text x="250" y="204" text-anchor="middle">3 TV targets</text>
+    <rect x="320" y="186" width="128" height="26" rx="13" fill="#2a2540"/><text x="384" y="204" text-anchor="middle">zero deps</text>
+  </g>
+
+  <!-- mock TV with a 2x2 stream grid -->
+  <g transform="translate(556,70)">
+    <rect x="-8" y="-8" width="356" height="216" rx="12" fill="#000"/>
+    <rect width="340" height="200" rx="6" fill="url(#screen)"/>
+    <!-- top bar -->
+    <text x="14" y="24" fill="#9147ff" font-size="15" font-weight="700">twitch</text>
+    <g>
+      <circle cx="250" cy="19" r="6" fill="#eb0400"/><circle cx="270" cy="19" r="6" fill="#46a200"/>
+      <circle cx="290" cy="19" r="6" fill="#c8b500"/><circle cx="310" cy="19" r="6" fill="#1f69ff"/>
+    </g>
+    <!-- tiles -->
+    <g>
+      <rect x="14" y="40" width="150" height="68" rx="4" fill="#3a2a63" stroke="#fff" stroke-width="2"/>
+      <rect x="176" y="40" width="150" height="68" rx="4" fill="#241a3d"/>
+      <rect x="14" y="120" width="150" height="68" rx="4" fill="#241a3d"/>
+      <rect x="176" y="120" width="150" height="68" rx="4" fill="#241a3d"/>
+    </g>
+    <g fill="#d8d2ea" font-size="9">
+      <text x="20" y="100">ESLCS · 60,082</text>
+      <text x="182" y="100">ow_esports · 44k</text>
+      <text x="20" y="180">cs2_paragon · 45k</text>
+      <text x="182" y="180">Warcraft · 8k</text>
+    </g>
+  </g>
+
+  <!-- mini remote -->
+  <g transform="translate(470,250)">
+    <rect x="0" y="0" width="58" height="104" rx="14" fill="#26262c"/>
+    <circle cx="29" cy="30" r="15" fill="#3a3a44"/>
+    <text x="29" y="35" text-anchor="middle" fill="#fff" font-size="12">OK</text>
+    <circle cx="14" cy="70" r="5" fill="#eb0400"/><circle cx="24" cy="70" r="5" fill="#46a200"/>
+    <circle cx="34" cy="70" r="5" fill="#c8b500"/><circle cx="44" cy="70" r="5" fill="#1f69ff"/>
+  </g>
+</svg>
