@@ -1,0 +1,67 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Zero runtime deps, so no `npm ci` anywhere — just run the checks.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: ES5 / old-engine lint
+        run: npm run lint
+      - name: Brand guard (no Twitch trademark assets)
+        run: |
+          if [ -f src/assets/twitchlogo.png ]; then
+            echo "::error::Twitch glitch logo reintroduced (src/assets/twitchlogo.png)"; exit 1
+          fi
+          if grep -rIniE '9147ff|6441a5' src; then
+            echo "::error::Twitch brand purple reintroduced in src/"; exit 1
+          fi
+          echo "brand guard ok"
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Unit tests
+        run: npm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build all platforms + package releases
+        run: |
+          npm run build
+          npm run release
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: twellie-packages
+          path: dist/release/*.zip
+          if-no-files-found: error

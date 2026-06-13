@@ -6,6 +6,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/nikitakatchik/smarttv-twitch/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nikitakatchik/smarttv-twitch/ci.yml?branch=master&style=flat-square&label=ci" alt="ci"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square" alt="License: GPL v3"></a>
   <img src="https://img.shields.io/badge/platform-Samsung%20Orsay%20%2B%20Tizen-23d3a3.svg?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/Made%20with-JavaScript%20(ES5)-F7DF1E.svg?style=flat-square&logo=javascript&logoColor=black" alt="Made with JavaScript">
@@ -33,26 +34,21 @@ Full matrix, engines and caveats → **[docs/PLATFORMS.md](docs/PLATFORMS.md)**.
 
 ## 📦 Install on your TV
 
-### Tizen (2015 and newer) — `.wgt`
+Download the package for your TV from the
+[**latest release**](https://github.com/nikitakatchik/smarttv-twitch/releases/latest),
+then follow the guide for your model year.
 
-```bash
-npm run build:tizen                       # → dist/tizen/
-# then, with Tizen Studio CLI + a signing profile:
-tizen build-web   -- dist/tizen
-tizen package -t wgt -s <profile> -- dist/tizen/.buildResult
-# TV → Apps → 1 2 3 4 5 → Developer Mode ON → enter your PC's IP → reboot
-sdb connect <TV-IP> && tizen install -n Twellie.wgt -t <device>
-```
+| Your TV | Download | Guide |
+| ------- | -------- | ----- |
+| **2015 and newer** — Tizen (J · K · M · N · R · T · U …) | [⬇ twellie-tizen.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-tizen.zip) | [Tizen guide →](docs/install/tizen.md) |
+| **2013–2014** — Orsay (F · H) | [⬇ twellie-orsay-host.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host.zip) | [F / H guide →](docs/install/orsay-2013-2014.md) |
+| **2011–2012** — Orsay (D · E) | [⬇ twellie-orsay-host.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host.zip) | [D / E guide →](docs/install/orsay-2011-2012.md) |
 
-### Orsay (2011–2014) — legacy widget
-
-1. Deploy the [relay](proxy/) and set `relayBase` in `src/platforms/orsay/boot.js`
-   (these TVs can't reach Twitch over modern TLS without it).
-2. `npm run build:orsay` → zip `dist/orsay/`.
-3. Install via **USB** (a FAT32 stick with a root `userwidget` folder) **or** the
-   **`develop` account** Smart Hub "App Sync" over your LAN.
-
-Step-by-step for both → **[docs/TESTING.md](docs/TESTING.md)**.
+> **Why a "host" download for older TVs?** Samsung TVs from 2011–2014 can't open
+> a modern (TLS/SNI) connection to Twitch, so they need a helper. The host is a
+> tiny app you run on any computer on the same Wi-Fi: it installs Twellie onto
+> the TV and relays Twitch for it while you watch — one command, nothing to build.
+> Tizen TVs talk to Twitch directly and need none of this.
 
 
 ## 🗺️ Roadmap

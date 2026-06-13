@@ -1,0 +1,29 @@
+name: release
+
+# Tag a commit `vX.Y.Z` and push the tag to cut a release with one package
+# per generation attached:  git tag v4.0.0 && git push origin v4.0.0
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify
+        run: npm run lint && npm test
+      - name: Package releases
+        run: npm run release
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/release/*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true

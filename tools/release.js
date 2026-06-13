@@ -7,11 +7,16 @@
  * Produces one downloadable package per target, because the install path
  * differs by Samsung generation:
  *
- *   twellie-tizen-<v>.zip   2015+ Tizen web app (sign into a .wgt, sideload)
- *   twellie-orsay-<v>.zip   2011–2014 Orsay widget (advanced/USB; needs a relay)
- *   twellie-host-<v>.zip    the self-contained host: installs + relays for
- *                           Orsay TVs with just `node tools/host.js`
- *   twellie-web-<v>.zip     the browser build (static hosting / demo)
+ * Asset names are UNVERSIONED so a stable "latest" download link works:
+ *   https://github.com/<owner>/<repo>/releases/latest/download/<name>.zip
+ * (the version lives inside each zip — config.xml / package.json — and on the
+ * release tag).
+ *
+ *   twellie-tizen.zip        2015+ Tizen web app (sign into a .wgt, sideload)
+ *   twellie-orsay.zip        2011–2014 Orsay widget (advanced/USB; needs a relay)
+ *   twellie-orsay-host.zip   the self-contained host: installs + relays for Orsay
+ *                            TVs with just `node tools/host.js`
+ *   twellie-web.zip          the browser build (static hosting / demo)
  */
 'use strict';
 
@@ -34,9 +39,9 @@ function writeZip(name, buf) {
 console.log('packaging v' + V + ' -> dist/release/');
 
 // One self-contained package per generation.
-writeZip('twellie-orsay-' + V + '.zip', zipDir(build('orsay')));
-writeZip('twellie-tizen-' + V + '.zip', zipDir(build('tizen')));
-writeZip('twellie-web-' + V + '.zip', zipDir(build('web')));
+writeZip('twellie-orsay.zip', zipDir(build('orsay')));
+writeZip('twellie-tizen.zip', zipDir(build('tizen')));
+writeZip('twellie-web.zip', zipDir(build('web')));
 
 // The host bundle: just enough to run `node tools/host.js` after unzip.
 const hostFiles = []
@@ -50,9 +55,10 @@ hostFiles.push({
     'Requires Node.js 18+ (https://nodejs.org).\n\n' +
     'Run:\n    node tools/host.js\n\n' +
     'Then follow the on-screen instructions to install on your TV.\n' +
-    'Keep it running while watching. See docs/INSTALL.md for details.\n'
+    'Keep it running while watching.\n\n' +
+    'Full guide: https://github.com/nikitakatchik/smarttv-twitch/tree/master/docs/install\n'
   )
 });
-writeZip('twellie-host-' + V + '.zip', zip(hostFiles));
+writeZip('twellie-orsay-host.zip', zip(hostFiles));
 
 console.log('done.');
