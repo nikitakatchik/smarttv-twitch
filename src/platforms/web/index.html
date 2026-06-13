@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Twitch for Samsung TV — Dev Harness</title>
+  <link rel="stylesheet" href="ui/styles.css">
+  <style>
+    /* Harness chrome — overrides the TV-fullscreen assumptions in styles.css */
+    html, body { width: auto; height: auto; overflow: auto; background: #0a0a0c; }
+    .tw-stage-wrap { display: block; text-align: center; padding: 20px 0; }
+    .tv-frame {
+      position: relative; width: 1280px; height: 720px; margin: 0 auto;
+      overflow: hidden; border-radius: 10px; box-shadow: 0 16px 60px rgba(0,0,0,0.6);
+      background: #000;
+    }
+    #tw-video, #app { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; }
+    #tw-video { background: #000; z-index: 0; }
+    #app { z-index: 1; }
+    .remote {
+      width: 1280px; margin: 14px auto 40px; color: #adadb8; font: 13px/1.5 "Helvetica Neue", Arial, sans-serif;
+      text-align: center;
+    }
+    .remote h2 { color: #efeff1; font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+    .remote button {
+      min-width: 56px; height: 40px; margin: 3px; padding: 0 12px; cursor: pointer;
+      background: #26262c; color: #efeff1; border: 1px solid #3a3a44; border-radius: 6px;
+      font-size: 14px;
+    }
+    .remote button:hover { background: #34343c; }
+    .remote .r { color: #eb0400; } .remote .g { color: #46a200; }
+    .remote .y { color: #c8b500; } .remote .b { color: #1f69ff; }
+    .remote .hint { margin-top: 10px; color: #7d7d8c; }
+    .remote kbd {
+      background: #1f1f23; border: 1px solid #3a3a44; border-radius: 4px; padding: 1px 6px;
+      font-family: inherit; color: #dedee3;
+    }
+  </style>
+</head>
+<body>
+  <div class="tw-stage-wrap">
+    <div class="tv-frame">
+      <video id="tw-video" playsinline></video>
+      <div id="app"></div>
+    </div>
+  </div>
+
+  <div class="remote">
+    <h2>📺 Virtual remote</h2>
+    <div>
+      <button data-tvkey="UP">▲</button>
+    </div>
+    <div>
+      <button data-tvkey="LEFT">◀</button>
+      <button data-tvkey="ENTER">OK</button>
+      <button data-tvkey="RIGHT">▶</button>
+    </div>
+    <div>
+      <button data-tvkey="DOWN">▼</button>
+    </div>
+    <div style="margin-top:8px">
+      <button data-tvkey="RED" class="r">A · Channels</button>
+      <button data-tvkey="GREEN" class="g">B · Games</button>
+      <button data-tvkey="YELLOW" class="y">C · Open</button>
+      <button data-tvkey="BLUE" class="b">D · Refresh</button>
+    </div>
+    <div style="margin-top:8px">
+      <button data-tvkey="BACK">Back</button>
+      <button data-tvkey="CH_UP">CH ▲ (quality)</button>
+      <button data-tvkey="CH_DOWN">CH ▼ (quality)</button>
+    </div>
+    <div class="hint">
+      Keyboard: <kbd>↑ ↓ ← →</kbd> navigate · <kbd>Enter</kbd> select · <kbd>Backspace</kbd> back ·
+      <kbd>R</kbd><kbd>G</kbd><kbd>Y</kbd><kbd>B</kbd> color buttons ·
+      <kbd>PgUp</kbd>/<kbd>PgDn</kbd> quality. In the player, <kbd>←</kbd> opens the quality panel.
+    </div>
+  </div>
+
+  <!-- hls.js powers playback in Chrome/Firefox; Safari uses native HLS. -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+
+  <!-- core (load order matters: no bundler / ES modules) -->
+  <script src="core/polyfill.js"></script>
+  <script src="core/util.js"></script>
+  <script src="core/dom.js"></script>
+  <script src="core/keys.js"></script>
+  <script src="core/config.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/http.js"></script>
+  <script src="lang/en.js"></script>
+  <script src="lang/de.js"></script>
+  <script src="lang/ru.js"></script>
+  <script src="lang/es.js"></script>
+  <script src="lang/fr.js"></script>
+  <script src="lang/pt-br.js"></script>
+  <script src="lang/uk.js"></script>
+  <script src="lang/sv.js"></script>
+  <script src="core/twitch/playlist.js"></script>
+  <script src="core/twitch/usher.js"></script>
+  <script src="core/twitch/gql.js"></script>
+  <script src="core/twitch/helix.js"></script>
+  <script src="core/twitch/api.js"></script>
+  <script src="core/scene-manager.js"></script>
+  <script src="core/scenes/browser-scene.js"></script>
+  <script src="core/scenes/channel-scene.js"></script>
+  <script src="core/app.js"></script>
+
+  <!-- web platform adapter -->
+  <script src="platform/player.js"></script>
+  <script src="platform/keys.js"></script>
+  <script src="platform/system.js"></script>
+  <script src="platform/boot.js"></script>
+</body>
+</html>
