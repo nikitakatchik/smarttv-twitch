@@ -39,9 +39,11 @@
       relayBase: ''
     },
 
-    // Grid layout.
+    // Grid layout. Twitch GraphQL caps `first` at 30; Helix allows up to 100
+    // but 30 keeps one value valid for both backends (infinite scroll fetches
+    // more on demand).
     columns: 4,
-    pageSize: 100,
+    pageSize: 30,
 
     // Default + remembered quality label ('Auto', 'chunked'/source, '720p60'…).
     defaultQuality: 'High',

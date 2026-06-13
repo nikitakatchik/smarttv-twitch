@@ -26,12 +26,23 @@
       'https://static-cdn.jtvnw.net/ttv-boxart/' + encodeURIComponent(name) + '-285x380.jpg');
   }
 
+  // Twitch GraphQL caps connection `first` arguments at 30.
+  function cap(limit) { return Math.min(limit || 30, 30); }
+
   function post(query, onData, onFail) {
     var headers = { 'Client-ID': TW.config.api.clientId };
     TW.http.postJson(TW.twitch.relayUrl(TW.config.api.gqlUrl), headers, { query: query },
       function (json) {
-        if (json && json.data) { onData(json.data); }
-        else if (onFail) { onFail(-1, null, json && json.errors); }
+        // A GraphQL error (e.g. a bad argument) yields data:null + errors[];
+        // treat that as a failure rather than rendering an empty grid.
+        if (json && json.errors && json.errors.length) {
+          TW.log.warn('gql: ' + json.errors[0].message);
+          if (onFail) { onFail(-1, null, json.errors); }
+        } else if (json && json.data) {
+          onData(json.data);
+        } else if (onFail) {
+          onFail(-1, null, null);
+        }
       }, onFail);
   }
 
@@ -64,13 +75,13 @@
     name: 'gql',
 
     topStreams: function (limit, cursor, onOk, onFail) {
-      post('{ streams(first: ' + limit + afterClause(cursor) + ') { edges { cursor node { ' +
+      post('{ streams(first: ' + cap(limit) + afterClause(cursor) + ') { edges { cursor node { ' +
         'id title viewersCount broadcaster { login displayName } game { name } } } } }',
         function (data) { onOk(mapStreamEdges(data.streams)); }, onFail);
     },
 
     topGames: function (limit, cursor, onOk, onFail) {
-      post('{ games(first: ' + limit + afterClause(cursor) + ') { edges { cursor node { ' +
+      post('{ games(first: ' + cap(limit) + afterClause(cursor) + ') { edges { cursor node { ' +
         'id name displayName viewersCount } } } }',
         function (data) {
           var items = [], edges = (data.games && data.games.edges) || [], last = null;
@@ -89,7 +100,7 @@
 
     streamsByGame: function (game, limit, cursor, onOk, onFail) {
       var q = '{ game(name: "' + String(game.name).replace(/"/g, '\\"') + '") { streams(first: ' +
-        limit + afterClause(cursor) + ') { edges { cursor node { ' +
+        cap(limit) + afterClause(cursor) + ') { edges { cursor node { ' +
         'id title viewersCount broadcaster { login displayName } game { name } } } } } }';
       post(q, function (data) {
         onOk(mapStreamEdges(data.game && data.game.streams));

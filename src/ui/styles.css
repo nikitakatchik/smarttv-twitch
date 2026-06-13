@@ -22,6 +22,10 @@ html, body {
 #app { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; }
 
 .tw-scene { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+/* The grid sits on an opaque background; the player scene is transparent so
+   the video behind #app shows through. */
+#tw-browser { background: #0e0e10; }
+#tw-channel { background: transparent; }
 
 /* --- top bar ------------------------------------------------------------ */
 .tw-topbar { position: absolute; left: 0; top: 0; width: 100%; height: 84px; }
