@@ -42,7 +42,7 @@
     root.id = 'tw-channel';
     root.innerHTML =
       '<div class="tw-panel" id="tw-panel">' +
-        '<img class="tw-panel-logo" src="assets/twitchlogo.png" alt="Twitch">' +
+        '<img class="tw-panel-logo" src="assets/logo.png" alt="">' +
         '<div class="tw-panel-head">' +
           '<img class="tw-panel-icon" id="tw-c-icon" src="">' +
           '<div class="tw-panel-name" id="tw-c-name"></div>' +

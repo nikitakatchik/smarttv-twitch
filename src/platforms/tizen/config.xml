@@ -12,7 +12,7 @@
   <description>Unofficial Twitch live viewer for Samsung Tizen TVs.</description>
   <author href="https://github.com/nikitakatchik">Nikita Katchik</author>
   <content src="index.html"/>
-  <icon src="assets/icon/icon_115_95.png"/>
+  <icon src="assets/icon/icon.png"/>
 
   <feature name="http://tizen.org/feature/screen.size.all"/>
 

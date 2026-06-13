@@ -35,7 +35,7 @@
     root.id = 'tw-browser';
     root.innerHTML =
       '<div class="tw-topbar">' +
-        '<img class="tw-logo" src="assets/twitchlogo.png" alt="Twitch">' +
+        '<img class="tw-logo" src="assets/logo.png" alt="">' +
         '<div class="tw-tips">' +
           '<span class="tw-tip" id="tw-tip-all"><b class="tw-dot tw-red">A</b> <span id="tw-l-all"></span></span>' +
           '<span class="tw-tip" id="tw-tip-games"><b class="tw-dot tw-green">B</b> <span id="tw-l-games"></span></span>' +
