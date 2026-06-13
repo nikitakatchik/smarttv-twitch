@@ -27,7 +27,7 @@
   "scripts": {
     "start": "node tools/dev-server.js",
     "dev": "node tools/dev-server.js",
-    "test": "node --test test/",
+    "test": "node --test test/*.test.js",
     "lint": "node tools/lint-es5.js",
     "build": "node tools/build.js",
     "build:orsay": "node tools/build.js orsay",

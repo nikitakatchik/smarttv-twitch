@@ -67,9 +67,9 @@
         pendingGroup = m['GROUP-ID'] || null;
       } else if (line.indexOf('#EXT-X-STREAM-INF:') === 0) {
         pendingInf = parseAttributes(line.substring('#EXT-X-STREAM-INF:'.length));
-      } else if (line.charAt(0) !== '#') {
-        // A URL line closes the current variant.
-        var inf = pendingInf || {};
+      } else if (line.charAt(0) !== '#' && pendingInf) {
+        // A URL line that follows a STREAM-INF closes the current variant.
+        var inf = pendingInf;
         variants.push({
           name: pendingName || inf.VIDEO || ('q' + variants.length),
           group: pendingGroup || inf.VIDEO || null,
