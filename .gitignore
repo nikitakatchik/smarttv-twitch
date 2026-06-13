@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build output
+dist/
+build/
+*.wgt
+*.zip
+.buildResult/
+
+# Tizen / Samsung SDK
+.tizen-cli-history
+.sign/
+author.p12
+*.p12
+
+# Proxy
+proxy/.dev.vars
+proxy/.wrangler/
+.env
+.env.local
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Legacy Eclipse / Samsung Smart TV SDK workspace artifacts
+.metadata/
+.settings/
+.project
+.cproject
+RemoteSystemsTempFiles/
+Logs/
