@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tizen TV web app manifest (W3C widget schema) — Samsung 2015+ (J-series
+     onward). required_version 2.3 targets the widest range of Tizen TVs. -->
+<widget xmlns="http://www.w3.org/ns/widgets"
+        xmlns:tizen="http://tizen.org/ns/widgets"
+        id="https://github.com/nikitakatchik/smarttv-twitch"
+        version="4.0.0" viewmodes="maximized">
+  <tizen:application id="TwitchTV01.Twitch" package="TwitchTV01" required_version="2.3"/>
+  <tizen:profile name="tv"/>
+
+  <name>Twitch</name>
+  <description>Unofficial Twitch live viewer for Samsung Tizen TVs.</description>
+  <author href="https://github.com/nikitakatchik">Nikita Katchik</author>
+  <content src="index.html"/>
+  <icon src="assets/icon/icon_115_95.png"/>
+
+  <feature name="http://tizen.org/feature/screen.size.all"/>
+
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+  <!-- Samsung Product API: AVPlay -->
+  <tizen:privilege name="http://developer.samsung.com/privilege/avplay"/>
+
+  <tizen:setting screen-orientation="landscape" context-menu="disable"
+                 background-support="disable" encryption="disable"
+                 install-location="auto" hwkey-event="enable"/>
+</widget>
