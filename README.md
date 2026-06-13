@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="docs/media/hero.svg" alt="Twellie" width="720">
-</p>
-
 <h1 align="center">📺 Twellie</h1>
 
 <p align="center">
@@ -58,13 +54,6 @@ sdb connect <TV-IP> && tizen install -n Twellie.wgt -t <device>
 
 Step-by-step for both → **[docs/TESTING.md](docs/TESTING.md)**.
 
-## 🧪 Testing
-
-`npm start` (the harness) catches ~95% of issues against **live Twitch** with no
-hardware. `npm test` + `npm run lint` guard the core and the ES5 contract. Final
-device validation uses a real TV over `sdb` (Tizen) or USB (Orsay). The Apple-
-Silicon emulator situation and the per-generation checklist are in
-**[docs/TESTING.md](docs/TESTING.md)**.
 
 ## 🗺️ Roadmap
 

@@ -15,6 +15,11 @@
   var TW = global.TW;
 
   TW.config = {
+    // The app's own product name. It is an unofficial viewer FOR Twitch, not
+    // affiliated with Twitch/Amazon — so it carries its own name and never the
+    // Twitch logo or brand. Change this one value to rebrand.
+    appName: 'Twellie',
+
     api: {
       // 'gql'   — talk to Twitch's public GraphQL directly (no backend).
       // 'proxy' — talk to your own serverless relay (Helix + TLS/CORS bridge).

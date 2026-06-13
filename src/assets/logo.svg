@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" rx="224" fill="#17171d"/>
+  <!-- rounded chat bubble (deliberately NOT the angular Twitch glitch), teal on charcoal -->
+  <g fill="none" stroke="#f4f4f7" stroke-width="44" stroke-linejoin="round">
+    <rect x="266" y="220" width="492" height="392" rx="76"/>
+  </g>
+  <polygon points="372,592 372,742 486,604" fill="#f4f4f7"/>
+  <!-- play -->
+  <polygon points="452,332 452,500 600,416" fill="#23d3a3"/>
+</svg>

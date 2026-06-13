@@ -1,7 +1,7 @@
 {
   "name": "smarttv-twitch",
   "version": "4.0.0",
-  "description": "Unofficial Twitch app for Samsung Smart TVs — one ES5 core, three targets: Orsay (2011–2014), Tizen (2015+), and a desktop browser harness.",
+  "description": "Twellie — an unofficial viewer for Twitch on Samsung Smart TVs. One ES5 core, three targets: Orsay (2011–2014), Tizen (2015+), and a desktop browser harness.",
   "keywords": [
     "twitch",
     "samsung",

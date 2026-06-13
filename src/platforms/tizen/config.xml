@@ -5,11 +5,11 @@
         xmlns:tizen="http://tizen.org/ns/widgets"
         id="https://github.com/nikitakatchik/smarttv-twitch"
         version="4.0.0" viewmodes="maximized">
-  <tizen:application id="TwitchTV01.Twitch" package="TwitchTV01" required_version="2.3"/>
+  <tizen:application id="Twellie001.Twellie" package="Twellie001" required_version="2.3"/>
   <tizen:profile name="tv"/>
 
-  <name>Twitch</name>
-  <description>Unofficial Twitch live viewer for Samsung Tizen TVs.</description>
+  <name>Twellie</name>
+  <description>Twellie — an unofficial live viewer for Twitch on Samsung Tizen TVs.</description>
   <author href="https://github.com/nikitakatchik">Nikita Katchik</author>
   <content src="index.html"/>
   <icon src="assets/icon/icon.png"/>

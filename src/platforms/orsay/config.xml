@@ -20,8 +20,8 @@
   <childlock>n</childlock>
   <videomute>n</videomute>
   <dcont>y</dcont>
-  <widgetname>Twitch</widgetname>
-  <description>Unofficial Twitch live viewer for pre-Tizen Samsung Smart TVs.</description>
+  <widgetname>Twellie</widgetname>
+  <description>Twellie — an unofficial live viewer for Twitch on pre-Tizen Samsung Smart TVs.</description>
   <width>1280</width>
   <height>720</height>
   <author>
