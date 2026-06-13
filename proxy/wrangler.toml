@@ -1,0 +1,9 @@
+name = "smarttv-twitch-relay"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Secrets (set with `wrangler secret put ...`, do NOT commit them):
+#   wrangler secret put TWITCH_CLIENT_ID
+#   wrangler secret put TWITCH_CLIENT_SECRET
+# These are only needed for the /helix/* (official Helix) path. The /relay
+# endpoint works without any secret.
