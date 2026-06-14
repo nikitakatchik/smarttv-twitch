@@ -11,7 +11,7 @@ for each generation — including the macOS-on-Apple-Silicon gotchas.
 | Core logic (parser, API, i18n) | `npm test` | ❌ |
 | ES5 / old-engine safety | `npm run lint` | ❌ |
 | Final Tizen validation | real TV in Developer Mode + `sdb` | ✅ |
-| Final Orsay validation | real TV (develop account / USB) | ✅ |
+| Final Orsay validation | real TV (`develop` account + App-Sync) | ✅ |
 
 > **Apple Silicon reality:** the Samsung **Tizen TV Emulator does not run on
 > M-series Macs** (it needs Intel HAXM / VT-x; Rosetta doesn't help), and the
@@ -65,25 +65,28 @@ sandbox — covering the m3u8 parser, the GraphQL client (shape mapping, the
 
 ## 3. Tizen TVs (2015+) 📦
 
-No emulator on Apple Silicon — test on a real panel. The toolchain (Tizen Studio
-CLI) *does* install on macOS (via Rosetta) and deploys over the network.
+No emulator on Apple Silicon — test on a real panel. The toolchain now ships as
+the **"Tizen TV" extension for VS Code** (Samsung retired standalone Tizen Studio
+in 2025); its `tizen`/`sdb` CLI installs on macOS, runs under Rosetta, and deploys
+over the network. Full steps: [docs/install/tizen.md](install/tizen.md).
 
 ```bash
 # Build the package layout, then sign + package as a .wgt
 npm run build:tizen                 # -> dist/tizen/
-# (in Tizen Studio CLI, with an author+distributor cert profile 'myprofile')
 tizen build-web -- dist/tizen
-tizen package -t wgt -s myprofile -- dist/tizen/.buildResult
+tizen package -t wgt -s myprofile -- dist/tizen/.buildResult   # Samsung author+distributor cert
 
 # On the TV: Apps → type 1 2 3 4 5 → Developer Mode ON → enter your Mac's IP → reboot
-sdb connect <TV-IP>
-sdb devices                          # note the device name
-tizen install -n Twitch.wgt -t <device-name>
+#   (2024+ One UI: open "App Settings" at the bottom of the Apps tab first)
+sdb connect <TV-IP>                  # port 26101
+sdb devices                          # note the target name (right column)
+tizen install -n Twellie.wgt -t <device-name>
 #   ("install failed" is a known false-negative — check the TV)
 ```
 
-You'll need a free Samsung account to create the certificate in **Certificate
-Manager** (author + distributor cert tied to the TV's DUID).
+You'll need a free Samsung account to make the certificate via **`Tizen TV: Run
+Certificate Manager`** (a **Samsung** author + distributor cert, tied to the TV's
+DUID).
 
 > Samsung's **Web Simulator** runs on macOS but **does not support HLS/DRM** and
 > stubs the TV APIs — fine for a static layout glance, useless for the player.
@@ -92,17 +95,19 @@ Manager** (author + distributor cert tied to the TV's DUID).
 ## 4. Orsay TVs (2013–2014) 🕹️
 
 No reliable emulator on a modern Mac. On a real F/H panel (2011–2012 D/E are not
-supported):
+supported). Orsay has **no `12345` toggle** — you sign Smart Hub into the built-in
+**`develop`** account and sync from a LAN web server. Full steps, with the F-vs-H
+menu differences: [docs/install/orsay-2013-2014.md](install/orsay-2013-2014.md).
 
-1. **Install with the installer.** `npm run host:bin` (or grab the release zip)
-   gives the self-contained installer; run it, log into Smart Hub as user
-   `develop`, point the **App-Sync server IP** at the machine, and *Start App
-   Sync*. (`npm run host` does the same from source.) USB `userwidget` install
-   is disabled on most F/H firmware, so use App-Sync.
-2. **Watch.** The app connects to Twitch **directly**; most F/H sets reach it
+1. **Run the App-Sync server on port 80.** `npm run host:bin` builds the
+   self-contained installer; `npm run host -- 80` runs it from source. It **must**
+   listen on **80** — the Orsay IP field has no port box, so the TV always fetches
+   on port 80 (the default 8080 silently fails).
+2. **Sync from the TV** as user `develop`:
+   - **F (2013):** More Apps → Options → *IP Setting* → host IP → Options → *Start App Sync*.
+   - **H (2014):** hold OK ~5 s on any app → *IP Setting* → host IP → hold OK → *Start User App Sync*.
+3. **Watch.** The app connects to Twitch **directly**; most F/H sets reach it
    fine. A panel whose firmware can't negotiate modern TLS isn't supported.
-
-Menu paths vary by firmware (Smart Hub on 2013–2014).
 
 ## 5. Which buttons to check on-device
 

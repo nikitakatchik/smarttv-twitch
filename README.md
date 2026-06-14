@@ -60,7 +60,7 @@ small **installer** once. It's a self-contained app that bundles a **signed,
 unmodified copy of Node** — nothing to install, and no security warning to click
 through. It detects your computer's IP and pushes Twellie onto the TV; once it's
 installed you **close the installer** and the TV streams Twitch directly.
-(Tizen TVs sideload via Tizen Studio and need none of this.)
+(Tizen TVs sideload via the VS Code Tizen extension and need none of this.)
 
 > Most F/H sets reach Twitch directly. Very old firmware whose TLS can't is not
 > supported. See the [guide](docs/install/orsay-2013-2014.md).
