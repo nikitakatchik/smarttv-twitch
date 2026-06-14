@@ -46,8 +46,10 @@ jobs:
           node-version: 22
       - name: Verify
         run: npm run lint && npm test
-      - name: Package platform releases
-        run: npm run release
+      # A Samsung-signed .wgt is bound to your own cert + TV DUIDs, so CI can't
+      # build one — it publishes the sign-it-yourself bundle instead.
+      - name: Package platform bundles (unsigned)
+        run: npm run release-unsigned
       - name: Download host binaries
         uses: actions/download-artifact@v4
         with:

@@ -35,7 +35,9 @@
     "build:web": "node tools/build.js web",
     "host": "node tools/host.js",
     "host:bin": "node tools/bin.js",
-    "release": "node tools/release.js"
+    "cert": "node tools/cert.js",
+    "release": "node tools/release.js",
+    "release-unsigned": "node tools/release-unsigned.js"
   },
   "devDependencies": {}
 }

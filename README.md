@@ -47,7 +47,7 @@ then follow the guide for your model year.
 
 | Your TV | Install | Guide |
 | ------- | ------- | ----- |
-| **2015 and newer** — Tizen (J · K · M · N · R · T · U …) | [⬇ twellie-tizen.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-tizen.zip) | [Tizen guide →](docs/install/tizen.md) |
+| **2015 and newer** — Tizen (J · K · M · N · R · T · U …) | [⬇ twellie-tizen-unsigned.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-tizen-unsigned.zip) — sign it for your TV | [Tizen guide →](docs/install/tizen.md) |
 | **2013–2014** — Orsay (F · H) | [installer ↓](#-orsay-installer) | [F / H guide →](docs/install/orsay-2013-2014.md) |
 
 > Older **2011–2012** (D / E) Orsay sets aren't supported — their MAPLE engine and

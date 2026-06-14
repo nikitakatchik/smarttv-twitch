@@ -23,7 +23,7 @@ account fee.
     steps below are identical.)
 - A free **Samsung account** (for the signing certificate).
 - Your TV's IP address (Settings → General → Network → Network Status).
-- [**Download `twellie-tizen.zip`**](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-tizen.zip) — always points to the latest release.
+- [**Download `twellie-tizen-unsigned.zip`**](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-tizen-unsigned.zip) — the Tizen web app, ready to sign (always the latest release). It isn't a finished `.wgt`: a Tizen package must be signed with **your own** Samsung certificate, bound to your TV's DUID, so you sign it below.
 
 ## Step 1 — Install the toolchain (once)
 
@@ -58,7 +58,7 @@ account fee.
 ## Step 3 — Package, sign and install
 
 The CLI lives in the SDK the extension installed (`<tizen-sdk>/tools/ide/bin`).
-From a terminal in the unzipped `twellie-tizen` folder:
+From a terminal in the unzipped `twellie-tizen-unsigned` folder:
 
 ```bash
 tizen build-web   -- .                               # build the web app
@@ -71,6 +71,11 @@ tizen install -n Twellie.wgt -t <device-name>        # -t takes the target NAME,
 > **Prefer buttons?** The extension does all of this in two commands:
 > **`Tizen TV: Build Signed Package`**, then **`Tizen TV: Launch Application`**
 > (it packages, installs and starts the app on the connected TV).
+
+> **Working from the repo?** Run `npm run cert` once (it creates a signing
+> profile under `~/Documents/Dev/SamsungTV`), then `npm run release` builds a
+> signed `dist/release/Twellie.wgt` for your registered TVs. (`npm run
+> release-unsigned` produces the raw bundle above instead.)
 
 Then **launch Twellie** from the Apps screen.
 
