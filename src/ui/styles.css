@@ -150,6 +150,36 @@ html, body {
 .tw-hints .tw-dot { width: 22px; height: 22px; line-height: 22px; font-size: 13px; }
 .tw-chat-open .tw-hints { display: none; }
 
+/* --- account chip (browser top bar) ------------------------------------- */
+.tw-account {
+  position: absolute; top: 28px; left: 300px; font-size: 18px; color: #dedee3;
+  padding: 4px 14px; border-radius: 15px; background: rgba(255, 255, 255, 0.06);
+}
+.tw-account.tw-focused { color: #fff; background: rgba(35, 211, 163, 0.20); outline: 3px solid #23d3a3; }
+
+/* --- login scene -------------------------------------------------------- */
+#tw-login { background: #0e0e10; }
+.tw-login-card {
+  position: absolute; left: 50%; top: 70px; width: 760px; margin-left: -380px; text-align: center;
+}
+.tw-login-logo { height: 44px; }
+.tw-login-title { font-size: 34px; color: #fff; margin: 14px 0 10px; }
+.tw-login-help { font-size: 20px; color: #c8c8cf; line-height: 1.4; margin: 0 auto 22px; max-width: 660px; }
+.tw-login-input {
+  width: 560px; height: 64px; font-size: 26px; text-align: center; border: 0;
+  border-radius: 4px; background: #fff; color: #111; box-sizing: border-box;
+}
+.tw-login-input.tw-focused { outline: 4px solid #23d3a3; }
+.tw-login-btn {
+  display: inline-block; margin-top: 22px; padding: 16px 54px; font-size: 24px;
+  background: #23d3a3; color: #0a3d30; border-radius: 4px;
+}
+.tw-login-btn.tw-focused { background: #1bb98f; outline: 4px solid #fff; }
+.tw-login-hint { font-size: 16px; color: #8d8d96; margin-top: 18px; }
+.tw-login-code { font-size: 64px; font-weight: 700; letter-spacing: 6px; color: #23d3a3; margin: 16px 0 6px; }
+.tw-login-uri { font-size: 22px; color: #fff; margin-bottom: 18px; }
+.tw-login-msg { font-size: 20px; color: #ffd479; margin-top: 18px; min-height: 24px; }
+
 /* --- loading spinner ---------------------------------------------------- */
 .tw-loading { position: absolute; left: 0; top: 42%; width: 100%; text-align: center; z-index: 6; }
 .tw-loading-text { display: inline-block; margin-left: 14px; font-size: 30px; vertical-align: middle; }

@@ -31,6 +31,11 @@
       backend().streamInfo(login, onOk, onFail);
     },
 
+    // Live channels the logged-in user follows (Helix; needs login).
+    followedStreams: function (cursor, onOk, onFail) {
+      TW.twitch.helix.followedStreams(cursor, onOk, onFail);
+    },
+
     // A channel's past broadcasts (VODs) and top clips.
     channelVideos: function (login, cursor, onOk, onFail) {
       backend().channelVideos(login, TW.config.pageSize, cursor, onOk, onFail);

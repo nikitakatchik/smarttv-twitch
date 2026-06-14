@@ -20,7 +20,7 @@ const ALLOWED = ['ttvnw.net', 'twitch.tv', 'jtvnw.net', 'twitchcdn.net', 'cloudf
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Client-ID, Content-Type'
+  'Access-Control-Allow-Headers': 'Client-ID, Client-Id, Content-Type, Authorization'
 };
 
 function hostAllowed(h) {
@@ -87,8 +87,9 @@ async function proxyHttp(req, res, target, selfBase) {
 
   try {
     const headers = {};
-    if (req.headers['client-id']) { headers['Client-ID'] = req.headers['client-id']; }
+    if (req.headers['client-id']) { headers['Client-Id'] = req.headers['client-id']; }
     if (req.headers['content-type']) { headers['Content-Type'] = req.headers['content-type']; }
+    if (req.headers['authorization']) { headers['Authorization'] = req.headers['authorization']; }
     let body = null;
     if (req.method === 'POST') {
       body = await readBody(req);

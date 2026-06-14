@@ -37,6 +37,7 @@
 
       TW.sceneManager.register('browser', new TW.BrowserScene(adapter));
       TW.sceneManager.register('channel', new TW.ChannelScene(adapter));
+      TW.sceneManager.register('login', new TW.LoginScene(adapter));
 
       wireKeys(adapter);
 
@@ -50,10 +51,20 @@
       TW.sceneManager.focus('channel');
     },
 
-    goToBrowser: function () {
+    goToBrowser: function (mode) {
       TW.sceneManager.hide('channel');
+      TW.sceneManager.hide('login');
+      var browser = TW.sceneManager.get('browser');
+      if (browser) { browser.pendingMode = (mode == null ? null : mode); }
       TW.sceneManager.show('browser');
       TW.sceneManager.focus('browser');
+    },
+
+    goToLogin: function () {
+      TW.sceneManager.hide('browser');
+      TW.sceneManager.hide('channel');
+      TW.sceneManager.show('login');
+      TW.sceneManager.focus('login');
     }
   };
 

@@ -26,11 +26,23 @@
   function start() {
     var cfg = { api: {} };
     if (qs('lang')) { cfg.language = qs('lang'); }
+    // Handy for testing login in the harness: ?clientId=<your twitch app id>.
+    if (qs('clientId')) { cfg.api.userClientId = qs('clientId'); }
 
     // Dev-only: the web player wraps the HLS master URL through this CORS proxy.
     var proxy = qs('proxy');
     TW.platform.proxyBase = (proxy === 'none') ? ''
       : (proxy || (global.location.protocol + '//' + global.location.host));
+
+    // Dev-only: route the authenticated APIs (id/api.twitch.tv) through the same
+    // CORS proxy. Real TVs leave TW.net.rewrite as the identity and go direct.
+    TW.net.rewrite = function (url) {
+      var base = TW.platform.proxyBase;
+      if (base && (/^https:\/\//).test(url)) {
+        return base.replace(/\/$/, '') + '/proxy?url=' + encodeURIComponent(url);
+      }
+      return url;
+    };
 
     TW.app.start({
       name: 'web',

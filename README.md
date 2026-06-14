@@ -19,6 +19,9 @@
 ## ✨ Features
 
 - 🔴 **Live Twitch** — top streams, top games, browse-by-game, open any channel.
+- 💬 **Live chat overlay** — anonymous IRC-over-WebSocket chat over the video, no login.
+- 📼 **VODs & clips** — each channel's past broadcasts and top clips, with playback.
+- 🔐 **Optional login** — device-code sign-in unlocks your **followed** channels ([guide](docs/LOGIN.md)). Everything else works signed-out.
 - 🎚️ **Quality switching** — Auto down to 160p, picked from the real renditions.
 - 🧭 **Made for a remote** — D-pad grid, color buttons, the works. No mouse.
 - 🌍 **8 languages** — English, Deutsch, Русский, Español, Português, Українська, Français, Svenska.
@@ -77,9 +80,9 @@ Grab the one for your computer — each always points at the newest release:
 - [x] Tizen (2015+) target
 - [x] Browser dev-harness with real playback
 - [x] Public GraphQL backend — no API key, no backend, no proxy
-- [ ] 💬 Live chat overlay (revive the long-abandoned IRC experiment)
-- [ ] 🔐 Logged-in mode (followed channels, sub-only streams)
-- [ ] 📼 VODs & clips
+- [x] 💬 Live chat overlay (revive the long-abandoned IRC experiment)
+- [x] 🔐 Logged-in mode (followed channels, sub-only streams)
+- [x] 📼 VODs & clips
 - [ ] 🧰 One-command Tizen `.wgt` signing helper
 
 ## 🙌 Credits & heritage

@@ -22,6 +22,13 @@ February 2022. This is a ground-up rewrite.
 - **Tizen (2015+) target** — AVPlay player, `.wgt` packaging, key registration.
   The original could never run past 2014.
 - **Browser dev-harness** — run and play live Twitch on a laptop with no TV.
+- **Live chat overlay** — anonymous IRC-over-WebSocket, rendered over the video
+  (the GREEN button); no login, no proxy, works on every target.
+- **Per-channel VODs & clips** — GraphQL browse + playback (VOD via usher HLS,
+  clips via their signed progressive MP4).
+- **Optional login** — Twitch device-code grant with your own app Client-ID,
+  unlocking your followed channels via Helix. No backend, no secret; tokens stay
+  on the device. See [docs/LOGIN.md](docs/LOGIN.md).
 - **One-time Orsay installer** — a self-contained app (bundles a signed copy of
   Node) that sideloads Twellie onto 2013–2014 Orsay TVs over App-Sync.
 - **Unit tests** (`node --test`, zero deps) and an **ES5 linter**.

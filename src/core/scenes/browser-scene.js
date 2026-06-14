@@ -12,7 +12,7 @@
   var dom = TW.dom;
   var KEY = TW.KEY;
 
-  var MODE = { ALL: 0, GAMES: 1, GAMES_STREAMS: 2, OPEN: 3 };
+  var MODE = { ALL: 0, GAMES: 1, GAMES_STREAMS: 2, OPEN: 3, FOLLOWED: 4 };
 
   function BrowserScene(adapter) {
     this.adapter = adapter;
@@ -26,6 +26,8 @@
     this.y = 0;
     this.selectedGame = null;
     this.built = false;
+    this.onChip = false;       // account chip focused (above the grid)
+    this.pendingMode = null;   // mode to enter on next focus (e.g. after login)
   }
 
   var P = BrowserScene.prototype;
@@ -37,11 +39,12 @@
       '<div class="tw-topbar">' +
         '<img class="tw-logo" src="assets/logo.png" alt="">' +
         '<span class="tw-wordmark">' + dom.escape(TW.config.appName) + '</span>' +
+        '<div class="tw-account" id="tw-account">&#9679; <span id="tw-acct-label"></span></div>' +
         '<div class="tw-tips">' +
           '<span class="tw-tip" id="tw-tip-all"><b class="tw-dot tw-red">A</b> <span id="tw-l-all"></span></span>' +
           '<span class="tw-tip" id="tw-tip-games"><b class="tw-dot tw-green">B</b> <span id="tw-l-games"></span></span>' +
-          '<span class="tw-tip" id="tw-tip-open"><b class="tw-dot tw-yellow">C</b> <span id="tw-l-open"></span></span>' +
-          '<span class="tw-tip" id="tw-tip-refresh"><b class="tw-dot tw-blue">D</b> <span id="tw-l-refresh"></span></span>' +
+          '<span class="tw-tip" id="tw-tip-followed"><b class="tw-dot tw-yellow">C</b> <span id="tw-l-followed"></span></span>' +
+          '<span class="tw-tip" id="tw-tip-open"><b class="tw-dot tw-blue">D</b> <span id="tw-l-open"></span></span>' +
         '</div>' +
       '</div>' +
       '<div class="tw-loading" id="tw-b-loading"><div class="tw-spinner"><i></i><i></i><i></i></div>' +
@@ -60,16 +63,34 @@
   P.initLabels = function () {
     dom.text(dom.get('tw-l-all'), TW.i18n.t('CHANNELS'));
     dom.text(dom.get('tw-l-games'), TW.i18n.t('GAMES'));
+    dom.text(dom.get('tw-l-followed'), TW.i18n.t('FOLLOWED'));
     dom.text(dom.get('tw-l-open'), TW.i18n.t('OPEN'));
-    dom.text(dom.get('tw-l-refresh'), TW.i18n.t('REFRESH'));
     dom.text(dom.get('tw-open-go'), TW.i18n.t('OPEN'));
     dom.attr(dom.get('tw-open-input'), 'placeholder', TW.i18n.t('PLACEHOLDER_OPEN'));
+  };
+
+  P.updateAccount = function () {
+    var label;
+    if (TW.auth.isLoggedIn()) {
+      var u = TW.auth.user();
+      label = (u && u.display) || TW.i18n.t('ACCOUNT');
+    } else {
+      label = TW.i18n.t('LOGIN');
+    }
+    dom.text(dom.get('tw-acct-label'), label);
   };
 
   // --- lifecycle ----------------------------------------------------------
   P.handleShow = function () { dom.show(this.root); };
   P.handleHide = function () { dom.hide(this.root); this.clean(); };
-  P.handleFocus = function () { this.switchMode(MODE.ALL, true); };
+  P.handleFocus = function () {
+    this.updateAccount();
+    this.onChip = false;
+    dom.removeClass(dom.get('tw-account'), 'tw-focused');
+    var m = (this.pendingMode == null) ? MODE.ALL : this.pendingMode;
+    this.pendingMode = null;
+    this.switchMode(m, true);
+  };
   P.handleBlur = function () {};
 
   // --- data ---------------------------------------------------------------
@@ -121,6 +142,7 @@
 
     if (this.mode === MODE.GAMES) { TW.api.topGames(cursor, onOk, onFail); }
     else if (this.mode === MODE.GAMES_STREAMS) { TW.api.streamsByGame(this.selectedGame, cursor, onOk, onFail); }
+    else if (this.mode === MODE.FOLLOWED) { TW.api.followedStreams(cursor, onOk, onFail); }
     else { TW.api.topStreams(cursor, onOk, onFail); }
   };
 
@@ -192,14 +214,22 @@
   // --- modes --------------------------------------------------------------
   P.switchMode = function (mode, force) {
     if (mode === this.mode && !force) { return; }
+    // The Followed tab needs a logged-in user — divert to the login scene.
+    if (mode === MODE.FOLLOWED && !TW.auth.isLoggedIn()) { TW.app.goToLogin(); return; }
     this.mode = mode;
+    this.onChip = false;
+    dom.removeClass(dom.get('tw-account'), 'tw-focused');
     this.selectedGame = (mode === MODE.GAMES_STREAMS) ? this.selectedGame : null;
 
-    var ids = ['tw-tip-all', 'tw-tip-games', 'tw-tip-open', 'tw-tip-refresh'];
+    var ids = ['tw-tip-all', 'tw-tip-games', 'tw-tip-followed', 'tw-tip-open'];
     for (var i = 0; i < ids.length; i++) { dom.removeClass(dom.get(ids[i]), 'tw-tip-active'); }
+    var activeId = (mode === MODE.OPEN) ? 'tw-tip-open'
+      : (mode === MODE.FOLLOWED) ? 'tw-tip-followed'
+      : (mode === MODE.GAMES || mode === MODE.GAMES_STREAMS) ? 'tw-tip-games'
+      : 'tw-tip-all';
+    dom.addClass(dom.get(activeId), 'tw-tip-active');
 
     if (mode === MODE.OPEN) {
-      dom.addClass(dom.get('tw-tip-open'), 'tw-tip-active');
       this.clean();
       this.showOpen();
       this.openCursor = 0;
@@ -207,7 +237,6 @@
       var input = dom.get('tw-open-input');
       if (input && input.focus) { try { input.focus(); } catch (e) {} }
     } else {
-      dom.addClass(dom.get(mode === MODE.ALL ? 'tw-tip-all' : 'tw-tip-games'), 'tw-tip-active');
       this.refresh();
     }
   };
@@ -230,15 +259,35 @@
       if (this.adapter.system && this.adapter.system.exit) { this.adapter.system.exit(); return true; }
       return false;
     }
-    if (key === KEY.RED) { this.switchMode(MODE.ALL); return true; }
-    if (key === KEY.GREEN) { this.switchMode(MODE.GAMES); return true; }
-    if (key === KEY.YELLOW) { this.switchMode(MODE.OPEN); return true; }
-    if (key === KEY.BLUE) { this.refresh(); return true; }
+    // Colour buttons switch tabs; pressing the active tab again force-refreshes.
+    if (key === KEY.RED) { this.switchMode(MODE.ALL, this.mode === MODE.ALL); return true; }
+    if (key === KEY.GREEN) { this.switchMode(MODE.GAMES, this.mode === MODE.GAMES); return true; }
+    if (key === KEY.YELLOW) { this.switchMode(MODE.FOLLOWED, this.mode === MODE.FOLLOWED); return true; }
+    if (key === KEY.BLUE) { this.switchMode(MODE.OPEN); return true; }
 
+    if (this.onChip) { return this.handleChipKey(key); }
     if (this.loading && this.mode !== MODE.OPEN) { return true; }
 
     if (this.mode === MODE.OPEN) { return this.handleOpenKey(key); }
     return this.handleGridKey(key);
+  };
+
+  // --- account chip (above the grid) --------------------------------------
+  P.focusChip = function () {
+    this.removeFocus();
+    this.onChip = true;
+    dom.addClass(dom.get('tw-account'), 'tw-focused');
+  };
+
+  P.handleChipKey = function (key) {
+    if (key === KEY.DOWN) {
+      this.onChip = false;
+      dom.removeClass(dom.get('tw-account'), 'tw-focused');
+      this.addFocus();
+      return true;
+    }
+    if (key === KEY.ENTER) { TW.app.goToLogin(); return true; }
+    return true;
   };
 
   P.handleOpenKey = function (key) {
@@ -263,7 +312,10 @@
 
     if (key === KEY.LEFT && this.x > 0) { this.move(this.x - 1, this.y); return true; }
     if (key === KEY.RIGHT && this.x < cellsInRow.call(this, this.y) - 1) { this.move(this.x + 1, this.y); return true; }
-    if (key === KEY.UP && this.y > 0) { this.move(this.x, this.y - 1); return true; }
+    if (key === KEY.UP) {
+      if (this.y > 0) { this.move(this.x, this.y - 1); } else { this.focusChip(); }
+      return true;
+    }
     if (key === KEY.DOWN && this.y < rows - 1 && this.x < cellsInRow.call(this, this.y + 1)) {
       this.move(this.x, this.y + 1); return true;
     }

@@ -1,0 +1,141 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { loadCore, mockXHR } = require('./_load');
+
+// A scriptable TW.net replacement. routes.device / routes.token (value or
+// function(opts)) / routes.revoke each return { status, json }. Records sends.
+function netMock(routes) {
+  const sent = [];
+  const net = {
+    rewrite: (u) => u,
+    send: (opts, onDone) => {
+      sent.push(opts);
+      let r;
+      if (opts.url.indexOf('/device') >= 0) { r = routes.device; }
+      else if (opts.url.indexOf('/token') >= 0) { r = typeof routes.token === 'function' ? routes.token(opts) : routes.token; }
+      else if (opts.url.indexOf('/revoke') >= 0) { r = routes.revoke || { status: 200, json: {} }; }
+      else if (opts.url.indexOf('/users') >= 0) { r = routes.users || { status: 200, json: { data: [{ id: '42', login: 'me', display_name: 'Me' }] } }; }
+      else if (opts.url.indexOf('/streams/followed') >= 0) { r = typeof routes.followed === 'function' ? routes.followed(opts) : routes.followed; }
+      else { r = { status: 404, json: {} }; }
+      onDone(r.status, JSON.stringify(r.json));
+    }
+  };
+  net.sent = sent;
+  return net;
+}
+
+function loadAuth(net, withHelix) {
+  const files = ['core/polyfill.js', 'core/util.js', 'core/config.js', 'core/storage.js', 'core/net.js', 'core/twitch/auth.js'];
+  if (withHelix) { files.push('core/twitch/helix.js'); }
+  const g = loadCore(files, {});
+  g.TW.net = net;
+  g.TW.twitch = g.TW.twitch || {};
+  if (!withHelix) { g.TW.twitch.helix = { me: (ok) => ok({ id: '42', login: 'me', display_name: 'Me' }) }; }
+  return g.TW;
+}
+
+test('startDeviceFlow refuses without a client-id', () => {
+  const TW = loadAuth(netMock({}));
+  let err = null;
+  TW.auth.startDeviceFlow(['user:read:follows'], { onError: (r) => { err = r; } });
+  assert.equal(err, 'no-client-id');
+});
+
+test('startDeviceFlow posts client_id + scopes and surfaces the user code', () => {
+  // expires_in -1 => already past, so the poll loop ends after we capture the code.
+  const net = netMock({
+    device: { status: 200, json: { device_code: 'dc', user_code: 'WXYZ-1234', verification_uri: 'https://twitch.tv/activate', expires_in: -1, interval: 0 } },
+    token: { status: 400, json: { message: 'authorization_pending' } },
+  });
+  const TW = loadAuth(net);
+  TW.auth.setClientId('myid');
+  let code = null;
+  TW.auth.startDeviceFlow(['user:read:follows'], { onCode: (i) => { code = i; } });
+  assert.equal(code.user_code, 'WXYZ-1234');
+  assert.equal(code.verification_uri, 'https://twitch.tv/activate');
+  const dev = net.sent[0];
+  assert.match(dev.body, /client_id=myid/);
+  assert.match(dev.body, /scopes=user%3Aread%3Afollows/);
+});
+
+test('a successful token exchange stores the token and identity', () => {
+  const net = netMock({
+    device: { status: 200, json: { device_code: 'dc', user_code: 'AAAA', verification_uri: 'u', expires_in: 1800, interval: 0 } },
+    token: { status: 200, json: { access_token: 'AT', refresh_token: 'RT', expires_in: 3600 } },
+  });
+  const TW = loadAuth(net);
+  TW.auth.setClientId('myid');
+  let ok = false;
+  TW.auth.startDeviceFlow(['user:read:follows'], { onSuccess: () => { ok = true; } });
+  assert.equal(ok, true);
+  assert.equal(TW.auth.isLoggedIn(), true);
+  assert.equal(TW.auth.token(), 'AT');
+  assert.equal(TW.auth.user().id, '42');
+});
+
+test('polling continues through authorization_pending until it succeeds', async () => {
+  let n = 0;
+  const net = netMock({
+    device: { status: 200, json: { device_code: 'dc', user_code: 'BBBB', verification_uri: 'u', expires_in: 1800, interval: 0 } },
+    token: () => { n++; return n < 3 ? { status: 400, json: { message: 'authorization_pending' } } : { status: 200, json: { access_token: 'AT2' } }; },
+  });
+  const TW = loadAuth(net);
+  TW.auth.setClientId('myid');
+  await new Promise((resolve) => { TW.auth.startDeviceFlow(['s'], { onSuccess: resolve, onError: resolve }); });
+  assert.equal(TW.auth.token(), 'AT2');
+  assert.ok(n >= 3);
+});
+
+test('logout clears the stored session', () => {
+  const net = netMock({
+    device: { status: 200, json: { device_code: 'dc', user_code: 'C', verification_uri: 'u', expires_in: 1800, interval: 0 } },
+    token: { status: 200, json: { access_token: 'AT', refresh_token: 'RT', expires_in: 3600 } },
+  });
+  const TW = loadAuth(net);
+  TW.auth.setClientId('myid');
+  TW.auth.startDeviceFlow(['s'], {});
+  assert.equal(TW.auth.isLoggedIn(), true);
+  let done = false;
+  TW.auth.logout(() => { done = true; });
+  assert.equal(done, true);
+  assert.equal(TW.auth.isLoggedIn(), false);
+  assert.equal(TW.auth.user(), null);
+});
+
+test('helix.followedStreams maps the Helix shape and sizes the thumbnail', () => {
+  const net = netMock({
+    followed: { status: 200, json: {
+      data: [{ user_login: 'a', user_name: 'A', title: 't', viewer_count: 5, game_name: 'G', thumbnail_url: 'http://x/{width}x{height}.jpg' }],
+      pagination: { cursor: 'cur' },
+    } },
+  });
+  const TW = loadAuth(net, true);
+  // Stand in for a logged-in user so helix skips the /users lookup.
+  TW.storage.set('auth.access', 'AT'); TW.storage.set('auth.uid', '42');
+  TW.storage.set('clientId', 'CID');
+  let res = null;
+  TW.twitch.helix.followedStreams(null, (r) => { res = r; }, () => {});
+  assert.equal(res.items.length, 1);
+  assert.equal(res.items[0].kind, 'stream');
+  assert.equal(res.items[0].login, 'a');
+  assert.equal(res.items[0].viewers, 5);
+  assert.match(res.items[0].thumb, /320x180/);
+  assert.equal(res.cursor, 'cur');
+});
+
+test('GraphQL attaches the OAuth token only when logged in', () => {
+  function gqlHeaders(loggedIn) {
+    const XHR = mockXHR(() => ({ status: 200, text: JSON.stringify({ data: { streams: { edges: [] } } }) }));
+    const g = loadCore([
+      'core/polyfill.js', 'core/util.js', 'core/config.js', 'core/storage.js', 'core/http.js',
+      'core/twitch/usher.js', 'core/twitch/playlist.js', 'core/twitch/auth.js', 'core/twitch/gql.js', 'core/twitch/api.js',
+    ], { XMLHttpRequest: XHR });
+    if (loggedIn) { g.TW.storage.set('auth.access', 'USERTOKEN'); }
+    g.TW.api.topStreams(null, () => {}, () => {});
+    return XHR.log[XHR.log.length - 1].headers;
+  }
+  assert.equal(gqlHeaders(false).Authorization, undefined);
+  assert.equal(gqlHeaders(true).Authorization, 'OAuth USERTOKEN');
+});
