@@ -31,6 +31,14 @@
       backend().streamInfo(login, onOk, onFail);
     },
 
+    // A channel's past broadcasts (VODs) and top clips.
+    channelVideos: function (login, cursor, onOk, onFail) {
+      backend().channelVideos(login, TW.config.pageSize, cursor, onOk, onFail);
+    },
+    channelClips: function (login, cursor, onOk, onFail) {
+      backend().channelClips(login, TW.config.pageSize, cursor, onOk, onFail);
+    },
+
     /**
      * Resolve a channel to a playable usher master-playlist URL.
      */
@@ -38,6 +46,18 @@
       backend().playbackToken(channel, function (token) {
         onOk(TW.twitch.usher.build(channel, token));
       }, onFail);
+    },
+
+    // Resolve a VOD id to a playable usher master-playlist URL.
+    vodPlaybackUrl: function (vodId, onOk, onFail) {
+      backend().vodPlaybackToken(vodId, function (token) {
+        onOk(TW.twitch.usher.buildVod(vodId, token));
+      }, onFail);
+    },
+
+    // Resolve a clip slug to a directly-playable (signed) MP4 + quality list.
+    clipPlayback: function (slug, onOk, onFail) {
+      backend().clipInfo(slug, onOk, onFail);
     },
 
     /**

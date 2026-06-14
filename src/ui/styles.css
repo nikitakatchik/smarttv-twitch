@@ -113,6 +113,34 @@ html, body {
 .tw-chat-sep { color: #9b9bb0; }
 .tw-chat-msg { color: #e6e6ea; }
 
+/* --- VOD / clip browse list --------------------------------------------- */
+.tw-clist {
+  display: none; position: absolute; left: 0; top: 0; width: 560px; height: 100%;
+  background: rgba(14, 14, 16, 0.92); box-sizing: border-box; z-index: 6;
+}
+.tw-clist-head {
+  height: 48px; line-height: 48px; padding: 0 20px; font-size: 22px; font-weight: 500;
+  text-align: left; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.tw-clist-body {
+  position: absolute; left: 0; right: 0; top: 49px; bottom: 0; overflow: auto;
+  padding: 8px 0; text-align: left;
+}
+.tw-clist-empty { padding: 30px 20px; font-size: 20px; color: #adadb8; }
+.tw-clist-row {
+  position: relative; padding: 8px 20px; min-height: 76px; box-sizing: border-box;
+  border-left: 4px solid transparent;
+}
+.tw-clist-row.tw-focused { background: rgba(35, 211, 163, 0.16); border-left-color: #23d3a3; }
+.tw-clist-thumb {
+  position: absolute; left: 20px; top: 8px; width: 120px; height: 68px;
+  object-fit: cover; background: #18181b; border-radius: 3px;
+}
+.tw-clist-meta { margin-left: 136px; }
+.tw-clist-title { font-size: 19px; color: #fff; line-height: 1.25; max-height: 48px; overflow: hidden; }
+.tw-clist-sub { font-size: 16px; color: #c8c8cf; margin-top: 6px; }
+.tw-list-open .tw-hints { display: none; }
+
 /* --- channel hint bar --------------------------------------------------- */
 .tw-hints {
   position: absolute; left: 16px; bottom: 14px; z-index: 5; font-size: 16px;

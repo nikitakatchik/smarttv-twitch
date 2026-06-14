@@ -38,9 +38,22 @@
     this.chatOn = false;
     this.chatClient = null;
     this.chatCount = 0;
+
+    this.listMode = null;      // null | 'vods' | 'clips'
+    this.listItems = [];
+    this.listIndex = 0;
+    this.listCursor = null;
+    this.listLoading = false;
   }
 
   var CHAT_MAX = 80;           // cap chat rows kept in the DOM
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function formatDuration(sec) {
+    sec = Math.floor(sec || 0);
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    return h > 0 ? (h + ':' + pad2(m) + ':' + pad2(s)) : (m + ':' + pad2(s));
+  }
 
   var P = ChannelScene.prototype;
 
@@ -66,8 +79,15 @@
         '<div class="tw-chat-head" id="tw-chat-head"></div>' +
         '<div class="tw-chat-list" id="tw-chat-list"></div>' +
       '</div>' +
+      '<div class="tw-clist" id="tw-clist">' +
+        '<div class="tw-clist-head" id="tw-clist-head"></div>' +
+        '<div class="tw-clist-body" id="tw-clist-body"></div>' +
+      '</div>' +
       '<div class="tw-hints" id="tw-c-hints">' +
         '<span><b class="tw-dot tw-green">B</b> <span id="tw-h-chat"></span></span>' +
+        '<span><b class="tw-dot tw-yellow">C</b> <span id="tw-h-vods"></span></span>' +
+        '<span><b class="tw-dot tw-blue">D</b> <span id="tw-h-clips"></span></span>' +
+        '<span><b class="tw-dot tw-red">A</b> <span id="tw-h-live"></span></span>' +
       '</div>' +
       '<div class="tw-loading" id="tw-c-loading"><div class="tw-spinner"><i></i><i></i><i></i></div>' +
         '<div class="tw-loading-text" id="tw-c-loading-text"></div></div>';
@@ -76,6 +96,9 @@
     dom.text(dom.get('tw-c-quality-label'), TW.i18n.t('QUALITY'));
     dom.text(dom.get('tw-chat-head'), TW.i18n.t('CHAT'));
     dom.text(dom.get('tw-h-chat'), TW.i18n.t('CHAT'));
+    dom.text(dom.get('tw-h-vods'), TW.i18n.t('VODS'));
+    dom.text(dom.get('tw-h-clips'), TW.i18n.t('CLIPS'));
+    dom.text(dom.get('tw-h-live'), TW.i18n.t('LIVE'));
   };
 
   P.handleShow = function (data) {
@@ -136,6 +159,36 @@
     if (this.infoTimer) { global.clearInterval(this.infoTimer); this.infoTimer = null; }
   };
 
+  P.showContentInfo = function (item) {
+    dom.text(dom.get('tw-c-name'), this.login || '');
+    dom.text(dom.get('tw-c-title'), item.title || '');
+    dom.text(dom.get('tw-c-viewers'), TW.addCommas(item.viewers) + ' ' + TW.i18n.t('VIEWERS'));
+  };
+
+  P.playVod = function (item) {
+    var self = this;
+    this.contentKind = 'vod';
+    this.closeChat();
+    this.stopInfoTimer();
+    this.showContentInfo(item);
+    this.showDialog(TW.i18n.t('LOADING'));
+    TW.api.vodPlaybackUrl(item.id, function (url) {
+      self.loadInto(url);
+    }, function () { self.showDialog(TW.i18n.t('ERROR_TOKEN')); });
+  };
+
+  P.playClip = function (item) {
+    var self = this;
+    this.contentKind = 'clip';
+    this.closeChat();
+    this.stopInfoTimer();
+    this.showContentInfo(item);
+    this.showDialog(TW.i18n.t('LOADING'));
+    TW.api.clipPlayback(item.slug, function (info) {
+      self.loadInto(info.url);
+    }, function () { self.showDialog(TW.i18n.t('ERROR_RENDER')); });
+  };
+
   P.handleBlur = function () {
     if (this.adapter.system && this.adapter.system.setScreensaver) {
       this.adapter.system.setScreensaver(false);
@@ -157,7 +210,7 @@
       onBufferingProgress: function (pct) { self.showDialog(TW.i18n.t('BUFFERING') + ': ' + pct + '%'); },
       onBufferingComplete: function () { self.hideDialog(); },
       onPlaying: function () { self.hideDialog(); },
-      onEnded: function () { self.shutdown(); },
+      onEnded: function () { self.onContentEnded(); },
       onError: function (msg) { self.showDialog(msg || TW.i18n.t('ERROR_RENDER')); }
     };
   };
@@ -242,8 +295,114 @@
     list.scrollTop = list.scrollHeight;
   };
 
-  // Replaced with a real implementation in the VOD/Clip section below.
-  P.closeList = function () {};
+  // --- VOD / Clip browse list ---------------------------------------------
+  P.openList = function (mode) {
+    if (this.listMode === mode) { return; }
+    this.listMode = mode;
+    this.listItems = [];
+    this.listIndex = 0;
+    this.listCursor = null;
+    this.hidePanel();
+    this.closeChat();
+    dom.text(dom.get('tw-clist-head'), TW.i18n.t(mode === 'vods' ? 'VODS' : 'CLIPS'));
+    dom.html(dom.get('tw-clist-body'), '');
+    if (this.root) { dom.addClass(this.root, 'tw-list-open'); }
+    dom.show(dom.get('tw-clist'));
+    this.loadListData();
+  };
+
+  P.closeList = function () {
+    this.listMode = null;
+    if (this.root) { dom.removeClass(this.root, 'tw-list-open'); }
+    dom.hide(dom.get('tw-clist'));
+  };
+
+  P.listEmpty = function (msgKey) {
+    dom.html(dom.get('tw-clist-body'), '<div class="tw-clist-empty">' + dom.escape(TW.i18n.t(msgKey)) + '</div>');
+  };
+
+  P.loadListData = function () {
+    if (this.listLoading || this.listCursor === false) { return; }
+    this.listLoading = true;
+    var self = this, mode = this.listMode, first = this.listItems.length === 0;
+    if (first) { this.listEmpty('LOADING'); }
+
+    var onOk = function (result) {
+      if (self.listMode !== mode) { self.listLoading = false; return; } // user switched lists
+      var start = self.listItems.length;
+      for (var i = 0; i < result.items.length; i++) { self.listItems.push(result.items[i]); }
+      self.listCursor = result.cursor ? result.cursor : false;
+      if (self.listItems.length === 0) { self.listEmpty(mode === 'vods' ? 'NO_VODS' : 'NO_CLIPS'); }
+      else { self.renderList(start); }
+      self.listLoading = false;
+    };
+    var onFail = function () {
+      self.listLoading = false;
+      if (self.listItems.length === 0) { self.listEmpty(mode === 'vods' ? 'NO_VODS' : 'NO_CLIPS'); }
+    };
+
+    if (mode === 'vods') { TW.api.channelVideos(this.login, this.listCursor || null, onOk, onFail); }
+    else { TW.api.channelClips(this.login, this.listCursor || null, onOk, onFail); }
+  };
+
+  P.renderList = function (fromIndex) {
+    var body = dom.get('tw-clist-body');
+    if (fromIndex === 0) { dom.html(body, ''); }
+    for (var i = fromIndex; i < this.listItems.length; i++) {
+      var it = this.listItems[i];
+      var meta = TW.addCommas(it.viewers) + ' ' + TW.i18n.t('VIEWERS');
+      if (it.duration) { meta += ' · ' + formatDuration(it.duration); }
+      var row = dom.create('div', 'tw-clist-row');
+      row.id = 'tw-clrow-' + i;
+      row.innerHTML =
+        '<img class="tw-clist-thumb" src="' + (it.thumb || '') + '">' +
+        '<div class="tw-clist-meta">' +
+          '<div class="tw-clist-title">' + dom.escape(it.title) + '</div>' +
+          '<div class="tw-clist-sub">' + meta + '</div>' +
+        '</div>';
+      body.appendChild(row);
+    }
+    if (fromIndex === 0) { this.listFocus(); }
+  };
+
+  P.listMove = function (idx) {
+    var old = dom.get('tw-clrow-' + this.listIndex);
+    if (old) { dom.removeClass(old, 'tw-focused'); }
+    this.listIndex = idx;
+    this.listFocus();
+  };
+
+  P.listFocus = function () {
+    var row = dom.get('tw-clrow-' + this.listIndex);
+    if (row) { dom.addClass(row, 'tw-focused'); if (row.scrollIntoView) { row.scrollIntoView(false); } }
+    if (this.listIndex + 4 >= this.listItems.length && this.listCursor && !this.listLoading) { this.loadListData(); }
+  };
+
+  P.activateListItem = function () {
+    var it = this.listItems[this.listIndex];
+    if (!it) { return; }
+    this.closeList();
+    if (it.kind === 'vod') { this.playVod(it); } else { this.playClip(it); }
+  };
+
+  P.handleListKey = function (key) {
+    if (key === KEY.UP) { if (this.listIndex > 0) { this.listMove(this.listIndex - 1); } return true; }
+    if (key === KEY.DOWN) { if (this.listIndex < this.listItems.length - 1) { this.listMove(this.listIndex + 1); } return true; }
+    if (key === KEY.ENTER) { this.activateListItem(); return true; }
+    if (key === KEY.BACK || key === KEY.RIGHT) { this.closeList(); return true; }
+    if (key === KEY.YELLOW) { this.openList('vods'); return true; }
+    if (key === KEY.BLUE) { this.openList('clips'); return true; }
+    if (key === KEY.RED) { this.closeList(); this.playLive(); return true; }
+    return true; // swallow everything else while the list is open
+  };
+
+  // A VOD or clip that plays to the end reopens its list (keep browsing this
+  // channel); a live stream ending returns to the grid.
+  P.onContentEnded = function () {
+    if (this.contentKind === 'clip') { this.openList('clips'); }
+    else if (this.contentKind === 'vod') { this.openList('vods'); }
+    else { this.shutdown(); }
+  };
 
   P.shutdown = function () { TW.app.goToBrowser(); };
 
@@ -258,6 +417,13 @@
         return true;
       case KEY.GREEN:
         this.toggleChat(); return true;
+      case KEY.YELLOW:
+        this.openList('vods'); return true;
+      case KEY.BLUE:
+        this.openList('clips'); return true;
+      case KEY.RED:
+        if (this.contentKind !== 'live') { this.playLive(); }
+        return true;
       case KEY.LEFT:
         this.showPanel(); return true;
       case KEY.RIGHT:

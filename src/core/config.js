@@ -22,7 +22,8 @@
       // Public Twitch web Client-ID (same one the website and Streamlink use).
       clientId: 'kimne78kx3ncx6brgo4mv6wki5h1ko',
       gqlUrl: 'https://gql.twitch.tv/gql',
-      usherBase: 'https://usher.ttvnw.net/api/channel/hls/'
+      usherBase: 'https://usher.ttvnw.net/api/channel/hls/',
+      usherVodBase: 'https://usher.ttvnw.net/vod/'
     },
 
     // Grid layout. Twitch GraphQL caps connection `first` at 30 (infinite

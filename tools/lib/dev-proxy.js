@@ -15,7 +15,8 @@
 
 const https = require('https');
 
-const ALLOWED = ['ttvnw.net', 'twitch.tv', 'jtvnw.net'];
+// twitchcdn.net + cloudfront.net cover VOD segments and clip MP4 hosts.
+const ALLOWED = ['ttvnw.net', 'twitch.tv', 'jtvnw.net', 'twitchcdn.net', 'cloudfront.net'];
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',

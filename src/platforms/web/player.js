@@ -50,6 +50,17 @@
     return {
       load: function (rawUrl) {
         var masterUrl = viaProxy(rawUrl);
+
+        // Clips are a progressive MP4, not HLS — play them on the <video>
+        // element directly (single quality). Live + VODs are HLS (.m3u8).
+        if (rawUrl.indexOf('.m3u8') < 0) {
+          try { if (hls) { hls.destroy(); hls = null; } } catch (e) {}
+          qualities = ['Source']; levelMap = [-1]; publishQualities();
+          video.src = masterUrl;
+          video.play();
+          return;
+        }
+
         if (Hls && Hls.isSupported()) {
           hls = new Hls({ lowLatencyMode: true });
           hls.on(Hls.Events.MANIFEST_PARSED, function () {
