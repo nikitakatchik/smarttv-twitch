@@ -33,7 +33,14 @@
     this.playingIndex = 0;     // currently playing
     this.panelShown = false;
     this.infoTimer = null;
+
+    this.contentKind = 'live'; // 'live' | 'vod' | 'clip'
+    this.chatOn = false;
+    this.chatClient = null;
+    this.chatCount = 0;
   }
+
+  var CHAT_MAX = 80;           // cap chat rows kept in the DOM
 
   var P = ChannelScene.prototype;
 
@@ -55,11 +62,20 @@
           '<span class="tw-quality-arrows"><i id="tw-c-up">&#9650;</i><i id="tw-c-down">&#9660;</i></span>' +
         '</div>' +
       '</div>' +
+      '<div class="tw-chat" id="tw-chat">' +
+        '<div class="tw-chat-head" id="tw-chat-head"></div>' +
+        '<div class="tw-chat-list" id="tw-chat-list"></div>' +
+      '</div>' +
+      '<div class="tw-hints" id="tw-c-hints">' +
+        '<span><b class="tw-dot tw-green">B</b> <span id="tw-h-chat"></span></span>' +
+      '</div>' +
       '<div class="tw-loading" id="tw-c-loading"><div class="tw-spinner"><i></i><i></i><i></i></div>' +
         '<div class="tw-loading-text" id="tw-c-loading-text"></div></div>';
     (dom.get('app') || global.document.body).appendChild(root);
     this.root = root;
     dom.text(dom.get('tw-c-quality-label'), TW.i18n.t('QUALITY'));
+    dom.text(dom.get('tw-chat-head'), TW.i18n.t('CHAT'));
+    dom.text(dom.get('tw-h-chat'), TW.i18n.t('CHAT'));
   };
 
   P.handleShow = function (data) {
@@ -68,35 +84,56 @@
   };
 
   P.handleFocus = function () {
-    var self = this;
     if (this.adapter.system && this.adapter.system.setScreensaver) {
       this.adapter.system.setScreensaver(true, 100000);
     }
     this.hidePanel();
+    this.closeList();
+    this.closeChat();
+
+    this.player = this.adapter.createPlayer(this.playerCallbacks());
+    if (this.player.setDisplayArea) {
+      this.player.setDisplayArea(0, 0, TW.config.screen.width, TW.config.screen.height);
+    }
+    this.playLive();
+  };
+
+  // --- content sources ----------------------------------------------------
+  P.playLive = function () {
+    var self = this;
+    this.contentKind = 'live';
     dom.text(dom.get('tw-c-name'), this.login || '');
     dom.text(dom.get('tw-c-title'), '');
     dom.text(dom.get('tw-c-viewers'), '');
     dom.attr(dom.get('tw-c-icon'), 'src', '');
     this.showDialog(TW.i18n.t('LOADING'));
 
-    this.player = this.adapter.createPlayer(this.playerCallbacks());
-    if (this.player.setDisplayArea) {
-      this.player.setDisplayArea(0, 0, TW.config.screen.width, TW.config.screen.height);
-    }
-
     TW.api.playbackUrl(this.login, function (masterUrl) {
-      self.player.load(masterUrl);
-      self.player.getQualities(function (list) {
-        self.qualities = (list && list.length) ? list : ['Auto'];
-        self.qualityIndex = 0; self.playingIndex = 0;
-        self.renderQuality();
-      });
+      self.loadInto(masterUrl);
     }, function () {
       self.showDialog(TW.i18n.t('ERROR_TOKEN'));
     });
 
+    this.stopInfoTimer();
     this.updateInfo();
     this.infoTimer = global.setInterval(function () { self.updateInfo(); }, 10000);
+  };
+
+  // Hand a media URL (live master, VOD master, or clip MP4) to the player and
+  // refresh the quality list. The player adapters detect HLS vs progressive.
+  P.loadInto = function (url) {
+    var self = this;
+    try { this.player.stop(); } catch (e) {}
+    this.player.load(url);
+    this.player.getQualities(function (list) {
+      self.qualities = (list && list.length) ? list : ['Auto'];
+      self.qualityIndex = 0; self.playingIndex = 0;
+      self.renderQuality();
+    });
+  };
+
+  P.stopInfoTimer = function () {
+    if (this.infoTimer) { global.clearInterval(this.infoTimer); this.infoTimer = null; }
   };
 
   P.handleBlur = function () {
@@ -106,7 +143,9 @@
   };
 
   P.handleHide = function () {
-    if (this.infoTimer) { global.clearInterval(this.infoTimer); this.infoTimer = null; }
+    this.stopInfoTimer();
+    this.closeChat();
+    this.closeList();
     if (this.player) { try { this.player.stop(); this.player.destroy(); } catch (e) {} this.player = null; }
     dom.hide(this.root);
   };
@@ -131,7 +170,7 @@
   P.hideDialog = function () { dom.hide(dom.get('tw-c-loading')); };
 
   P.updateInfo = function () {
-    if (!this.login) { return; }
+    if (!this.login || this.contentKind !== 'live') { return; }
     TW.api.streamInfo(this.login, function (info) {
       dom.text(dom.get('tw-c-name'), info.display);
       dom.text(dom.get('tw-c-title'), info.title);
@@ -160,14 +199,65 @@
     // onBufferingStart/Complete callbacks; hls.js and AVPlay switch seamlessly.
   };
 
+  // --- chat overlay (read-only, live only) --------------------------------
+  P.toggleChat = function () {
+    if (this.contentKind !== 'live') { return; }
+    if (this.chatOn) { this.closeChat(); } else { this.openChat(); }
+  };
+
+  P.openChat = function () {
+    if (this.chatOn || !this.login) { return; }
+    var self = this;
+    this.chatOn = true;
+    this.clearChat();
+    dom.addClass(this.root, 'tw-chat-open');
+    dom.show(dom.get('tw-chat'));
+    this.chatClient = TW.twitch.chat.connect(this.login, {
+      onMessage: function (m) { self.addChatLine(m); },
+      onError: function () {}
+    });
+  };
+
+  P.closeChat = function () {
+    if (this.chatClient) { try { this.chatClient.close(); } catch (e) {} this.chatClient = null; }
+    this.chatOn = false;
+    if (this.root) { dom.removeClass(this.root, 'tw-chat-open'); }
+    dom.hide(dom.get('tw-chat'));
+  };
+
+  P.clearChat = function () { this.chatCount = 0; dom.html(dom.get('tw-chat-list'), ''); };
+
+  P.addChatLine = function (m) {
+    var list = dom.get('tw-chat-list');
+    if (!list) { return; }
+    var color = /^#[0-9a-fA-F]{6}$/.test(m.color) ? m.color : '#9b9bb0';
+    var row = dom.create('div', 'tw-chat-row');
+    row.innerHTML =
+      '<b class="tw-chat-nick" style="color:' + color + '">' + dom.escape(m.nick) + '</b>' +
+      '<span class="tw-chat-sep">: </span>' +
+      '<span class="tw-chat-msg">' + dom.escape(m.text) + '</span>';
+    list.appendChild(row);
+    this.chatCount++;
+    while (this.chatCount > CHAT_MAX && list.firstChild) { list.removeChild(list.firstChild); this.chatCount--; }
+    list.scrollTop = list.scrollHeight;
+  };
+
+  // Replaced with a real implementation in the VOD/Clip section below.
+  P.closeList = function () {};
+
   P.shutdown = function () { TW.app.goToBrowser(); };
 
   // --- keys ---------------------------------------------------------------
   P.handleKeyDown = function (key) {
+    if (this.listMode) { return this.handleListKey(key); }
     switch (key) {
       case KEY.BACK:
-        if (this.panelShown) { this.hidePanel(); } else { this.shutdown(); }
+        if (this.panelShown) { this.hidePanel(); }
+        else if (this.chatOn) { this.closeChat(); }
+        else { this.shutdown(); }
         return true;
+      case KEY.GREEN:
+        this.toggleChat(); return true;
       case KEY.LEFT:
         this.showPanel(); return true;
       case KEY.RIGHT:
