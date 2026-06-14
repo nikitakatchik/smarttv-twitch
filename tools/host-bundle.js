@@ -13,13 +13,15 @@ const { startHost, lanIP } = require('./lib/serve-host');
 // Prepended by tools/bin.js as `var __TWELLIE_WIDGET__ = [...]`.
 const widget = __TWELLIE_WIDGET__.map((f) => ({ name: f.name, data: Buffer.from(f.b64, 'base64') }));
 
-// Accept an optional port from any numeric CLI arg, so both `node host.js 8080`
-// and a launcher that forwards args work without hard-coding an index.
+// Default to port 80: Orsay (2013-2014 F/H) TVs enter only an IP for the App-Sync
+// server — there's no port field — so the TV always fetches the widget on port 80.
+// A numeric CLI arg (or PORT env) overrides, so `node host.js 8080` still works for
+// the rare firmware that accepts an ip:port, or for testing.
 function argPort() {
   for (let i = process.argv.length - 1; i >= 1; i--) {
     if (/^\d+$/.test(process.argv[i])) { return parseInt(process.argv[i], 10); }
   }
-  return parseInt(process.env.PORT || '8080', 10);
+  return parseInt(process.env.PORT || '80', 10);
 }
 
 startHost(widget, { ip: lanIP(), port: argPort() });

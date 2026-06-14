@@ -65,9 +65,14 @@ function unixLauncher() {
   // SIGKILLs it on launch. Once the user has approved THIS script (right-click →
   // Open), it runs with their permissions and can clear the flag from the whole
   // folder — then node starts with no further prompt.
+  // The host serves on port 80 (Orsay's App-Sync field is IP-only, no port box),
+  // and binding a port < 1024 needs root on macOS — so re-exec under sudo (one
+  // Terminal password prompt) unless we're already root or a high port was passed.
   return '#!/bin/bash\n' +
     'cd "$(dirname "$0")"\n' +
     'xattr -dr com.apple.quarantine . 2>/dev/null || true\n' +
+    '# Orsay App-Sync fetches on port 80; binding it needs root on macOS.\n' +
+    'if [ "$(id -u)" != 0 ]; then exec sudo ./node host.js "$@"; fi\n' +
     'exec ./node host.js "$@"\n';
 }
 function winReadme() {
@@ -92,6 +97,8 @@ function unixReadme() {
     'internet" flag on the folder and starts. (The bundled node is\n' +
     'Developer-ID-signed by the Node.js Foundation; clearing that flag is what\n' +
     'lets macOS run it without a second prompt.)\n\n' +
+    'macOS then asks for your password: the installer serves on port 80 (which the\n' +
+    'TV requires), and binding it needs that one-time permission.\n\n' +
     'It prints your computer\'s IP. On the TV, sign in as "develop", set that as\n' +
     'the App-Sync server IP, and run Start App Sync to install Twellie.\n\n' +
     'Then you can CLOSE this window — the TV streams Twitch directly.\n\n' +
