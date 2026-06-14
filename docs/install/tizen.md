@@ -72,9 +72,11 @@ tizen install -n Twellie.wgt -t <device-name>        # -t takes the target NAME,
 > **`Tizen TV: Build Signed Package`**, then **`Tizen TV: Launch Application`**
 > (it packages, installs and starts the app on the connected TV).
 
-> **Working from the repo?** Run `npm run cert` once (it creates a signing
-> profile under `~/Documents/Dev/SamsungTV`), then `npm run release` builds a
-> signed `dist/release/Twellie.wgt` for your registered TVs. (`npm run
+> **Working from the repo?** `npm run tizen:setup` fetches a self-contained Tizen
+> CLI into gitignored `dist/.tizen-sdk/` (no system-wide install; on Apple Silicon
+> it needs Rosetta 2 and tells you if it's missing). Then `npm run cert` once
+> (signing profile under `~/Documents/Dev/SamsungTV`), and `npm run release` builds
+> a signed `dist/release/Twellie.wgt` for your registered TVs. (`npm run
 > release-unsigned` produces the raw bundle above instead.)
 
 Then **launch Twellie** from the Apps screen.

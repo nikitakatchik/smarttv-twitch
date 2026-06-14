@@ -28,6 +28,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const tizenEnv = require('./lib/tizen-env');
 
 const CERT_DIR = path.join(os.homedir(), 'Documents', 'Dev', 'SamsungTV');
 
@@ -39,25 +40,17 @@ function arg(flag, env, def) {
 }
 function die(msg) { console.error('\ncert: ' + msg + '\n'); process.exit(1); }
 
-function tizenCli() {
-  if (process.env.TIZEN_SDK) {
-    const c = path.join(process.env.TIZEN_SDK, 'tools', 'ide', 'bin', 'tizen');
-    if (fs.existsSync(c)) return c;
-  }
-  const home = path.join(os.homedir(), 'tizen-studio', 'tools', 'ide', 'bin', 'tizen');
-  if (fs.existsSync(home)) return home;
-  try { execFileSync('tizen', ['version'], { stdio: 'ignore' }); return 'tizen'; } catch (e) { return null; }
-}
-
 const name = arg('--name', 'TIZEN_CERT_NAME', 'twellie');
 const password = arg('--password', 'TIZEN_CERT_PASSWORD', ''); // default: password-less keystore
 const duid = arg('--duid', 'TIZEN_TV_DUID', null);
 
-const cli = tizenCli();
-if (!cli) {
-  die('the Tizen `tizen` CLI was not found.\n' +
-      '  Install the "Tizen TV" VS Code extension (it ships the SDK + CLI), or set TIZEN_SDK.');
+const env = tizenEnv.resolve();
+if (!env) {
+  die('no Tizen CLI found.\n' +
+      '  Get a self-contained one:  npm run tizen:setup\n' +
+      '  (or install the "Tizen TV" VS Code extension, or set TIZEN_SDK).');
 }
+const cli = env.tizen;
 
 fs.mkdirSync(CERT_DIR, { recursive: true });
 const authorP12 = path.join(CERT_DIR, name + '-author.p12');

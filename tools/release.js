@@ -23,6 +23,7 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { build, ROOT } = require('./build');
+const tizenEnv = require('./lib/tizen-env');
 
 const OUT = path.join(ROOT, 'dist', 'release');
 const CERT_DIR = path.join(os.homedir(), 'Documents', 'Dev', 'SamsungTV');
@@ -33,15 +34,6 @@ function die(msg) {
   process.exit(1);
 }
 
-// Resolve the Tizen CLI: TIZEN_SDK, the common install dir, or PATH.
-function tizenCli() {
-  const candidates = [];
-  if (process.env.TIZEN_SDK) candidates.push(path.join(process.env.TIZEN_SDK, 'tools', 'ide', 'bin', 'tizen'));
-  candidates.push(path.join(os.homedir(), 'tizen-studio', 'tools', 'ide', 'bin', 'tizen'));
-  for (const c of candidates) { if (fs.existsSync(c)) return c; }
-  try { execFileSync('tizen', ['version'], { stdio: 'ignore' }); return 'tizen'; } catch (e) { return null; }
-}
-
 // Hard-require both prerequisites up front, before any slow build work.
 function preflight() {
   if (!fs.existsSync(PROFILE_JSON)) {
@@ -49,13 +41,13 @@ function preflight() {
         '  Create one first:   npm run cert\n' +
         '  Raw bundles instead: npm run release-unsigned');
   }
-  const cli = tizenCli();
-  if (!cli) {
-    die('the Tizen `tizen` CLI was not found.\n' +
-        '  Install the "Tizen TV" VS Code extension (it ships the SDK + CLI), or set TIZEN_SDK.\n' +
-        '  See docs/install/tizen.md.');
+  const env = tizenEnv.resolve();
+  if (!env) {
+    die('no Tizen CLI found.\n' +
+        '  Get a self-contained one:  npm run tizen:setup\n' +
+        '  (or install the "Tizen TV" VS Code extension, or set TIZEN_SDK).');
   }
-  return { cli: cli, profile: JSON.parse(fs.readFileSync(PROFILE_JSON, 'utf8')) };
+  return { cli: env.tizen, profile: JSON.parse(fs.readFileSync(PROFILE_JSON, 'utf8')) };
 }
 
 function buildHostInstallers() {
