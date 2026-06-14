@@ -1,4 +1,8 @@
-<h1 align="center">📺 Twellie</h1>
+<p align="center">
+  <img src="docs/media/logo.png" alt="Twellie" width="200" />
+</p>
+
+<h1 align="center">Twellie</h1>
 
 <p align="center">
   <b>An unofficial viewer for Twitch on any Samsung Smart TV — from a 2013 Orsay set to a 2024 Tizen panel.</b> <br />
