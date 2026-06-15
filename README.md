@@ -47,7 +47,7 @@ then follow the guide for your model year.
 
 | Your TV | Install | Guide |
 | ------- | ------- | ----- |
-| **2017 and newer** — Tizen (M · N · R · T · U …) | via **TizenBrew** — no signing | [TizenBrew guide →](docs/install/tizenbrew.md) |
+| **2015 and newer** — Tizen (J · K · M · N · R · T · U …) | [⬇ Twellie.wgt](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/Twellie.wgt) + **Apps2Samsung** (it signs & installs) — or **TizenBrew** | [Apps2Samsung →](docs/install/apps2samsung.md) · [TizenBrew →](docs/install/tizenbrew.md) |
 | **2013–2014** — Orsay (F · H) | [installer ↓](#-orsay-installer) | [F / H guide →](docs/install/orsay-2013-2014.md) |
 
 > Older **2011–2012** (D / E) Orsay sets aren't supported — their MAPLE engine and
@@ -60,8 +60,8 @@ small **installer** once. It's a self-contained app that bundles a **signed,
 unmodified copy of Node** — nothing to install, and no security warning to click
 through. It detects your computer's IP and pushes Twellie onto the TV; once it's
 installed you **close the installer** and the TV streams Twitch directly.
-(Tizen TVs use TizenBrew instead and need none of this — see the
-[TizenBrew guide](docs/install/tizenbrew.md).)
+(Tizen TVs use [Apps2Samsung](docs/install/apps2samsung.md) or
+[TizenBrew](docs/install/tizenbrew.md) instead and need none of this.)
 
 > Most F/H sets reach Twitch directly. Very old firmware whose TLS can't is not
 > supported. See the [guide](docs/install/orsay-2013-2014.md).
@@ -85,6 +85,7 @@ Grab the one for your computer — each always points at the newest release:
 - [x] 🔐 Logged-in mode (followed channels, sub-only streams)
 - [x] 📼 VODs & clips
 - [x] 📦 TizenBrew module — install on 2017+ Tizen TVs with no signing
+- [x] 📲 Apps2Samsung `.wgt` — native install on 2015+ Tizen TVs (it signs for you)
 
 ## 🙌 Credits & heritage
 

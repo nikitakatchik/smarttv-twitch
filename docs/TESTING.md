@@ -10,7 +10,7 @@ for each generation — including the macOS-on-Apple-Silicon gotchas.
 | All app logic + UI + **live playback** | `npm start` → browser harness | ❌ |
 | Core logic (parser, API, i18n) | `npm test` | ❌ |
 | ES5 / old-engine safety | `npm run lint` | ❌ |
-| Final Tizen validation | real TV running TizenBrew + the published module | ✅ |
+| Final Tizen validation | real TV — Apps2Samsung (`.wgt`) or TizenBrew (module) | ✅ |
 | Final Orsay validation | real TV (`develop` account + App-Sync) | ✅ |
 
 > **Apple Silicon reality:** the Samsung **Tizen TV Emulator does not run on
@@ -63,28 +63,37 @@ sandbox — covering the m3u8 parser, the GraphQL client (shape mapping, the
 
 ---
 
-## 3. Tizen TVs (2017+) 📦
+## 3. Tizen TVs (2015+) 📦
 
-Tizen ships as a **TizenBrew module** — no signing, no Tizen SDK, no `.wgt`. Full
-install steps: [docs/install/tizenbrew.md](install/tizenbrew.md).
+Two install paths, neither needing manual cert handling:
+
+**A. Native `.wgt` via [Apps2Samsung](install/apps2samsung.md) (2015+, AVPlay).**
+
+```bash
+npm run release         # -> dist/release/Twellie.wgt (generic-signed; Apps2Samsung re-signs per-TV)
+                        #    auto-fetches the Tizen CLI into dist/.tizen-sdk/ on first run
+                        #    (Rosetta 2 on Apple Silicon; pre-fetch with `npm run tizen:setup`)
+```
+
+Verify the package without a TV: `unzip -l dist/release/Twellie.wgt` should show
+`config.xml`, `author-signature.xml`, `signature1.xml` and the `core/` tree. On a
+real panel, install it through Apps2Samsung (it signs for your TV and pushes it).
+
+**B. TizenBrew module (2017+, hls.js).**
 
 ```bash
 npm run build:tizenbrew      # -> dist/tizenbrew/{package.json, app/}
 ```
 
-Two ways to test it:
+- **Real panel:** publish `dist/tizenbrew/` (npm or a tagged GitHub repo) and add it
+  in TizenBrew by name. hls.js + MSE: reliable 2017+ / solid 2019+.
+- **Boot check on a laptop (no TV):** statically serve `dist/tizenbrew/app/` and open
+  `index.html` — it boots the `tizenbrew` adapter and renders the live browse grid via
+  GraphQL (console logs `starting on platform "tizenbrew"`, no errors). Remote nav uses
+  Tizen keyCodes, so use the harness in §1 for interaction testing.
 
-- **On a real panel** (the only way to confirm playback): publish `dist/tizenbrew/`
-  (npm or a tagged GitHub repo) and add it in TizenBrew by its module name — see the
-  guide. Playback rides on hls.js + MSE, reliable on 2017+ / solid on 2019+ sets.
-- **Boot check on a laptop** (no TV): statically serve `dist/tizenbrew/app/` and open
-  `index.html`. It boots the `tizenbrew` adapter and renders the live browse grid via
-  GraphQL; the console should log `starting on platform "tizenbrew"` with no errors.
-  (Remote nav uses Tizen keyCodes, so you can't drive it with a desktop keyboard —
-  use the harness in §1 for interaction testing.)
-
-> What only a real TV can confirm: hls.js/MSE playback in the TizenBrew webview,
-> on-device remote keys, and TLS/SNI reachability of Twitch from the TV. The harness
+> What only a real TV can confirm: AVPlay (`.wgt`) playback, hls.js/MSE playback in the
+> TizenBrew webview, on-device remote keys, and Twitch TLS/SNI reachability. The harness
 > covers everything else.
 
 ## 4. Orsay TVs (2013–2014) 🕹️

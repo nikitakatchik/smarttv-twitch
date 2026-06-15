@@ -31,10 +31,12 @@
     "lint": "node tools/lint-es5.js",
     "build": "node tools/build.js",
     "build:orsay": "node tools/build.js orsay",
+    "build:tizen": "node tools/build.js tizen",
     "build:web": "node tools/build.js web",
     "build:tizenbrew": "node tools/build.js tizenbrew",
     "host": "node tools/host.js",
     "host:bin": "node tools/bin.js",
+    "tizen:setup": "node tools/tizen-setup.js",
     "release": "node tools/release.js"
   },
   "devDependencies": {}

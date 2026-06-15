@@ -46,9 +46,13 @@ jobs:
           node-version: 22
       - name: Verify
         run: npm run lint && npm test
-      # Nothing here needs signing: Orsay installs over App-Sync and Tizen ships
-      # as a TizenBrew module. (No Samsung certificate / .wgt is involved.)
-      - name: Package platform bundles
+      # Fetch the CLI-only Tizen SDK so `release` can build + sign Twellie.wgt
+      # (generic cert; Apps2Samsung re-signs per-TV). Best-effort: if it fails,
+      # `release` still emits the Orsay/web zips and just skips the .wgt.
+      - name: Set up Tizen CLI (for the .wgt)
+        continue-on-error: true
+        run: npm run tizen:setup
+      - name: Package platform bundles + Tizen .wgt
         run: npm run release
       - name: Download host binaries
         uses: actions/download-artifact@v4
@@ -61,6 +65,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/release/*.zip
+          files: |
+            dist/release/*.zip
+            dist/release/Twellie.wgt
           generate_release_notes: true
           fail_on_unmatched_files: true
