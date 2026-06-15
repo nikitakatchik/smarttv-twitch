@@ -19,7 +19,6 @@ const SCAN = [
   'src/core',
   'src/lang',
   'src/platforms/orsay',
-  'src/platforms/tizen',
   'src/platforms/tizenbrew',
 ];
 

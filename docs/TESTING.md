@@ -10,7 +10,7 @@ for each generation — including the macOS-on-Apple-Silicon gotchas.
 | All app logic + UI + **live playback** | `npm start` → browser harness | ❌ |
 | Core logic (parser, API, i18n) | `npm test` | ❌ |
 | ES5 / old-engine safety | `npm run lint` | ❌ |
-| Final Tizen validation | real TV in Developer Mode + `sdb` | ✅ |
+| Final Tizen validation | real TV running TizenBrew + the published module | ✅ |
 | Final Orsay validation | real TV (`develop` account + App-Sync) | ✅ |
 
 > **Apple Silicon reality:** the Samsung **Tizen TV Emulator does not run on
@@ -63,34 +63,29 @@ sandbox — covering the m3u8 parser, the GraphQL client (shape mapping, the
 
 ---
 
-## 3. Tizen TVs (2015+) 📦
+## 3. Tizen TVs (2017+) 📦
 
-No emulator on Apple Silicon — test on a real panel. The toolchain now ships as
-the **"Tizen TV" extension for VS Code** (Samsung retired standalone Tizen Studio
-in 2025); its `tizen`/`sdb` CLI installs on macOS, runs under Rosetta, and deploys
-over the network. Full steps: [docs/install/tizen.md](install/tizen.md).
+Tizen ships as a **TizenBrew module** — no signing, no Tizen SDK, no `.wgt`. Full
+install steps: [docs/install/tizenbrew.md](install/tizenbrew.md).
 
 ```bash
-# Build the package layout, then sign + package as a .wgt
-npm run build:tizen                 # -> dist/tizen/
-tizen build-web -- dist/tizen
-tizen package -t wgt -s myprofile -- dist/tizen/.buildResult   # Samsung author+distributor cert
-
-# On the TV: Apps → type 1 2 3 4 5 → Developer Mode ON → enter your Mac's IP → reboot
-#   (2024+ One UI: open "App Settings" at the bottom of the Apps tab first)
-sdb connect <TV-IP>                  # port 26101
-sdb devices                          # note the target name (right column)
-tizen install -n Twellie.wgt -t <device-name>
-#   ("install failed" is a known false-negative — check the TV)
+npm run build:tizenbrew      # -> dist/tizenbrew/{package.json, app/}
 ```
 
-You'll need a free Samsung account to make the certificate via **`Tizen TV: Run
-Certificate Manager`** (a **Samsung** author + distributor cert, tied to the TV's
-DUID).
+Two ways to test it:
 
-> Samsung's **Web Simulator** runs on macOS but **does not support HLS/DRM** and
-> stubs the TV APIs — fine for a static layout glance, useless for the player.
-> Use the harness instead.
+- **On a real panel** (the only way to confirm playback): publish `dist/tizenbrew/`
+  (npm or a tagged GitHub repo) and add it in TizenBrew by its module name — see the
+  guide. Playback rides on hls.js + MSE, reliable on 2017+ / solid on 2019+ sets.
+- **Boot check on a laptop** (no TV): statically serve `dist/tizenbrew/app/` and open
+  `index.html`. It boots the `tizenbrew` adapter and renders the live browse grid via
+  GraphQL; the console should log `starting on platform "tizenbrew"` with no errors.
+  (Remote nav uses Tizen keyCodes, so you can't drive it with a desktop keyboard —
+  use the harness in §1 for interaction testing.)
+
+> What only a real TV can confirm: hls.js/MSE playback in the TizenBrew webview,
+> on-device remote keys, and TLS/SNI reachability of Twitch from the TV. The harness
+> covers everything else.
 
 ## 4. Orsay TVs (2013–2014) 🕹️
 

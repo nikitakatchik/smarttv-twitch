@@ -5,8 +5,8 @@ one that lets people install it from a public link **without signing a package
 for each TV**.
 
 > Why this exists: a sideloaded `.wgt` must be signed with a Samsung distributor
-> certificate bound to *that specific TV's* DUID (see
-> [tizen.md](tizen.md)). So you can't hand out one pre-signed file. **TizenBrew**
+> certificate bound to *that specific TV's* DUID, so you can't hand out one
+> pre-signed file that installs for everyone. **TizenBrew**
 > sidesteps that: you sideload the TizenBrew *loader* once (signed for your TV),
 > and it then runs web "modules" — like Twellie — pulled straight off the network,
 > with no per-app signing.

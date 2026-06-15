@@ -1,77 +1,39 @@
 #!/usr/bin/env node
 /*
- * tools/release.js — build the FINISHED, SIGNED release artifacts.
+ * tools/release.js — package the shippable bundles. Nothing here is signed:
+ * Twellie installs without any Samsung certificate.
  *
- *   node tools/release.js
- *     -> dist/release/twellie-orsay-host-<os>-<arch>.zip   (x3; bundles signed Node)
- *     -> dist/release/Twellie.wgt                          (Tizen, signed with your cert)
+ *   node tools/release.js   ->   dist/release/twellie-{orsay,web}.zip
  *
- * This target REQUIRES everything needed to actually ship and NEVER falls back to
- * an unsigned artifact. Prerequisites (any missing => hard error):
- *   - the host-binary toolchain (tools/bin.js), and
- *   - a Samsung signing profile from `npm run cert` (under ~/Documents/Dev/SamsungTV)
- *     plus the Tizen `tizen` CLI (the "Tizen TV" VS Code extension ships it).
+ *   twellie-orsay.zip   the raw 2013-2014 Orsay widget the host serves over
+ *                       App-Sync (docs/install/orsay-2013-2014.md). Build the
+ *                       host installers separately with `npm run host:bin`.
+ *   twellie-web.zip     the browser build, for static hosting / demo.
  *
- * For the raw, unsigned bundles (Tizen project to self-sign, raw Orsay widget,
- * web build) use `npm run release-unsigned` — that is what CI publishes, since a
- * Samsung-signed .wgt is bound to your own cert + TV DUIDs and can't be built in CI.
+ * Tizen (2015+) is distributed as a TizenBrew module, not a zip here: run
+ * `npm run build:tizenbrew` and publish dist/tizenbrew/ (docs/install/tizenbrew.md).
+ *
+ * Asset names are UNVERSIONED so a stable "latest" link works; the version lives
+ * inside each zip (config.xml) and on the release tag.
  */
 'use strict';
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const pkg = require('../package.json');
 const { build, ROOT } = require('./build');
-const tizenEnv = require('./lib/tizen-env');
+const { zipDir } = require('./lib/zip');
 
+const V = pkg.version;
 const OUT = path.join(ROOT, 'dist', 'release');
-const CERT_DIR = path.join(os.homedir(), 'Documents', 'Dev', 'SamsungTV');
-const PROFILE_JSON = path.join(CERT_DIR, 'profile.json');
+fs.mkdirSync(OUT, { recursive: true });
 
-function die(msg) {
-  console.error('\nrelease: ' + msg + '\n');
-  process.exit(1);
+function writeZip(name, buf) {
+  fs.writeFileSync(path.join(OUT, name), buf);
+  console.log('  ' + name + '  (' + Math.round(buf.length / 1024) + ' KB)');
 }
 
-// Hard-require both prerequisites up front, before any slow build work.
-function preflight() {
-  if (!fs.existsSync(PROFILE_JSON)) {
-    die('no signing profile at ' + PROFILE_JSON + '.\n' +
-        '  Create one first:   npm run cert\n' +
-        '  Raw bundles instead: npm run release-unsigned');
-  }
-  const env = tizenEnv.resolve();
-  if (!env) {
-    die('no Tizen CLI found.\n' +
-        '  Get a self-contained one:  npm run tizen:setup\n' +
-        '  (or install the "Tizen TV" VS Code extension, or set TIZEN_SDK).');
-  }
-  return { cli: env.tizen, profile: JSON.parse(fs.readFileSync(PROFILE_JSON, 'utf8')) };
-}
-
-function buildHostInstallers() {
-  console.log('building Orsay host installers (all targets)…');
-  execFileSync('node', [path.join(__dirname, 'bin.js'), '--all'], { stdio: 'inherit' });
-}
-
-function buildSignedWgt(cli, profileName) {
-  console.log('building + signing Tizen .wgt…');
-  const dir = build('tizen');                          // dist/tizen
-  execFileSync(cli, ['build-web', '--', dir], { stdio: 'inherit' });
-  const built = path.join(dir, '.buildResult');
-  execFileSync(cli, ['package', '-t', 'wgt', '-s', profileName, '--', built], { stdio: 'inherit' });
-  const wgt = fs.readdirSync(built).find((f) => f.endsWith('.wgt'));
-  if (!wgt) die('tizen package produced no .wgt in ' + built);
-  const dest = path.join(OUT, 'Twellie.wgt');
-  fs.copyFileSync(path.join(built, wgt), dest);
-  console.log('  wrote ' + path.relative(ROOT, dest));
-}
-
-(function main() {
-  fs.mkdirSync(OUT, { recursive: true });
-  const { cli, profile } = preflight();
-  buildHostInstallers();
-  buildSignedWgt(cli, profile.name);
-  console.log('\nrelease: signed artifacts in dist/release/ (host installers + Twellie.wgt)');
-})();
+console.log('packaging v' + V + ' -> dist/release/');
+writeZip('twellie-orsay.zip', zipDir(build('orsay')));
+writeZip('twellie-web.zip', zipDir(build('web')));
+console.log('done.  (Tizen ships via TizenBrew: npm run build:tizenbrew + publish.)');

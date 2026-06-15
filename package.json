@@ -31,17 +31,11 @@
     "lint": "node tools/lint-es5.js",
     "build": "node tools/build.js",
     "build:orsay": "node tools/build.js orsay",
-    "build:tizen": "node tools/build.js tizen",
     "build:web": "node tools/build.js web",
     "build:tizenbrew": "node tools/build.js tizenbrew",
     "host": "node tools/host.js",
     "host:bin": "node tools/bin.js",
-    "tizen:setup": "node tools/tizen-setup.js",
-    "precert": "node tools/tizen-setup.js --ensure",
-    "cert": "node tools/cert.js",
-    "prerelease": "node tools/tizen-setup.js --ensure",
-    "release": "node tools/release.js",
-    "release-unsigned": "node tools/release-unsigned.js"
+    "release": "node tools/release.js"
   },
   "devDependencies": {}
 }

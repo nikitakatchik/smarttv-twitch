@@ -20,7 +20,7 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
 const DIST = path.join(ROOT, 'dist');
-const ALL = ['orsay', 'tizen', 'web', 'tizenbrew'];
+const ALL = ['orsay', 'web', 'tizenbrew'];
 const PLATFORM_FILES = new Set(['index.html', 'config.xml', 'widget.info']);
 
 // The TizenBrew module manifest (emitted at dist/tizenbrew/package.json). This

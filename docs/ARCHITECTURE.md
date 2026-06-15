@@ -10,15 +10,15 @@
                                       │ depends only on an "adapter"
         ┌─────────────────────────────┼─────────────────────────────┐
         ▼                             ▼                             ▼
-  platforms/orsay/             platforms/tizen/             platforms/web/
-  INFOLINK player              AVPlay player                hls.js player
+  platforms/orsay/             platforms/tizenbrew/         platforms/web/
+  INFOLINK player              hls.js player                hls.js player
   Maple keycodes               Tizen keys + registerKey     keyboard + D-pad
-  Common API system            tizen.application            (harness)
+  Common API system            guarded tizen.* (in host)    (harness)
 ```
 
 The core is **platform-agnostic ES5** and talks to exactly one abstraction —
 the **adapter** — so the browser harness, a 2013 Orsay TV and a 2024 Tizen TV
-all run byte-for-byte the same `core/`.
+(via TizenBrew) all run byte-for-byte the same `core/`.
 
 ## Module loading
 
@@ -33,7 +33,7 @@ use identical paths.
 
 ```js
 adapter = {
-  name,                              // 'orsay' | 'tizen' | 'web'
+  name,                              // 'orsay' | 'tizenbrew' | 'web'
   config,                            // optional TW.config overrides
   keys:   { map(domEvent), register? },
   createPlayer(callbacks) -> player, // load/stop/setDisplayArea/getQualities/selectQuality
@@ -59,14 +59,13 @@ scene → TW.api.playbackUrl(channel)
           └─ gql PlaybackAccessToken {value, signature}   (no user login)
           └─ build usher master URL
         → player.load(masterUrl)
-          ├─ web:   hls.js parses master, exposes levels
-          ├─ tizen: AVPlay plays master, getTotalTrackInfo for quality
-          └─ orsay: parse master ourselves, play Auto=master / else variant URL
+          ├─ web / tizenbrew: hls.js parses master, exposes levels
+          └─ orsay:           parse master ourselves, play Auto=master / else variant URL
 ```
 
-Quality is **delegated to the player adapter** because hls.js, AVPlay and
-INFOLINK each discover renditions differently — the scene only ever calls
-`getQualities()` / `selectQuality(i)`.
+Quality is **delegated to the player adapter** because hls.js and INFOLINK each
+discover renditions differently — the scene only ever calls `getQualities()` /
+`selectQuality(i)`.
 
 ## The Twitch integration (and the CORS/TLS reality)
 
@@ -86,11 +85,16 @@ dev harness needs help — TVs don't, because native players send no `Origin`:
 | `*.playlist.ttvnw.net` | **403** for non-Twitch origins ❌ |
 | `*.cloudfront.hls.ttvnw.net` (segments) | `*` ✅ |
 
-**Native players (AVPlay, INFOLINK) send no browser `Origin`**, so they sail
-past the CORS gates and play Twitch directly — Tizen and Orsay both. Only the
-**browser harness** is CORS-bound, so `npm start` routes HLS playback through a
-small **dev-only CORS proxy** (`tools/lib/dev-proxy.js`), whose key trick is
-**rewriting the m3u8 playlists** so every nested fetch (variant playlist,
-segment) routes back through it too. Nothing ships it.
+**Orsay's INFOLINK player sends no browser `Origin`**, so it sails past these
+gates and plays Twitch directly. The **TizenBrew** module uses hls.js (which
+*does* send an origin), but it runs inside TizenBrew's webview under its
+`<access origin="*">` privilege, so the TV web runtime — unlike a strict desktop
+browser — is expected to fetch usher/playlist cross-origin too (to confirm on
+hardware; if a host like `*.playlist.ttvnw.net` blocks it, the fallback is a
+TizenBrew service-mod proxy). Only the **browser harness** is hard CORS-bound, so
+`npm start` routes HLS playback through a small **dev-only CORS proxy**
+(`tools/lib/dev-proxy.js`), whose key trick is **rewriting the m3u8 playlists** so
+every nested fetch (variant playlist, segment) routes back through it too.
+Nothing ships it.
 
 See [`docs/PLATFORMS.md`](PLATFORMS.md) for the measured per-host behaviour.
