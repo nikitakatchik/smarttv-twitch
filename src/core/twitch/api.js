@@ -35,6 +35,16 @@
     followedStreams: function (cursor, onOk, onFail) {
       TW.twitch.helix.followedStreams(cursor, onOk, onFail);
     },
+    // Every channel the user follows, live or not (Helix; needs login). Tiles
+    // carry an avatar; the Following scene subtracts the live set for "offline".
+    followedChannels: function (cursor, onOk, onFail) {
+      TW.twitch.helix.followedChannels(cursor, onOk, onFail);
+    },
+
+    // A channel's landing-page info (avatar, name, followers, bio).
+    channelInfo: function (login, onOk, onFail) {
+      backend().channelInfo(login, onOk, onFail);
+    },
 
     // A channel's past broadcasts (VODs) and top clips.
     channelVideos: function (login, cursor, onOk, onFail) {

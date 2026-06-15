@@ -55,6 +55,21 @@ test('a GraphQL error response triggers onFail, not an empty success', () => {
   assert.equal(failed, 1);
 });
 
+test('channelInfo maps the GraphQL user shape to a channel-page header', () => {
+  const body = JSON.stringify({ data: { user: {
+    login: 'alpha', displayName: 'Alpha', description: 'hello there',
+    profileImageURL: 'http://img/alpha.png', followers: { totalCount: 1234 }, stream: null,
+  } } });
+  const { TW } = makeApp(() => ({ status: 200, text: body }));
+  let info = null;
+  TW.api.channelInfo('alpha', (i) => { info = i; }, () => {});
+  assert.equal(info.display, 'Alpha');
+  assert.equal(info.followers, 1234);
+  assert.equal(info.avatar, 'http://img/alpha.png');
+  assert.equal(info.description, 'hello there');
+  assert.equal(info.online, false);
+});
+
 test('playbackUrl builds a usher URL from the access token', () => {
   const token = JSON.stringify({ data: { streamPlaybackAccessToken: { value: '{"a":1}', signature: 'sig123' } } });
   const { TW } = makeApp(() => ({ status: 200, text: token }));

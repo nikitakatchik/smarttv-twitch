@@ -131,6 +131,25 @@
       }, onFail);
     },
 
+    // Channel landing-page info: avatar, name, follower count and bio. Public
+    // GraphQL (no login). Non-fatal — the channel page degrades to just the name
+    // if any field is unavailable.
+    channelInfo: function (login, onOk, onFail) {
+      var q = '{ user(login: "' + esc(login) + '") { login displayName description ' +
+        'profileImageURL(width: 300) followers { totalCount } stream { id } } }';
+      post(q, function (data) {
+        var u = data.user || {};
+        onOk({
+          login: u.login || login,
+          display: u.displayName || login,
+          description: u.description || '',
+          avatar: u.profileImageURL || '',
+          followers: (u.followers && u.followers.totalCount) || 0,
+          online: !!u.stream
+        });
+      }, onFail);
+    },
+
     // A channel's past broadcasts (VODs). Newest first.
     channelVideos: function (login, limit, cursor, onOk, onFail) {
       var q = '{ user(login: "' + esc(login) + '") { videos(first: ' + cap(limit) +

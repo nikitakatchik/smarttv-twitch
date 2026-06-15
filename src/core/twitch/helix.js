@@ -70,6 +70,53 @@
         (cursor ? ('&after=' + encodeURIComponent(cursor)) : '');
       get(path, function (j) { onOk(mapStreams(j)); }, onFail);
     }
+    withUserId(run, onFail);
+  }
+
+  // Batch-resolve user profiles (up to 100 ids per call) into a login->avatar
+  // map. Best-effort: a failure yields an empty map rather than aborting, so the
+  // channel tiles just fall back to a placeholder.
+  function avatarMap(ids, done) {
+    if (!ids.length) { done({}); return; }
+    var qs = '';
+    for (var i = 0; i < ids.length; i++) { qs += (i ? '&' : '?') + 'id=' + encodeURIComponent(ids[i]); }
+    get('/users' + qs, function (j) {
+      var map = {}, data = (j && j.data) || [];
+      for (var k = 0; k < data.length; k++) { map[data[k].login] = data[k].profile_image_url || ''; }
+      done(map);
+    }, function () { done({}); });
+  }
+
+  // Every channel the user follows (live or not), newest-followed first. Twitch
+  // returns login/name but no avatar here, so a second /users call fills those
+  // in. The caller subtracts the live set to get the "offline" channels.
+  function followedChannels(cursor, onOk, onFail) {
+    function run(uid) {
+      var path = '/channels/followed?user_id=' + encodeURIComponent(uid) + '&first=100' +
+        (cursor ? ('&after=' + encodeURIComponent(cursor)) : '');
+      get(path, function (j) {
+        var data = (j && j.data) || [], items = [], ids = [];
+        for (var i = 0; i < data.length; i++) {
+          var c = data[i];
+          items.push({
+            kind: 'channel',
+            login: c.broadcaster_login,
+            display: c.broadcaster_name || c.broadcaster_login,
+            avatar: ''
+          });
+          if (c.broadcaster_id) { ids.push(c.broadcaster_id); }
+        }
+        avatarMap(ids, function (map) {
+          for (var n = 0; n < items.length; n++) { items[n].avatar = map[items[n].login] || ''; }
+          onOk({ items: items, cursor: (j.pagination && j.pagination.cursor) || null });
+        });
+      }, onFail);
+    }
+    withUserId(run, onFail);
+  }
+
+  // Resolve our own user id (cached on the identity), then call run(uid).
+  function withUserId(run, onFail) {
     var u = TW.auth.user();
     if (u && u.id) { run(u.id); return; }
     me(function (m) {
@@ -77,5 +124,7 @@
     }, onFail);
   }
 
-  TW.twitch.helix = { me: me, followedStreams: followedStreams, mapStreams: mapStreams };
+  TW.twitch.helix = {
+    me: me, followedStreams: followedStreams, followedChannels: followedChannels, mapStreams: mapStreams
+  };
 })(this);

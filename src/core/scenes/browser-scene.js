@@ -14,6 +14,11 @@
 
   var MODE = { ALL: 0, GAMES: 1, GAMES_STREAMS: 2, OPEN: 3, FOLLOWED: 4 };
 
+  // The offline "Offline" section is just avatars + names, so it packs more
+  // per row than the 16:9 stream/live tiles (TW.config.columns). Keep this in
+  // sync with the .tw-grid-6 column width in styles.css.
+  var OFFLINE_COLUMNS = 6;
+
   // The top row as a left-to-right d-pad path: the four colour-button tabs,
   // then the account chip at the far right. Lets remotes without A/B/C/D
   // buttons reach every tab. (Order matches the on-screen layout so LEFT/RIGHT
@@ -41,6 +46,18 @@
     this.onTopNav = false;     // top row (chip + tabs) holds d-pad focus
     this.navIndex = 0;         // which NAV item is focused while onTopNav
     this.pendingMode = null;   // mode to enter on next focus (e.g. after login)
+
+    // --- Following view (two sections: live + offline channels) -------------
+    this.fLive = [];           // followed channels that are live now
+    this.fOffline = [];        // the rest (offline), avatar tiles
+    this.fLiveLogins = {};     // login -> true, to subtract live from offline
+    this.fOffCursor = null;    // offline pagination cursor (false = ended)
+    this.fOffLoading = false;
+    this.fRows = [];           // focusable rows across both sections, top->bottom
+    this.fr = 0;               // focused row index into fRows
+    this.fc = 0;               // focused column within that row
+    this.fScroll = 0;          // applied vertical scroll offset
+    this.fFocused = false;     // a tile is focused (vs. parked on the tab row)
   }
 
   var P = BrowserScene.prototype;
@@ -63,8 +80,12 @@
       '<div class="tw-loading" id="tw-b-loading"><div class="tw-spinner"></div>' +
         '<div class="tw-loading-text" id="tw-b-loading-text"></div></div>' +
       '<div class="tw-grid-wrap" id="tw-grid-wrap">' +
-        '<div class="tw-grid-scroll" id="tw-grid-scroll"><table class="tw-grid" id="tw-grid"></table></div>' +
+        '<div class="tw-grid-scroll" id="tw-grid-scroll">' +
+          '<table class="tw-grid" id="tw-grid"></table>' +
+          '<div class="tw-follow" id="tw-follow"></div>' +
+        '</div>' +
         '<div class="tw-grid-frame" id="tw-grid-frame"></div>' +
+        '<div class="tw-follow-empty" id="tw-follow-empty"></div>' +
       '</div>' +
       '<div class="tw-open" id="tw-open">' +
         '<input class="tw-open-input" id="tw-open-input" type="text">' +
@@ -79,10 +100,11 @@
   P.initLabels = function () {
     dom.text(dom.get('tw-l-all'), TW.i18n.t('CHANNELS'));
     dom.text(dom.get('tw-l-games'), TW.i18n.t('GAMES'));
-    dom.text(dom.get('tw-l-followed'), TW.i18n.t('FOLLOWED'));
+    dom.text(dom.get('tw-l-followed'), TW.i18n.t('FOLLOWING'));
     dom.text(dom.get('tw-l-open'), TW.i18n.t('OPEN'));
     dom.text(dom.get('tw-open-go'), TW.i18n.t('OPEN'));
     dom.attr(dom.get('tw-open-input'), 'placeholder', TW.i18n.t('PLACEHOLDER_OPEN'));
+    dom.text(dom.get('tw-follow-empty'), TW.i18n.t('FOLLOW_NONE'));
   };
 
   // Force all four tab pills to the width of the widest one (text left-aligned),
@@ -144,6 +166,28 @@
     dom.hide(dom.get('tw-b-loading'));
     dom.hide(dom.get('tw-open'));
     dom.show(dom.get('tw-grid-wrap'));
+    dom.show(dom.get('tw-grid'));          // flat table (Channels/Games/Streams)
+    dom.hide(dom.get('tw-follow'));
+    dom.hide(dom.get('tw-follow-empty'));
+  };
+  // Following: the two-section view replaces the flat table inside the scroller.
+  P.showFollow = function () {
+    dom.hide(dom.get('tw-b-loading'));
+    dom.hide(dom.get('tw-open'));
+    dom.show(dom.get('tw-grid-wrap'));
+    dom.hide(dom.get('tw-grid'));
+    dom.show(dom.get('tw-follow'));
+    dom.hide(dom.get('tw-follow-empty'));
+  };
+  // Following with zero follows: a centred message, no grid, no frame.
+  P.showFollowEmpty = function () {
+    this.hideFrame();
+    dom.hide(dom.get('tw-b-loading'));
+    dom.hide(dom.get('tw-open'));
+    dom.show(dom.get('tw-grid-wrap'));
+    dom.hide(dom.get('tw-grid'));
+    dom.hide(dom.get('tw-follow'));
+    dom.show(dom.get('tw-follow-empty'));
   };
   P.showOpen = function () {
     dom.hide(dom.get('tw-b-loading'));
@@ -249,9 +293,10 @@
       }
     };
 
+    // FOLLOWED has its own two-section loader (see enterFollowing); it never
+    // reaches the flat-grid pagination here.
     if (this.mode === MODE.GAMES) { TW.api.topGames(cursor, onOk, onFail); }
     else if (this.mode === MODE.GAMES_STREAMS) { TW.api.streamsByGame(this.selectedGame, cursor, onOk, onFail); }
-    else if (this.mode === MODE.FOLLOWED) { TW.api.followedStreams(cursor, onOk, onFail); }
     else { TW.api.topStreams(cursor, onOk, onFail); }
   };
 
@@ -327,6 +372,267 @@
     if (nearEnd && this.cursor && !this.loading) { this.loadData(); }
   };
 
+  // --- Following (two sections: live + offline channels) ------------------
+  // The Following tab isn't a flat grid: it stacks a "Live" section (followed
+  // channels streaming now -> open the player) above a "Channels" section (the
+  // rest -> open the channel page). Tiles keep the standard size; the live
+  // section is hidden when nobody's live, and a zero-follows state shows a
+  // centred message. It owns its own focus model (fRows/fr/fc) and reuses the
+  // shared selection frame + pinned-scroll machinery.
+  P.enterFollowing = function () {
+    this.cleanFollow();
+    this.loading = true;          // block grid keys until the first render lands
+    this.showLoading();
+    this.loadFollowLive();
+  };
+
+  P.cleanFollow = function () {
+    this.fLive = [];
+    this.fOffline = [];
+    this.fLiveLogins = {};
+    this.fOffCursor = null;
+    this.fOffLoading = false;
+    this.fRows = [];
+    this.fr = 0;
+    this.fc = 0;
+    this.fScroll = 0;
+    this.fFocused = false;
+    dom.html(dom.get('tw-follow'), '');
+    this.setScroll(0);
+    this.hideFrame();
+  };
+
+  // Load EVERY live followed channel first (usually a single page) so the offline
+  // section can subtract them; then page through all follows.
+  P.loadFollowLive = function () {
+    var self = this;
+    function page(cursor) {
+      TW.api.followedStreams(cursor, function (res) {
+        for (var i = 0; i < res.items.length; i++) {
+          self.fLive.push(res.items[i]);
+          self.fLiveLogins[res.items[i].login] = true;
+        }
+        if (res.cursor) { page(res.cursor); } else { self.loadFollowOffline(); }
+      }, function () { self.loadFollowOffline(); });   // proceed with what we have
+    }
+    page(null);
+  };
+
+  P.loadFollowOffline = function () {
+    if (this.fOffLoading || this.fOffCursor === false) { return; }
+    this.fOffLoading = true;
+    var self = this, cursor = this.fOffCursor || null;
+    TW.api.followedChannels(cursor, function (res) {
+      for (var i = 0; i < res.items.length; i++) {
+        var it = res.items[i];
+        if (!self.fLiveLogins[it.login]) { self.fOffline.push(it); }
+      }
+      self.fOffCursor = res.cursor ? res.cursor : false;
+      self.fOffLoading = false;
+      self.onFollowLoaded();
+      // A page that was entirely live yields no offline tiles; keep paging so the
+      // section isn't left spuriously empty while more follows remain.
+      if (self.fOffCursor && self.fOffline.length === 0) { self.loadFollowOffline(); }
+    }, function () {
+      self.fOffLoading = false;
+      self.fOffCursor = false;
+      if (self.fLive.length === 0 && self.fOffline.length === 0) {
+        self.loading = false;
+        self.showDialog(TW.i18n.t('ERROR_LOAD'));
+        return;
+      }
+      self.onFollowLoaded();
+    });
+  };
+
+  P.onFollowLoaded = function () {
+    this.loading = false;
+    this.renderFollowing();
+    if (this.fLive.length === 0 && this.fOffline.length === 0 && this.fOffCursor === false) {
+      this.showFollowEmpty();
+      return;
+    }
+    this.showFollow();
+    if (this.onTopNav) { return; }           // parked on the tab row; don't grab focus
+    if (!this.fRows.length) { return; }
+    if (!this.fFocused) { this.fFocused = true; this.fr = 0; this.fc = 0; }
+    this.clampFollowCursor();
+    this.followAddFocus();
+  };
+
+  P.clampFollowCursor = function () {
+    if (this.fr > this.fRows.length - 1) { this.fr = this.fRows.length - 1; }
+    if (this.fr < 0) { this.fr = 0; }
+    var row = this.fRows[this.fr];
+    if (row && this.fc > row.cells.length - 1) { this.fc = row.cells.length - 1; }
+    if (this.fc < 0) { this.fc = 0; }
+  };
+
+  // Rebuild the section DOM from fLive/fOffline plus the flat fRows focus model.
+  // Cheap enough to re-run on each appended offline page (follow lists are small).
+  P.renderFollowing = function () {
+    var follow = dom.get('tw-follow');
+    dom.html(follow, '');
+    this.fRows = [];
+    if (this.fLive.length) { this.appendFollowSection(follow, TW.i18n.t('FOLLOW_LIVE'), this.fLive, 'stream'); }
+    if (this.fOffline.length) { this.appendFollowSection(follow, TW.i18n.t('FOLLOW_OFFLINE'), this.fOffline, 'channel'); }
+  };
+
+  P.appendFollowSection = function (parent, title, items, kind) {
+    var offline = (kind === 'channel');
+    var cols = offline ? OFFLINE_COLUMNS : TW.config.columns;
+    var sec = dom.create('div', 'tw-sec');
+    var head = dom.create('div', 'tw-sec-head'); dom.text(head, title); sec.appendChild(head);
+    var table = dom.create('table', offline ? 'tw-grid tw-grid-6' : 'tw-grid');
+    for (var i = 0; i < items.length;) {
+      var tr = dom.create('tr'), cells = [], rowItems = [];
+      for (var c = 0; c < cols; c++) {
+        if (i < items.length) {
+          var td = offline ? this.createChannelCell(items[i]) : this.createCell(items[i]);
+          tr.appendChild(td); cells.push(td); rowItems.push(items[i]); i++;
+        } else {
+          // Pad the short last row so table-layout:fixed keeps equal columns
+          // instead of stretching a lone tile across the whole width.
+          tr.appendChild(dom.create('td', 'tw-cell tw-cell-pad'));
+        }
+      }
+      table.appendChild(tr);
+      this.fRows.push({ el: tr, cells: cells, items: rowItems });
+    }
+    sec.appendChild(table);
+    parent.appendChild(sec);
+  };
+
+  // Offline channel tile: just a circular avatar + name (no live thumbnail, no
+  // card). Focus shows a ring on the avatar (see followAddFocus + styles.css),
+  // not the rectangular grid frame.
+  P.createChannelCell = function (item) {
+    var td = dom.create('td', 'tw-cell tw-cell-channel');
+    var name = dom.escape(item.display || item.login || '');
+    var avatar = item.avatar
+      ? '<img class="tw-chan-avatar" src="' + item.avatar + '">'
+      : '<div class="tw-chan-avatar tw-chan-avatar-ph"></div>';
+    td.innerHTML =
+      '<div class="tw-cell-inner">' + avatar +
+        '<div class="tw-chan-name">' + name + '</div>' +
+      '</div>';
+    return td;
+  };
+
+  P.followCell = function () { var row = this.fRows[this.fr]; return row && row.cells[this.fc]; };
+
+  P.followRemoveFocus = function () {
+    var c = this.followCell();
+    if (c) { dom.removeClass(c.firstChild, 'tw-focused'); }
+  };
+
+  P.followMove = function (r, c) {
+    this.followRemoveFocus();
+    this.fr = r;
+    var row = this.fRows[r];
+    this.fc = (row && c > row.cells.length - 1) ? row.cells.length - 1 : (c < 0 ? 0 : c);
+    this.followAddFocus();
+  };
+
+  P.followAddFocus = function () {
+    var c = this.followCell();
+    if (!c) { return; }
+    dom.addClass(c.firstChild, 'tw-focused');
+    this.followScrollTo();
+    // Offline avatar tiles indicate focus with a ring on the avatar (via the
+    // .tw-focused class), which suits their round shape; live tiles use the
+    // shared rectangular frame.
+    var item = this.fRows[this.fr].items[this.fc];
+    if (item && item.kind === 'channel') { this.hideFrame(); }
+    else { this.followFrame(); }
+    // Prefetch the next page of offline channels as focus nears the bottom.
+    if (this.fr >= this.fRows.length - 2 && this.fOffCursor && !this.fOffLoading) { this.loadFollowOffline(); }
+  };
+
+  // Pin the focused row near the top, but keep a heading's worth of lead space
+  // above it so the section title stays visible when you're on its first row.
+  P.followScrollTo = function () {
+    var row = this.fRows[this.fr];
+    if (!row) { return; }
+    var follow = dom.get('tw-follow'), wrap = dom.get('tw-grid-wrap');
+    var lead = 46;   // ~ section heading height + gap
+    var off = row.el.offsetTop - lead;
+    var maxOff = follow.offsetHeight - (wrap ? wrap.clientHeight : 0);
+    if (maxOff < 0) { maxOff = 0; }
+    if (off < 0) { off = 0; }
+    if (off > maxOff) { off = maxOff; }
+    this.fScroll = off;
+    this.setScroll(off);
+  };
+
+  P.followFrame = function () {
+    var frame = dom.get('tw-grid-frame');
+    if (!frame) { return; }
+    var c = this.followCell();
+    if (!c) { frame.style.opacity = '0'; return; }
+    var inner = c.firstChild;
+    var reappearing = (frame.style.opacity !== '1');
+    if (reappearing) { frame.style.webkitTransition = frame.style.transition = 'none'; }
+    frame.style.left = inner.offsetLeft + 'px';
+    frame.style.top = (inner.offsetTop - this.fScroll) + 'px';
+    frame.style.width = inner.offsetWidth + 'px';
+    frame.style.height = inner.offsetHeight + 'px';
+    if (reappearing) {
+      frame.offsetWidth;   // commit the snap before transitions resume
+      frame.style.webkitTransition = frame.style.transition = '';
+    }
+    frame.style.opacity = '1';
+    var img = inner.getElementsByTagName('img')[0];
+    if (img && !img.complete) {
+      var self = this;
+      img.onload = function () {
+        if (!self.onTopNav && self.mode === MODE.FOLLOWED && self.followCell() === c) { self.followFrame(); }
+      };
+    }
+  };
+
+  // Landing column when dropping from the tab row into the Following grid.
+  P.followEntryColumn = function () {
+    var item = NAV[this.navIndex];
+    var col = (item && item.mode === null) ? 3 : (this.navIndex <= 1 ? 0 : 1);
+    var n = this.fRows.length ? this.fRows[0].cells.length : 0;
+    if (col > n - 1) { col = n - 1; }
+    return col < 0 ? 0 : col;
+  };
+
+  P.handleFollowKey = function (key) {
+    if (key === KEY.UP) {
+      if (this.fRows.length && this.fr > 0) { this.followMove(this.fr - 1, this.fc); }
+      else { this.focusTopNav(); }
+      return true;
+    }
+    if (key === KEY.DOWN) {
+      if (this.fr < this.fRows.length - 1) { this.followMove(this.fr + 1, this.fc); }
+      return true;
+    }
+    if (key === KEY.LEFT) {
+      if (this.fc > 0) { this.followMove(this.fr, this.fc - 1); }
+      return true;
+    }
+    if (key === KEY.RIGHT) {
+      var row = this.fRows[this.fr];
+      if (row && this.fc < row.cells.length - 1) { this.followMove(this.fr, this.fc + 1); }
+      return true;
+    }
+    if (key === KEY.ENTER) { this.activateFollow(); return true; }
+    return false;
+  };
+
+  P.activateFollow = function () {
+    var row = this.fRows[this.fr];
+    if (!row) { return; }
+    var item = row.items[this.fc];
+    if (!item) { return; }
+    // Live -> straight to the player; offline -> the channel page (info + VODs).
+    if (item.kind === 'stream') { TW.app.goToChannel(item.login); }
+    else { TW.app.goToChannelPage(item.login); }
+  };
+
   // --- modes --------------------------------------------------------------
   P.switchMode = function (mode, force) {
     if (mode === this.mode && !force) { return; }
@@ -351,6 +657,8 @@
       this.refreshOpenFocus();
       var input = dom.get('tw-open-input');
       if (input && input.focus) { try { input.focus(); } catch (e) {} }
+    } else if (mode === MODE.FOLLOWED) {
+      this.enterFollowing();
     } else {
       this.refresh();
     }
@@ -391,6 +699,7 @@
     if (this.loading && this.mode !== MODE.OPEN) { return true; }
 
     if (this.mode === MODE.OPEN) { return this.handleOpenKey(key); }
+    if (this.mode === MODE.FOLLOWED) { return this.handleFollowKey(key); }
     return this.handleGridKey(key);
   };
 
@@ -451,6 +760,7 @@
 
   P.focusTopNav = function () {
     this.removeFocus();
+    this.followRemoveFocus();
     this.hideFrame();   // no tile is selected while the tab row holds focus
     dom.removeClass(dom.get('tw-open-input'), 'tw-focused');
     dom.removeClass(dom.get('tw-open-go'), 'tw-focused');
@@ -482,8 +792,11 @@
   };
 
   P.leaveTopNav = function () {
+    // Following with zero tiles: nothing to drop into, so stay on the tab row.
+    if (this.mode === MODE.FOLLOWED && !this.fRows.length) { return; }
     this.clearNavFocus();
     if (this.mode === MODE.OPEN) { this.openCursor = 0; this.refreshOpenFocus(); return; }
+    if (this.mode === MODE.FOLLOWED) { this.fFocused = true; this.followMove(0, this.followEntryColumn()); return; }
     // Always drop into the first row; the column is fixed by the focused top-row
     // item (see gridEntryColumn), not the previously memorized column.
     this.move(this.gridEntryColumn(), 0);

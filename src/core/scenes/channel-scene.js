@@ -35,6 +35,8 @@
     this.infoTimer = null;
 
     this.contentKind = 'live'; // 'live' | 'vod' | 'clip'
+    this.startVod = null;      // if set on entry, play this VOD instead of live
+    this.returnTo = null;      // where BACK exits to ('channelPage' | default browser)
     this.chatOn = false;
     this.chatClient = null;
     this.chatCount = 0;
@@ -103,6 +105,8 @@
 
   P.handleShow = function (data) {
     this.login = data && data.login;
+    this.startVod = (data && data.vod) || null;   // play this VOD instead of live
+    this.returnTo = (data && data.from) || null;   // e.g. 'channelPage'
     dom.show(this.root);
   };
 
@@ -118,7 +122,9 @@
     if (this.player.setDisplayArea) {
       this.player.setDisplayArea(0, 0, TW.config.screen.width, TW.config.screen.height);
     }
-    this.playLive();
+    // Entered from the channel page on a specific VOD? Play it; otherwise live.
+    if (this.startVod) { var v = this.startVod; this.startVod = null; this.playVod(v); }
+    else { this.playLive(); }
   };
 
   // --- content sources ----------------------------------------------------
@@ -411,7 +417,11 @@
     else { this.shutdown(); }
   };
 
-  P.shutdown = function () { TW.app.goToBrowser(); };
+  P.shutdown = function () {
+    // Came from a channel page (e.g. selected one of its VODs)? Return there.
+    if (this.returnTo === 'channelPage' && this.login) { TW.app.goToChannelPage(this.login); }
+    else { TW.app.goToBrowser(); }
+  };
 
   // --- keys ---------------------------------------------------------------
   P.handleKeyDown = function (key) {

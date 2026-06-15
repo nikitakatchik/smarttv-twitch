@@ -148,6 +148,43 @@ html, body {
 .tw-cell-game .tw-meta-name { font-size: 19px; }
 .tw-cell-game .tw-meta-views { font-size: 17px; }
 
+/* --- Following (two sections + offline channel tiles) ------------------- */
+/* The two-section view lives inside the same scroller as the flat grid; only
+   one is shown at a time. */
+.tw-follow { display: none; }
+.tw-sec { margin: 0 0 10px; }
+/* Section heading; its left padding lines the text up with the thumbnail
+   artwork (5px cell padding + 3px transparent thumb border = 8px). */
+.tw-sec-head { font-size: 22px; font-weight: 500; color: #efeff1; text-align: left; padding: 4px 8px 8px; }
+/* Empty pad cells keep table-layout:fixed honouring 25% columns when a section's
+   last row is short, so a lone tile isn't stretched across the whole width. */
+.tw-cell-pad { background: none; }
+/* Offline channel tile: just a circular avatar + name, no card. The section runs
+   at 6 columns (.tw-grid-6) since these tiles are more compact than 16:9 thumbs. */
+.tw-grid-6 .tw-cell { width: 16.6667%; }
+.tw-cell-channel .tw-cell-inner { text-align: center; padding: 10px 6px 14px; }
+.tw-chan-avatar {
+  width: 96px; height: 96px; border-radius: 50%; background: #18181b;
+  display: inline-block;
+}
+.tw-chan-avatar-ph { background: #3a3a42; }
+.tw-chan-name {
+  margin-top: 10px; font-size: 18px; color: #dedee3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Focus: a ring around the avatar (matches its round shape) + a brighter name.
+   The rectangular grid frame is suppressed for these tiles (see followAddFocus). */
+.tw-cell-channel .tw-cell-inner.tw-focused .tw-chan-avatar {
+  -webkit-box-shadow: 0 0 0 4px #f4f4f7; box-shadow: 0 0 0 4px #f4f4f7;
+}
+.tw-cell-channel .tw-cell-inner.tw-focused .tw-chan-name { color: #fff; }
+/* Zero follows: a centred, large, muted message filling the grid area. */
+.tw-follow-empty {
+  display: none; position: absolute; left: 0; right: 0; top: 50%;
+  -webkit-transform: translateY(-50%); transform: translateY(-50%);
+  text-align: center; font-size: 34px; color: #5c5c66; padding: 0 40px;
+}
+
 /* --- open / search ------------------------------------------------------ */
 .tw-open { position: absolute; left: 20%; top: 30%; width: 60%; text-align: center; }
 .tw-open-input {
@@ -161,6 +198,34 @@ html, body {
 }
 /* Fill flips dark -> white on focus (works on every renderer, no outline). */
 .tw-open-go.tw-focused { background: #f4f4f7; color: #18181b; }
+
+/* --- channel page (info + VODs) ----------------------------------------- */
+#tw-cpage { background: #08080a; }
+.tw-cp-head { position: absolute; left: 43px; right: 43px; top: 36px; height: 120px; }
+.tw-cp-avatar {
+  position: absolute; left: 0; top: 0; width: 96px; height: 96px;
+  border-radius: 50%; background: #18181b;
+}
+/* Left-aligned beside the avatar (don't inherit the harness stage's centering). */
+.tw-cp-info { margin-left: 124px; text-align: left; }
+.tw-cp-name { font-size: 34px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tw-cp-followers { font-size: 18px; color: #adadb8; margin-top: 6px; }
+.tw-cp-desc {
+  font-size: 18px; color: #c8c8cf; margin-top: 10px; line-height: 1.35;
+  max-height: 50px; overflow: hidden;
+}
+/* VOD grid: same wrapper/scroll/frame contract as the browse grid, scoped to
+   this scene so the two never share the selection-frame element. */
+.tw-cp-grid-wrap { position: absolute; left: 35px; right: 35px; top: 172px; bottom: 0; overflow: hidden; }
+.tw-cp-scroll {
+  -webkit-transition: -webkit-transform 0.2s ease-out;
+  transition: transform 0.2s ease-out;
+}
+.tw-cp-empty {
+  display: none; position: absolute; left: 0; right: 0; top: 40%;
+  text-align: center; font-size: 28px; color: #5c5c66;
+}
+#tw-cp-loading { top: 172px; }
 
 /* --- player overlay ----------------------------------------------------- */
 .tw-panel {
