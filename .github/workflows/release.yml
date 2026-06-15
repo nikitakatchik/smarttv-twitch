@@ -46,27 +46,26 @@ jobs:
           node-version: 22
       - name: Verify
         run: npm run lint && npm test
-      # Fetch the CLI-only Tizen SDK so `release` can build + sign Twellie.wgt
-      # (generic cert; Apps2Samsung re-signs per-TV). Best-effort: if it fails,
-      # `release` still emits the Orsay/web zips and just skips the .wgt.
-      - name: Set up Tizen CLI (for the .wgt)
-        continue-on-error: true
-        run: npm run tizen:setup
-      - name: Package platform bundles + Tizen .wgt
-        run: npm run release
+      # The host installers come from the per-OS matrix above; drop them where
+      # `publish` looks so it reuses them instead of cross-building.
       - name: Download host binaries
         uses: actions/download-artifact@v4
         with:
           pattern: host-*
           path: dist/host-bins
           merge-multiple: true
-      - name: Gather all assets
-        run: cp dist/host-bins/*.zip dist/release/
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/release/*.zip
-            dist/release/Twellie.wgt
-          generate_release_notes: true
-          fail_on_unmatched_files: true
+      - name: Gather host installers
+        run: mkdir -p dist/release && cp dist/host-bins/*.zip dist/release/
+      # Fetch the CLI-only Tizen SDK so `publish` can build + sign Twellie.wgt
+      # (generic cert; Apps2Samsung re-signs per-TV). Best-effort: if it fails,
+      # publish still ships the other assets and just omits the .wgt.
+      - name: Set up Tizen CLI (for the .wgt)
+        continue-on-error: true
+        run: npm run tizen:setup
+      # Build the remaining assets + publish the labeled GitHub Release. publish
+      # reuses the host installers gathered above and pins the tag to the one pushed.
+      - name: Publish labeled GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: npm run publish -- --live

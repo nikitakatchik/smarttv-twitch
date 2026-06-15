@@ -1,7 +1,8 @@
 {
   "name": "smarttv-twitch",
   "version": "4.0.0",
-  "description": "Twellie — an unofficial viewer for Twitch on Samsung Smart TVs. One ES5 core, three targets: Orsay (2013–2014), Tizen (2015+), and a desktop browser harness.",
+  "private": true,
+  "description": "Twellie — an unofficial viewer for Twitch on Samsung Smart TVs. One ES5 core; targets: Orsay (2013–2014), Tizen (2015+) as a native .wgt (Apps2Samsung) or TizenBrew module, and a desktop browser harness.",
   "keywords": [
     "twitch",
     "samsung",
@@ -37,7 +38,8 @@
     "host": "node tools/host.js",
     "host:bin": "node tools/bin.js",
     "tizen:setup": "node tools/tizen-setup.js",
-    "release": "node tools/release.js"
+    "release": "node tools/release.js",
+    "publish": "node tools/publish.js"
   },
   "devDependencies": {}
 }
