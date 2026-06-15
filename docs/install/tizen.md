@@ -27,19 +27,33 @@ account fee.
 
 ## Step 1 — Install the toolchain (once)
 
-1. Install VS Code, then the **“Tizen TV”** extension.
-2. Run the extension's **“Install Tizen Baseline SDK”** command (Command Palette
-   → `Ctrl/Cmd+Shift+P` → type *Tizen*). This pulls in the `tizen` + `sdb` CLI,
-   Certificate Manager and Device Manager. You'll also need a **JDK** (8 or 12+).
-3. Create a **Samsung certificate** — Command Palette → **`Tizen TV: Run
-   Certificate Manager`** → create a **Samsung** *author* + *distributor*
-   certificate (sign in with your Samsung account). It must be the **Samsung**
-   type, not a generic Tizen certificate, or the TV will refuse to install it.
+You don't need VS Code or the Certificate Manager GUI. From the repo:
 
-> The distributor certificate whitelists each TV's **DUID** (up to 50 devices).
-> The easiest path is to connect the TV first (Step 3) and let Certificate
-> Manager capture its DUID automatically; if you swap TVs later, re-add the new
-> DUID and re-sign.
+1. `npm run tizen:setup` — fetches a self-contained Tizen CLI into gitignored
+   `dist/.tizen-sdk/` (no system-wide install; on Apple Silicon it needs Rosetta 2
+   and tells you if it's missing). This bundles the `tizen` + `sdb` CLI and a JDK.
+2. `npm run cert -- --duid <TV-DUID>` — mints a **Samsung** *author* +
+   DUID-bound *distributor* certificate and registers the signing profile,
+   **headlessly**. The only interactive step is a single Samsung-account login
+   that opens in your browser (Samsung's CA issues certs only against an account
+   token — there is no password/API grant). Certs land in `~/Documents/Dev/SamsungTV`.
+   - Find the **DUID** on the TV at **Menu → Support → Contact Samsung** (*Unique
+     Device ID*), or just connect a dev-mode TV (Step 2) and `npm run cert` reads
+     it over `sdb` automatically. Pass several comma-separated for multiple TVs.
+   - It **must** be the Samsung VD type bound to your DUID — the SDK's generic
+     Tizen distributor cert is rejected by retail TVs (`install failed [118, -12]`).
+   - Prefer no listener at all? `npm run cert -- --duid <DUID> --paste` prints the
+     login URL and asks you to paste back the redirect; or set
+     `SAMSUNG_ACCESS_TOKEN`/`SAMSUNG_USER_ID` for a fully non-interactive run.
+
+> The distributor certificate whitelists each TV's **DUID** and expires (Samsung
+> VD certs last ~2 years). When it lapses, re-run `npm run cert` and re-install —
+> the app stops launching once the signing cert is no longer valid.
+
+> **Prefer the GUI?** You still can: install VS Code + the **“Tizen TV”**
+> extension and run **`Tizen TV: Run Certificate Manager`** to create the same
+> Samsung author + distributor certificate by hand. The CLI flow above just
+> automates it.
 
 ## Step 2 — Enable Developer Mode on the TV
 
@@ -57,27 +71,32 @@ account fee.
 
 ## Step 3 — Package, sign and install
 
-The CLI lives in the SDK the extension installed (`<tizen-sdk>/tools/ide/bin`).
-From a terminal in the unzipped `twellie-tizen-unsigned` folder:
+**From the repo (recommended):** one command builds, signs and is ready to
+install. `npm run release` produces a signed `dist/release/Twellie.wgt` using the
+profile from Step 1. Then connect and install:
+
+```bash
+sdb connect <TV-IP>                                  # Tizen TVs use port 26101
+sdb devices                                          # note the device/target name (right column)
+tizen install -n dist/release/Twellie.wgt -t <device-name>   # -t = target NAME, not the IP
+```
+
+(`npm run release-unsigned` instead produces the raw, unsigned bundle if you want
+to sign it some other way. The `tizen`/`sdb` CLIs are the ones `npm run
+tizen:setup` placed in `dist/.tizen-sdk/`.)
+
+**By hand**, from a terminal in an unzipped `twellie-tizen-unsigned` folder:
 
 ```bash
 tizen build-web   -- .                               # build the web app
 tizen package -t wgt -s <your-cert-profile> -- .buildResult
-sdb connect <TV-IP>                                  # Tizen TVs use port 26101
-sdb devices                                          # note the device/target name (right column)
-tizen install -n Twellie.wgt -t <device-name>        # -t takes the target NAME, not the IP
+sdb connect <TV-IP>
+tizen install -n Twellie.wgt -t <device-name>
 ```
 
-> **Prefer buttons?** The extension does all of this in two commands:
-> **`Tizen TV: Build Signed Package`**, then **`Tizen TV: Launch Application`**
-> (it packages, installs and starts the app on the connected TV).
-
-> **Working from the repo?** `npm run tizen:setup` fetches a self-contained Tizen
-> CLI into gitignored `dist/.tizen-sdk/` (no system-wide install; on Apple Silicon
-> it needs Rosetta 2 and tells you if it's missing). Then `npm run cert` once
-> (signing profile under `~/Documents/Dev/SamsungTV`), and `npm run release` builds
-> a signed `dist/release/Twellie.wgt` for your registered TVs. (`npm run
-> release-unsigned` produces the raw bundle above instead.)
+> **Prefer buttons?** If you installed the **“Tizen TV”** VS Code extension, it
+> does all of this in two commands: **`Tizen TV: Build Signed Package`**, then
+> **`Tizen TV: Launch Application`**.
 
 Then **launch Twellie** from the Apps screen.
 

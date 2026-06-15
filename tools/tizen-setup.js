@@ -16,8 +16,9 @@
  *     prints the one-liner for you to run.
  *   - a couple of tiny dotfiles the official installer/sdb drop in $HOME
  *     (~/.package-manager logs, ~/.sdb device keys).
- * The Samsung DISTRIBUTOR certificate still needs a one-time GUI step (Samsung
- * account + your TV's DUID) — there is no sanctioned headless path.
+ * The Samsung author + DUID-bound distributor certs are minted headlessly by
+ * `npm run cert` (tools/cert.js) — no Certificate Manager GUI. The only manual
+ * step there is a single Samsung-account browser login.
  *
  * Verified 2026-06: web-cli_Tizen_SDK_10.0_macos-64.bin -> HTTP 200, 326,076,958 bytes
  * (download.tizen.org). Flags/footprint per Samsung/tizen-docs + samsungtizenos.com.
@@ -155,12 +156,11 @@ function download(url, dest) {
   console.log('Note: a few small files may also appear in $HOME (~/.package-manager logs, ~/.sdb) —');
   console.log('the official installer puts them there; they are harmless.');
   console.log('\nNEXT STEPS:');
-  console.log('  1. Add the Samsung TV profile + Certificate Extension. Exact SDK-10 package');
-  console.log('     names vary, so list them first, then install the TV + cert ones:');
-  console.log('       ' + env.pkgMgr + ' show-pkgs --tree');
-  console.log('       ' + env.pkgMgr + ' install --accept-license --no-java-check <packages>');
-  console.log('  2. npm run cert        # author cert + signing profile (password-less)');
-  console.log('  3. One-time GUI: open Certificate Manager, add a Samsung distributor cert');
-  console.log('     (Samsung account + your TV DUID). No headless path exists for this step.');
-  console.log('  4. npm run release     # builds + signs Twellie.wgt');
+  console.log('  1. npm run cert -- --duid <TV-DUID>   # mints Samsung author + DUID-bound');
+  console.log('     distributor certs and registers the signing profile — NO GUI. One browser');
+  console.log('     login to your Samsung account is the only interactive step (no password grant');
+  console.log('     exists). DUID: TV > Menu > Support > Contact Samsung, or auto-read over sdb.');
+  console.log('  2. npm run release                    # builds + signs Twellie.wgt');
+  console.log('  (The Tizen "package/sign" tooling is already in this SDK; only `tizen install`');
+  console.log('   later needs a dev-mode TV reachable over sdb.)');
 })().catch(function (e) { die(e && e.message ? e.message : String(e)); });
