@@ -14,6 +14,18 @@
 
   var MODE = { ALL: 0, GAMES: 1, GAMES_STREAMS: 2, OPEN: 3, FOLLOWED: 4 };
 
+  // The top row as a left-to-right d-pad path: the four colour-button tabs,
+  // then the account chip at the far right. Lets remotes without A/B/C/D
+  // buttons reach every tab. (Order matches the on-screen layout so LEFT/RIGHT
+  // move the way they look.)
+  var NAV = [
+    { id: 'tw-tip-all',      mode: MODE.ALL },
+    { id: 'tw-tip-games',    mode: MODE.GAMES },
+    { id: 'tw-tip-followed', mode: MODE.FOLLOWED },
+    { id: 'tw-tip-open',     mode: MODE.OPEN },
+    { id: 'tw-account',      mode: null }          // chip -> login (far right)
+  ];
+
   function BrowserScene(adapter) {
     this.adapter = adapter;
     this.mode = -1;
@@ -26,7 +38,8 @@
     this.y = 0;
     this.selectedGame = null;
     this.built = false;
-    this.onChip = false;       // account chip focused (above the grid)
+    this.onTopNav = false;     // top row (chip + tabs) holds d-pad focus
+    this.navIndex = 0;         // which NAV item is focused while onTopNav
     this.pendingMode = null;   // mode to enter on next focus (e.g. after login)
   }
 
@@ -38,18 +51,21 @@
     root.innerHTML =
       '<div class="tw-topbar">' +
         '<img class="tw-logo" src="assets/logo.png" alt="">' +
-        '<span class="tw-wordmark">' + dom.escape(TW.config.appName) + '</span>' +
         '<div class="tw-account" id="tw-account">&#9679; <span id="tw-acct-label"></span></div>' +
         '<div class="tw-tips">' +
-          '<span class="tw-tip" id="tw-tip-all"><b class="tw-dot tw-red">A</b> <span id="tw-l-all"></span></span>' +
-          '<span class="tw-tip" id="tw-tip-games"><b class="tw-dot tw-green">B</b> <span id="tw-l-games"></span></span>' +
-          '<span class="tw-tip" id="tw-tip-followed"><b class="tw-dot tw-yellow">C</b> <span id="tw-l-followed"></span></span>' +
-          '<span class="tw-tip" id="tw-tip-open"><b class="tw-dot tw-blue">D</b> <span id="tw-l-open"></span></span>' +
+          '<span class="tw-tip" id="tw-tip-all"><span class="tw-tip-box"><span class="tw-tip-label" id="tw-l-all"></span></span></span>' +
+          '<span class="tw-tip" id="tw-tip-games"><span class="tw-tip-box"><span class="tw-tip-label" id="tw-l-games"></span></span></span>' +
+          '<span class="tw-tip" id="tw-tip-followed"><span class="tw-tip-box"><span class="tw-tip-label" id="tw-l-followed"></span></span></span>' +
+          '<span class="tw-tip" id="tw-tip-open"><span class="tw-tip-box"><span class="tw-tip-label" id="tw-l-open"></span></span></span>' +
+          '<div class="tw-tip-cursor" id="tw-tip-cursor"></div>' +
         '</div>' +
       '</div>' +
-      '<div class="tw-loading" id="tw-b-loading"><div class="tw-spinner"><i></i><i></i><i></i></div>' +
+      '<div class="tw-loading" id="tw-b-loading"><div class="tw-spinner"></div>' +
         '<div class="tw-loading-text" id="tw-b-loading-text"></div></div>' +
-      '<div class="tw-grid-wrap" id="tw-grid-wrap"><table class="tw-grid" id="tw-grid"></table></div>' +
+      '<div class="tw-grid-wrap" id="tw-grid-wrap">' +
+        '<div class="tw-grid-scroll" id="tw-grid-scroll"><table class="tw-grid" id="tw-grid"></table></div>' +
+        '<div class="tw-grid-frame" id="tw-grid-frame"></div>' +
+      '</div>' +
       '<div class="tw-open" id="tw-open">' +
         '<input class="tw-open-input" id="tw-open-input" type="text">' +
         '<div class="tw-open-go" id="tw-open-go"></div>' +
@@ -69,6 +85,22 @@
     dom.attr(dom.get('tw-open-input'), 'placeholder', TW.i18n.t('PLACEHOLDER_OPEN'));
   };
 
+  // Force all four tab pills to the width of the widest one (text left-aligned),
+  // so the row reads as a clean uniform set regardless of label length/language.
+  // Measured live because labels are i18n; runs when the scene is visible.
+  P.equalizeTabs = function () {
+    var ids = ['tw-tip-all', 'tw-tip-games', 'tw-tip-followed', 'tw-tip-open'];
+    var els = [], max = 0, i, el;
+    for (i = 0; i < ids.length; i++) {
+      el = dom.get(ids[i]);
+      if (el) { el.style.width = ''; els.push(el); }   // reset before measuring
+    }
+    for (i = 0; i < els.length; i++) { if (els[i].offsetWidth > max) { max = els[i].offsetWidth; } }
+    if (!max) { return; }   // hidden / not laid out yet
+    max += 8;   // a little slack so the widest label never wraps (sub-pixel safe)
+    for (i = 0; i < els.length; i++) { els[i].style.width = max + 'px'; }
+  };
+
   P.updateAccount = function () {
     var label;
     if (TW.auth.isLoggedIn()) {
@@ -81,12 +113,11 @@
   };
 
   // --- lifecycle ----------------------------------------------------------
-  P.handleShow = function () { dom.show(this.root); };
+  P.handleShow = function () { dom.show(this.root); this.equalizeTabs(); };
   P.handleHide = function () { dom.hide(this.root); this.clean(); };
   P.handleFocus = function () {
     this.updateAccount();
-    this.onChip = false;
-    dom.removeClass(dom.get('tw-account'), 'tw-focused');
+    this.clearNavFocus();
     var m = (this.pendingMode == null) ? MODE.ALL : this.pendingMode;
     this.pendingMode = null;
     this.switchMode(m, true);
@@ -94,10 +125,19 @@
   P.handleBlur = function () {};
 
   // --- data ---------------------------------------------------------------
+  // Indeterminate loading: the modern ring spinner alone, no text.
+  P.showLoading = function () {
+    dom.hide(dom.get('tw-grid-wrap'));
+    dom.hide(dom.get('tw-open'));
+    dom.removeClass(dom.get('tw-b-loading'), 'tw-msg');
+    dom.show(dom.get('tw-b-loading'));
+  };
+  // Status message (e.g. load error): text only, no spinner (.tw-msg hides it).
   P.showDialog = function (text) {
     dom.hide(dom.get('tw-grid-wrap'));
     dom.hide(dom.get('tw-open'));
     dom.text(dom.get('tw-b-loading-text'), text || '');
+    dom.addClass(dom.get('tw-b-loading'), 'tw-msg');
     dom.show(dom.get('tw-b-loading'));
   };
   P.showGrid = function () {
@@ -119,6 +159,68 @@
     this.x = 0;
     this.y = 0;
     dom.html(dom.get('tw-grid'), '');
+    this.setScroll(0);   // jump back to the top row for the new content
+    this.hideFrame();
+  };
+
+  // Translate the grid so the focused row sits in the top ("first") row slot.
+  // Up/Down scrolls the content under a fixed cursor row; Left/Right just moves
+  // the frame within the current row (same offset -> no animation fires).
+  P.setScroll = function (offset) {
+    var s = dom.get('tw-grid-scroll');
+    if (!s) { return; }
+    var t = 'translate3d(0,' + (-offset) + 'px,0)';
+    s.style.webkitTransform = t;
+    s.style.transform = t;
+  };
+
+  P.scrollToCursor = function () {
+    var row = this.rowEls[this.y];
+    this.setScroll(row ? row.offsetTop : 0);
+  };
+
+  // Position the fixed selection frame over the focused tile's RESTING spot
+  // (the row is pinned to the top, so top = cell-inner's offset minus the row's
+  // offset = the cell padding). offset* are layout coords, unaffected by the
+  // scroll transform, so the frame lands where the tile settles — and since the
+  // frame doesn't scroll, its top line never clips while content scrolls under.
+  P.updateFrame = function () {
+    var frame = dom.get('tw-grid-frame');
+    if (!frame) { return; }
+    var c = this.focusedCell();
+    if (!c) { frame.style.opacity = '0'; return; }
+    var inner = c.firstChild;                       // .tw-cell-inner
+    var row = this.rowEls[this.y];
+    var rowTop = row ? row.offsetTop : 0;
+    // If the frame is hidden it's (re)appearing — entering the grid or switching
+    // tabs. Snap it to the new spot (no horizontal slide across the old grid);
+    // only moves while it's already visible (Left/Right) animate.
+    var reappearing = (frame.style.opacity !== '1');
+    if (reappearing) { frame.style.webkitTransition = frame.style.transition = 'none'; }
+    frame.style.left = inner.offsetLeft + 'px';
+    frame.style.top = (inner.offsetTop - rowTop) + 'px';
+    frame.style.width = inner.offsetWidth + 'px';
+    frame.style.height = inner.offsetHeight + 'px';
+    if (reappearing) {
+      frame.offsetWidth;   // force reflow so the snap commits before transitions resume
+      frame.style.webkitTransition = frame.style.transition = '';   // restore (fade in only)
+    }
+    frame.style.opacity = '1';
+    // The thumbnail may still be loading (cell height collapsed); re-measure on
+    // load so the frame matches the final tile, but only if focus hasn't moved.
+    var img = inner.getElementsByTagName('img')[0];
+    if (img && !img.complete) {
+      var self = this;
+      // Re-measure only if this cell is STILL the focused grid tile — not if the
+      // user has since moved to the tab row (onTopNav) or another cell, else a
+      // late-loading image would resurrect the frame where it shouldn't be.
+      img.onload = function () { if (!self.onTopNav && self.focusedCell() === c) { self.updateFrame(); } };
+    }
+  };
+
+  P.hideFrame = function () {
+    var frame = dom.get('tw-grid-frame');
+    if (frame) { frame.style.opacity = '0'; }   // fades out (CSS transition)
   };
 
   P.refresh = function () {
@@ -130,7 +232,7 @@
   P.loadData = function () {
     if (this.loading || this.cursor === false) { return; }
     this.loading = true;
-    if (this.items.length === 0) { this.showDialog(TW.i18n.t('LOADING')); }
+    if (this.items.length === 0) { this.showLoading(); }
 
     var self = this;
     var cursor = this.cursor || null;
@@ -152,7 +254,9 @@
     this.cursor = result.cursor ? result.cursor : false; // false => no more pages
     this.appendCells(start);
     this.showGrid();
-    if (this.cells.length && !this.focusedCell()) { this.x = 0; this.y = 0; this.addFocus(); }
+    // Highlight the first tile when the first page lands; later pages must not
+    // yank focus back to the top. (Skip if the user is parked on the tab row.)
+    if (start === 0 && this.cells.length && !this.onTopNav) { this.x = 0; this.y = 0; this.addFocus(); }
     this.loading = false;
   };
 
@@ -176,19 +280,23 @@
   };
 
   P.createCell = function (item) {
-    var td = dom.create('td', 'tw-cell');
     var isGame = item.kind === 'game';
+    var td = dom.create('td', 'tw-cell' + (isGame ? ' tw-cell-game' : ''));
     var img = isGame ? item.box : item.thumb;
-    var title = isGame ? item.display : dom.escape(item.title || item.display);
-    var sub1 = isGame ? '' : dom.escape(item.display);
-    var sub2 = TW.addCommas(item.viewers) + ' ' + TW.i18n.t('VIEWERS');
+    // Streams: stream title on top, then channel name (left) + viewer count
+    // (right) on one line. Games have no title — just the name + count row.
+    var name = dom.escape(item.display || '');
+    var title = isGame ? '' : dom.escape(item.title || '');
+    var views = TW.shortNumber(item.viewers);
     td.innerHTML =
-      '<div class="tw-cell-inner' + (isGame ? ' tw-cell-game' : '') + '">' +
+      '<div class="tw-cell-inner">' +
         '<img class="tw-thumb" src="' + img + '">' +
         '<div class="tw-meta">' +
-          '<div class="tw-meta-title">' + title + '</div>' +
-          (sub1 ? '<div class="tw-meta-sub">' + sub1 + '</div>' : '') +
-          '<div class="tw-meta-sub">' + sub2 + '</div>' +
+          (title ? '<div class="tw-meta-title">' + title + '</div>' : '') +
+          '<div class="tw-meta-row">' +
+            '<span class="tw-meta-views">' + views + '</span>' +
+            '<span class="tw-meta-name">' + name + '</span>' +
+          '</div>' +
         '</div>' +
       '</div>';
     return td;
@@ -205,7 +313,8 @@
     var c = this.focusedCell();
     if (!c) { return; }
     dom.addClass(c.firstChild, 'tw-focused');
-    if (c.scrollIntoView) { c.scrollIntoView(false); }
+    this.scrollToCursor();
+    this.updateFrame();
     // Prefetch the next page as the user nears the end of what's loaded.
     var nearEnd = this.indexOfCursor() + TW.config.columns * 2 >= this.items.length;
     if (nearEnd && this.cursor && !this.loading) { this.loadData(); }
@@ -217,8 +326,7 @@
     // The Followed tab needs a logged-in user — divert to the login scene.
     if (mode === MODE.FOLLOWED && !TW.auth.isLoggedIn()) { TW.app.goToLogin(); return; }
     this.mode = mode;
-    this.onChip = false;
-    dom.removeClass(dom.get('tw-account'), 'tw-focused');
+    this.clearNavFocus();
     this.selectedGame = (mode === MODE.GAMES_STREAMS) ? this.selectedGame : null;
 
     var ids = ['tw-tip-all', 'tw-tip-games', 'tw-tip-followed', 'tw-tip-open'];
@@ -255,9 +363,16 @@
   // --- keys ---------------------------------------------------------------
   P.handleKeyDown = function (key) {
     if (key === KEY.BACK) {
+      // On the tab row already -> exit the app.
+      if (this.onTopNav) {
+        if (this.adapter.system && this.adapter.system.exit) { this.adapter.system.exit(); return true; }
+        return false;
+      }
+      // A game's stream list is a sub-view -> step back to the games grid.
       if (this.mode === MODE.GAMES_STREAMS) { this.switchMode(MODE.GAMES, true); return true; }
-      if (this.adapter.system && this.adapter.system.exit) { this.adapter.system.exit(); return true; }
-      return false;
+      // Anywhere else in a grid (or the Open field) -> return focus to the tabs.
+      this.focusTopNav();
+      return true;
     }
     // Colour buttons switch tabs; pressing the active tab again force-refreshes.
     if (key === KEY.RED) { this.switchMode(MODE.ALL, this.mode === MODE.ALL); return true; }
@@ -265,33 +380,124 @@
     if (key === KEY.YELLOW) { this.switchMode(MODE.FOLLOWED, this.mode === MODE.FOLLOWED); return true; }
     if (key === KEY.BLUE) { this.switchMode(MODE.OPEN); return true; }
 
-    if (this.onChip) { return this.handleChipKey(key); }
+    if (this.onTopNav) { return this.handleTopNavKey(key); }
     if (this.loading && this.mode !== MODE.OPEN) { return true; }
 
     if (this.mode === MODE.OPEN) { return this.handleOpenKey(key); }
     return this.handleGridKey(key);
   };
 
-  // --- account chip (above the grid) --------------------------------------
-  P.focusChip = function () {
-    this.removeFocus();
-    this.onChip = true;
-    dom.addClass(dom.get('tw-account'), 'tw-focused');
+  // --- top navigation row (account chip + colour-button tabs) -------------
+  // Reachable with the d-pad so remotes lacking A/B/C/D buttons can still
+  // switch tabs: UP from the content lands here, LEFT/RIGHT walks the row,
+  // ENTER activates, DOWN drops back into the content.
+  P.activeNavIndex = function () {
+    // Find the tab matching the current mode (order-independent). GAMES_STREAMS
+    // shares the Games tab.
+    var m = (this.mode === MODE.GAMES_STREAMS) ? MODE.GAMES : this.mode;
+    for (var i = 0; i < NAV.length; i++) {
+      if (NAV[i].mode === m) { return i; }
+    }
+    return 0;
   };
 
-  P.handleChipKey = function (key) {
-    if (key === KEY.DOWN) {
-      this.onChip = false;
-      dom.removeClass(dom.get('tw-account'), 'tw-focused');
-      this.addFocus();
-      return true;
+  P.clearNavFocus = function () {
+    this.onTopNav = false;
+    dom.removeClass(dom.get('tw-account'), 'tw-focused');
+    this.hideTabCursor();
+  };
+
+  P.hideTabCursor = function () {
+    var cursor = dom.get('tw-tip-cursor');
+    if (cursor) { cursor.style.opacity = '0'; }
+  };
+
+  P.highlightNav = function () {
+    // The account chip (mode null) keeps its own focus ring; the four tabs share
+    // a single cursor that slides between them.
+    var item = NAV[this.navIndex];
+    if (item && item.mode === null) { dom.addClass(dom.get('tw-account'), 'tw-focused'); }
+    else { dom.removeClass(dom.get('tw-account'), 'tw-focused'); }
+    this.moveTabCursor();
+  };
+
+  P.moveTabCursor = function () {
+    var cursor = dom.get('tw-tip-cursor');
+    if (!cursor) { return; }
+    var item = NAV[this.navIndex];
+    var box = (item && item.mode !== null) ? dom.get(item.id).firstChild : null;  // .tw-tip-box
+    if (!box) { cursor.style.opacity = '0'; return; }   // chip / none focused
+    // Snap (no slide) when (re)appearing — entering the tab row or coming from
+    // the chip; only tab-to-tab moves animate.
+    var reappearing = (cursor.style.opacity !== '1');
+    if (reappearing) { cursor.style.webkitTransition = cursor.style.transition = 'none'; }
+    cursor.style.left = box.offsetLeft + 'px';
+    cursor.style.top = box.offsetTop + 'px';
+    cursor.style.width = box.offsetWidth + 'px';
+    cursor.style.height = box.offsetHeight + 'px';
+    if (reappearing) {
+      cursor.offsetWidth;   // force reflow so the snap commits before transitions resume
+      cursor.style.webkitTransition = cursor.style.transition = '';
     }
-    if (key === KEY.ENTER) { TW.app.goToLogin(); return true; }
+    cursor.style.opacity = '1';
+  };
+
+  P.focusTopNav = function () {
+    this.removeFocus();
+    this.hideFrame();   // no tile is selected while the tab row holds focus
+    dom.removeClass(dom.get('tw-open-input'), 'tw-focused');
+    dom.removeClass(dom.get('tw-open-go'), 'tw-focused');
+    this.onTopNav = true;
+    this.navIndex = this.activeNavIndex();
+    this.highlightNav();
+  };
+
+  P.handleTopNavKey = function (key) {
+    if (key === KEY.LEFT) { this.navIndex = Math.max(0, this.navIndex - 1); this.highlightNav(); return true; }
+    if (key === KEY.RIGHT) { this.navIndex = Math.min(NAV.length - 1, this.navIndex + 1); this.highlightNav(); return true; }
+    if (key === KEY.DOWN) { this.leaveTopNav(); return true; }
+    if (key === KEY.ENTER) { this.activateNav(); return true; }
     return true;
   };
 
+  // Landing column when dropping into the grid from the top row (DOWN, or ENTER
+  // on the active tab). Rather than restoring the last-used column, pick the one
+  // sitting spatially under the focused top-row item: Channels/Games (tabs 1-2)
+  // -> column 1, Followed/Open (tabs 3-4) -> column 2, Login chip -> column 4.
+  // Relies on NAV being in left-to-right screen order; clamped to the cells
+  // actually present in the first row (small result sets).
+  P.gridEntryColumn = function () {
+    var item = NAV[this.navIndex];
+    var col = (item && item.mode === null) ? 3 : (this.navIndex <= 1 ? 0 : 1);
+    var inRow0 = Math.min(TW.config.columns, this.items.length);
+    if (col > inRow0 - 1) { col = inRow0 - 1; }
+    return col < 0 ? 0 : col;
+  };
+
+  P.leaveTopNav = function () {
+    this.clearNavFocus();
+    if (this.mode === MODE.OPEN) { this.openCursor = 0; this.refreshOpenFocus(); return; }
+    // Always drop into the first row; the column is fixed by the focused top-row
+    // item (see gridEntryColumn), not the previously memorized column.
+    this.move(this.gridEntryColumn(), 0);
+  };
+
+  P.activateNav = function () {
+    var item = NAV[this.navIndex];
+    if (!item) { return; }
+    this.clearNavFocus();
+    if (item.mode === null) { TW.app.goToLogin(); return; }
+    // Already on this tab -> just drop into the content; otherwise switch.
+    if (item.mode === this.mode) { this.leaveTopNav(); }
+    else { this.switchMode(item.mode, false); }
+  };
+
   P.handleOpenKey = function (key) {
-    if (key === KEY.UP) { this.openCursor = 0; this.refreshOpenFocus(); return true; }
+    if (key === KEY.UP) {
+      if (this.openCursor === 1) { this.openCursor = 0; this.refreshOpenFocus(); }
+      else { this.focusTopNav(); }   // already at the input -> up to the tab row
+      return true;
+    }
     if (key === KEY.DOWN) { this.openCursor = 1; this.refreshOpenFocus(); return true; }
     if (key === KEY.ENTER) {
       if (this.openCursor === 0 && this.adapter.ime && this.adapter.ime.edit) {
@@ -313,7 +519,7 @@
     if (key === KEY.LEFT && this.x > 0) { this.move(this.x - 1, this.y); return true; }
     if (key === KEY.RIGHT && this.x < cellsInRow.call(this, this.y) - 1) { this.move(this.x + 1, this.y); return true; }
     if (key === KEY.UP) {
-      if (this.y > 0) { this.move(this.x, this.y - 1); } else { this.focusChip(); }
+      if (this.y > 0) { this.move(this.x, this.y - 1); } else { this.focusTopNav(); }
       return true;
     }
     if (key === KEY.DOWN && this.y < rows - 1 && this.x < cellsInRow.call(this, this.y + 1)) {

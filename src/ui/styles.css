@@ -13,7 +13,7 @@ html, body {
   width: 1280px;
   height: 720px;
   overflow: hidden;
-  background: #0e0e10;
+  background: #08080a;
   color: #efeff1;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 300;
@@ -24,60 +24,143 @@ html, body {
 .tw-scene { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 /* The grid sits on an opaque background; the player scene is transparent so
    the video behind #app shows through. */
-#tw-browser { background: #0e0e10; }
+#tw-browser { background: #08080a; }
 #tw-channel { background: transparent; }
 
 /* --- top bar ------------------------------------------------------------ */
 .tw-topbar { position: absolute; left: 0; top: 0; width: 100%; height: 84px; }
-.tw-logo { position: absolute; left: 36px; top: 22px; height: 40px; }
-.tw-wordmark { position: absolute; left: 88px; top: 28px; font-size: 26px; font-weight: 500; color: #fff; }
-.tw-tips { position: absolute; right: 36px; top: 30px; }
-.tw-tip { margin-left: 26px; font-size: 20px; color: #dedee3; }
-.tw-tip-active { color: #fff; text-decoration: underline; }
+/* The top row's edge margin is 43px, not 40: the grid's thumbnails carry a 3px
+   transparent border (the "invisible frame"), so their visible artwork starts
+   at 40+3=43. Matching that keeps the logo/tabs/chip flush with the artwork. */
+.tw-logo { position: absolute; left: 43px; top: 43px; height: 36px; }
+/* Tabs sit just after the logo, shifted with the rest of the top row onto the
+   43px margin; the first tab slot's 8px margin then sets the gap from the logo. */
+.tw-tips { position: absolute; left: 87px; top: 43px; }
+/* The equal-width slot (set via JS) — just allocates space + even spacing; it
+   carries no background or frame itself. */
+.tw-tip {
+  display: inline-block; margin-left: 8px; vertical-align: middle; color: #c8c8cf;
+  text-align: left; box-sizing: border-box; white-space: nowrap;
+}
+/* The visible pill: background hugs the label (with padding), NOT the whole slot.
+   font-size:0 kills the text strut so the label sits centred; the label restores
+   its own font-size. */
+.tw-tip-box {
+  display: inline-block; padding: 5px 12px; font-size: 0; line-height: 0;
+}
+.tw-tip-label {
+  display: inline-block; height: 26px; line-height: 26px; vertical-align: middle;
+  font-size: 20px;
+}
+/* Selected tab: a soft grey pill around the content only. */
+.tw-tip-active { color: #fff; }
+.tw-tip-active .tw-tip-box { background: rgba(255, 255, 255, 0.10); }
+/* D-pad cursor for the tab row: a single overlay (sized/placed via JS) that
+   slides between tab boxes instead of the focus jumping instantly. */
+.tw-tip-cursor {
+  position: absolute; opacity: 0; pointer-events: none; outline: 2px solid #f4f4f7;
+  -webkit-transition: left 0.14s ease-out, width 0.14s ease-out, opacity 0.15s ease-out;
+  transition: left 0.14s ease-out, width 0.14s ease-out, opacity 0.15s ease-out;
+}
 .tw-dot {
   display: inline-block; width: 26px; height: 26px; line-height: 26px;
-  text-align: center; border-radius: 4px; color: #fff; font-weight: 700; font-size: 15px;
+  text-align: center; color: #fff; font-weight: 700; font-size: 15px;
   vertical-align: middle;
 }
-.tw-red { background: #eb0400; } .tw-green { background: #46a200; }
-.tw-yellow { background: #c8b500; color: #111; } .tw-blue { background: #1f69ff; }
+/* The remote's A/B/C/D buttons render as uniform dark-grey chips — the letter is
+   the cue, so the on-screen hint doesn't reproduce the button colours. The class
+   names still map to the physical button each represents. White letter (via
+   .tw-dot) reads cleanly on this grey. */
+.tw-red, .tw-green, .tw-yellow, .tw-blue { background: #36363c; }
 
 /* --- grid --------------------------------------------------------------- */
-.tw-grid-wrap { position: absolute; left: 0; top: 92px; width: 100%; height: 628px; overflow: auto; }
+/* Clips the content; the inner scroller is translated so the focused row stays
+   pinned to the top ("first") row. Visible artwork sits on a constant 43px edge
+   margin that matches the top bar: left/right are 35px + 5px cell padding + 3px
+   transparent thumb border = 43px, lining thumbnails up under the logo/tabs/chip.
+   top:114 puts the artwork 43px below the top row — the same as the row's 43px
+   top margin — so the top row gets equal breathing room above and below. Item
+   gutters stay smaller than this margin (games 20px, channels 10px) so the outer
+   framing always reads larger. Stage-px, scales uniformly per platform. The grid
+   fills to the bottom edge (no fixed bottom gap): content runs off the bottom
+   while scrolling; the only bottom margin is the empty space once the last row
+   reaches the top. */
+.tw-grid-wrap { position: absolute; left: 35px; right: 35px; top: 114px; bottom: 0; overflow: hidden; }
+/* GPU-composited transform + short transition = a smooth, lightweight scroll
+   (one layer moves; no per-frame layout). translate3d set inline from JS. */
+.tw-grid-scroll {
+  -webkit-transition: -webkit-transform 0.2s ease-out;
+  transition: transform 0.2s ease-out;
+}
 .tw-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.tw-cell { width: 25%; padding: 10px; vertical-align: top; }
+.tw-cell { width: 25%; padding: 5px; vertical-align: top; }
+/* Game covers are big portrait tiles — keep them a touch more spaced. */
+.tw-cell-game { padding: 10px; }
 .tw-cell-inner { position: relative; }
 .tw-thumb {
   width: 100%; display: block; background: #18181b;
-  border: 3px solid transparent; border-radius: 4px; box-sizing: border-box;
+  border: 3px solid transparent; border-radius: 0; box-sizing: border-box;
+  /* keep the bg out from under the transparent border so the gap to the focus
+     frame shows the page background, not the placeholder grey. */
+  -webkit-background-clip: padding-box; background-clip: padding-box;
 }
-.tw-cell-game .tw-thumb { width: auto; max-height: 240px; margin: 0 auto; }
-.tw-focused { border-color: #fff; outline: 3px solid #23d3a3; }
+/* Game box art is portrait (285x380): fill the cell width like stream thumbs so
+   the cell grows taller and the caption/focus frame line up with the cover. */
+.tw-cell-game .tw-thumb { width: 100%; max-height: none; }
+/* Selection frame: a FIXED overlay positioned over the focused tile (sized via
+   JS). It lives outside the scroller, so when Up/Down scrolls content under it
+   the frame stays put and its top line never clips. The 3px transparent thumb
+   border gives the small gap between this outline and the artwork. */
+.tw-grid-frame {
+  position: absolute; opacity: 0; pointer-events: none;
+  outline: 4px solid #f4f4f7;
+  /* Animate the horizontal slide (Left/Right within the row) and the fade
+     in/out when focus enters/leaves the grid. width/height/top are NOT animated
+     so the load-time resize and mode switches stay instant. */
+  -webkit-transition: left 0.14s ease-out, opacity 0.18s ease-out;
+  transition: left 0.14s ease-out, opacity 0.18s ease-out;
+}
+/* Caption bar inset 3px to match the thumbnail's gap, flush to its corners.
+   Channels caption is tight (half padding); games restore the roomier padding. */
 .tw-meta {
-  position: absolute; left: 8px; right: 8px; bottom: 8px;
-  background: rgba(0, 0, 0, 0.62); padding: 6px 8px; border-radius: 3px;
+  position: absolute; left: 3px; right: 3px; bottom: 3px; box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.62); padding: 4px 6px;
 }
+.tw-cell-game .tw-meta { padding: 7px 11px; }
+/* Stream title: the prominent top line, truncated to one line. */
 .tw-meta-title {
-  font-size: 19px; color: #fff; white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis;
+  font-size: 18px; color: #fff; white-space: nowrap; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
 }
-.tw-meta-sub {
-  font-size: 16px; color: #c8c8cf; white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis; margin-top: 2px;
+/* overflow:hidden makes the row a block formatting context so it contains the
+   floated viewer count (Orsay-safe — no flexbox). */
+.tw-meta-row { overflow: hidden; }
+/* Viewer count floats right; the name takes the rest and ellipsises — one line. */
+.tw-meta-views {
+  float: right; margin-left: 10px; font-size: 16px; color: #c8c8cf; font-weight: 400;
 }
+.tw-meta-name {
+  display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  font-size: 16px; color: #dedee3; text-align: left;
+}
+/* Games tiles have no title line, so the name is the primary label — bump it
+   (and the count) a touch larger than the channel-tile text. */
+.tw-cell-game .tw-meta-name { font-size: 19px; }
+.tw-cell-game .tw-meta-views { font-size: 17px; }
 
 /* --- open / search ------------------------------------------------------ */
 .tw-open { position: absolute; left: 20%; top: 30%; width: 60%; text-align: center; }
 .tw-open-input {
   width: 100%; height: 76px; font-size: 34px; text-align: center;
-  border: 0; border-radius: 4px; box-sizing: border-box; background: #fff; color: #111;
+  border: 0; border-radius: 0; box-sizing: border-box; background: #fff; color: #111;
 }
-.tw-open-input.tw-focused { outline: 4px solid #23d3a3; }
+.tw-open-input.tw-focused { outline: 4px solid #f4f4f7; }
 .tw-open-go {
   display: inline-block; margin-top: 28px; padding: 18px 60px; font-size: 28px;
-  background: #23d3a3; color: #0a3d30; border-radius: 4px;
+  background: #3f3f47; color: #efeff1; border-radius: 0;
 }
-.tw-open-go.tw-focused { background: #1bb98f; outline: 4px solid #fff; }
+/* Fill flips dark -> white on focus (works on every renderer, no outline). */
+.tw-open-go.tw-focused { background: #f4f4f7; color: #18181b; }
 
 /* --- player overlay ----------------------------------------------------- */
 .tw-panel {
@@ -101,7 +184,7 @@ html, body {
 }
 .tw-chat-head {
   height: 40px; line-height: 40px; padding: 0 16px; font-size: 18px; font-weight: 500;
-  text-align: left; color: #fff; background: rgba(35, 211, 163, 0.18);
+  text-align: left; color: #fff; background: rgba(255, 255, 255, 0.10);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .tw-chat-list {
@@ -131,10 +214,10 @@ html, body {
   position: relative; padding: 8px 20px; min-height: 76px; box-sizing: border-box;
   border-left: 4px solid transparent;
 }
-.tw-clist-row.tw-focused { background: rgba(35, 211, 163, 0.16); border-left-color: #23d3a3; }
+.tw-clist-row.tw-focused { background: rgba(255, 255, 255, 0.12); border-left-color: #f4f4f7; }
 .tw-clist-thumb {
   position: absolute; left: 20px; top: 8px; width: 120px; height: 68px;
-  object-fit: cover; background: #18181b; border-radius: 3px;
+  object-fit: cover; background: #18181b; border-radius: 0;
 }
 .tw-clist-meta { margin-left: 136px; }
 .tw-clist-title { font-size: 19px; color: #fff; line-height: 1.25; max-height: 48px; overflow: hidden; }
@@ -151,14 +234,15 @@ html, body {
 .tw-chat-open .tw-hints { display: none; }
 
 /* --- account chip (browser top bar) ------------------------------------- */
+/* Chip sits at the far right (43px edge), swapped with the tab bar. */
 .tw-account {
-  position: absolute; top: 28px; left: 300px; font-size: 18px; color: #dedee3;
-  padding: 4px 14px; border-radius: 15px; background: rgba(255, 255, 255, 0.06);
+  position: absolute; top: 43px; right: 43px; font-size: 18px; line-height: 26px; color: #dedee3;
+  padding: 5px 14px; border-radius: 0; background: rgba(255, 255, 255, 0.06);
 }
-.tw-account.tw-focused { color: #fff; background: rgba(35, 211, 163, 0.20); outline: 3px solid #23d3a3; }
+.tw-account.tw-focused { color: #fff; background: rgba(255, 255, 255, 0.16); outline: 3px solid #f4f4f7; }
 
 /* --- login scene -------------------------------------------------------- */
-#tw-login { background: #0e0e10; }
+#tw-login { background: #08080a; }
 .tw-login-card {
   position: absolute; left: 50%; top: 70px; width: 760px; margin-left: -380px; text-align: center;
 }
@@ -167,30 +251,41 @@ html, body {
 .tw-login-help { font-size: 20px; color: #c8c8cf; line-height: 1.4; margin: 0 auto 22px; max-width: 660px; }
 .tw-login-input {
   width: 560px; height: 64px; font-size: 26px; text-align: center; border: 0;
-  border-radius: 4px; background: #fff; color: #111; box-sizing: border-box;
+  border-radius: 0; background: #fff; color: #111; box-sizing: border-box;
 }
-.tw-login-input.tw-focused { outline: 4px solid #23d3a3; }
+.tw-login-input.tw-focused { outline: 4px solid #f4f4f7; }
 .tw-login-btn {
   display: inline-block; margin-top: 22px; padding: 16px 54px; font-size: 24px;
-  background: #23d3a3; color: #0a3d30; border-radius: 4px;
+  background: #3f3f47; color: #efeff1; border-radius: 0;
 }
-.tw-login-btn.tw-focused { background: #1bb98f; outline: 4px solid #fff; }
+.tw-login-btn.tw-focused { background: #f4f4f7; color: #18181b; }
 .tw-login-hint { font-size: 16px; color: #8d8d96; margin-top: 18px; }
-.tw-login-code { font-size: 64px; font-weight: 700; letter-spacing: 6px; color: #23d3a3; margin: 16px 0 6px; }
+.tw-login-code { font-size: 64px; font-weight: 700; letter-spacing: 6px; color: #f4f4f7; margin: 16px 0 6px; }
 .tw-login-uri { font-size: 22px; color: #fff; margin-bottom: 18px; }
 .tw-login-msg { font-size: 20px; color: #ffd479; margin-top: 18px; min-height: 24px; }
 
 /* --- loading spinner ---------------------------------------------------- */
-.tw-loading { position: absolute; left: 0; top: 42%; width: 100%; text-align: center; z-index: 6; }
-.tw-loading-text { display: inline-block; margin-left: 14px; font-size: 30px; vertical-align: middle; }
-.tw-spinner { display: inline-block; vertical-align: middle; }
-.tw-spinner i {
-  display: inline-block; width: 22px; height: 22px; margin: 0 3px; border-radius: 50%;
-  background: #fff;
-  -webkit-animation: tw-bounce 1.4s infinite ease-in-out both;
-  animation: tw-bounce 1.4s infinite ease-in-out both;
+/* Modern ring: a faint full circle with one bright arc, spinning. The overlay
+   fills its scene and the ring is dead-centered in it (absolute + margin:auto).
+   The loading state is the ring ALONE (no text); status text (load errors,
+   buffering %) shows centered instead, via the .tw-msg modifier. */
+.tw-loading { position: absolute; left: 0; right: 0; top: 0; bottom: 0; text-align: center; z-index: 6; }
+/* Browser: center within the GRID area, not the whole stage. Keep this top in
+   sync with .tw-grid-wrap (114px) so the ring sits in the grid's middle. */
+#tw-b-loading { top: 114px; }
+.tw-spinner {
+  display: inline-block; width: 58px; height: 58px; box-sizing: border-box; vertical-align: middle;
+  border: 5px solid rgba(244, 244, 247, 0.16); border-top-color: #f4f4f7; border-radius: 50%;
+  -webkit-animation: tw-spin 0.8s linear infinite; animation: tw-spin 0.8s linear infinite;
 }
-.tw-spinner i:nth-child(1) { -webkit-animation-delay: -0.32s; animation-delay: -0.32s; }
-.tw-spinner i:nth-child(2) { -webkit-animation-delay: -0.16s; animation-delay: -0.16s; }
-@-webkit-keyframes tw-bounce { 0%, 80%, 100% { -webkit-transform: scale(0); } 40% { -webkit-transform: scale(1); } }
-@keyframes tw-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+/* Inside an overlay the ring centers in the box; standalone (login) it stays
+   inline in the card. */
+.tw-loading .tw-spinner { position: absolute; top: 0; right: 0; bottom: 0; left: 0; margin: auto; }
+.tw-loading-text {
+  display: none; position: absolute; left: 0; right: 0; top: 50%; font-size: 30px;
+  -webkit-transform: translateY(-50%); transform: translateY(-50%);
+}
+.tw-loading.tw-msg .tw-spinner { display: none; }
+.tw-loading.tw-msg .tw-loading-text { display: block; }
+@-webkit-keyframes tw-spin { 0% { -webkit-transform: rotate(0); } 100% { -webkit-transform: rotate(360deg); } }
+@keyframes tw-spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }

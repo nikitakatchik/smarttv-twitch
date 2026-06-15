@@ -33,6 +33,30 @@
     return s;
   };
 
+  /**
+   * Compact a count for tight UI (grid overlay): 1234 -> "1.2k", 12345 ->
+   * "12.3k", 123456 -> "123k", 1.2e6 -> "1.2M". Keeps ~3 significant figures:
+   * one decimal below 100 of a unit, none at/above it. Truncates (never rounds
+   * up) so a value never overstates or rolls into the next unit (999999 ->
+   * "999k", not "1000k").
+   */
+  TW.shortNumber = function (n) {
+    n = Number(n) || 0;
+    if (n < 0) { return '0'; }
+    if (n < 1000) { return String(n); }
+    var units = [[1e9, 'B'], [1e6, 'M'], [1e3, 'k']];
+    for (var i = 0; i < units.length; i++) {
+      var div = units[i][0], suffix = units[i][1];
+      if (n >= div) {
+        var v = n / div;
+        var s = (v >= 100) ? String(Math.floor(v))
+                           : String(Math.floor(v * 10) / 10);
+        return s + suffix;
+      }
+    }
+    return String(n);
+  };
+
   /** setTimeout wrapper that reads in call order. */
   TW.delay = function (ms, fn) { return global.setTimeout(fn, ms); };
 

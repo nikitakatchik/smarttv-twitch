@@ -39,7 +39,7 @@
           '<div class="tw-login-help" id="tw-login-pending-help"></div>' +
           '<div class="tw-login-code" id="tw-login-code"></div>' +
           '<div class="tw-login-uri" id="tw-login-uri"></div>' +
-          '<div class="tw-spinner"><i></i><i></i><i></i></div>' +
+          '<div class="tw-spinner"></div>' +
         '</div>' +
         '<div id="tw-login-account" style="display:none">' +
           '<div class="tw-login-help" id="tw-login-acct"></div>' +

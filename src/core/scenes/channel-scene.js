@@ -89,7 +89,7 @@
         '<span><b class="tw-dot tw-blue">D</b> <span id="tw-h-clips"></span></span>' +
         '<span><b class="tw-dot tw-red">A</b> <span id="tw-h-live"></span></span>' +
       '</div>' +
-      '<div class="tw-loading" id="tw-c-loading"><div class="tw-spinner"><i></i><i></i><i></i></div>' +
+      '<div class="tw-loading" id="tw-c-loading"><div class="tw-spinner"></div>' +
         '<div class="tw-loading-text" id="tw-c-loading-text"></div></div>';
     (dom.get('app') || global.document.body).appendChild(root);
     this.root = root;
@@ -129,7 +129,7 @@
     dom.text(dom.get('tw-c-title'), '');
     dom.text(dom.get('tw-c-viewers'), '');
     dom.attr(dom.get('tw-c-icon'), 'src', '');
-    this.showDialog(TW.i18n.t('LOADING'));
+    this.showLoading();
 
     TW.api.playbackUrl(this.login, function (masterUrl) {
       self.loadInto(masterUrl);
@@ -171,7 +171,7 @@
     this.closeChat();
     this.stopInfoTimer();
     this.showContentInfo(item);
-    this.showDialog(TW.i18n.t('LOADING'));
+    this.showLoading();
     TW.api.vodPlaybackUrl(item.id, function (url) {
       self.loadInto(url);
     }, function () { self.showDialog(TW.i18n.t('ERROR_TOKEN')); });
@@ -183,7 +183,7 @@
     this.closeChat();
     this.stopInfoTimer();
     this.showContentInfo(item);
-    this.showDialog(TW.i18n.t('LOADING'));
+    this.showLoading();
     TW.api.clipPlayback(item.slug, function (info) {
       self.loadInto(info.url);
     }, function () { self.showDialog(TW.i18n.t('ERROR_RENDER')); });
@@ -216,8 +216,15 @@
   };
 
   // --- overlay ------------------------------------------------------------
+  // Indeterminate loading: the modern ring spinner alone, no text.
+  P.showLoading = function () {
+    dom.removeClass(dom.get('tw-c-loading'), 'tw-msg');
+    dom.show(dom.get('tw-c-loading'));
+  };
+  // Status message (errors, buffering %): text only, no spinner.
   P.showDialog = function (text) {
     dom.text(dom.get('tw-c-loading-text'), text || '');
+    dom.addClass(dom.get('tw-c-loading'), 'tw-msg');
     dom.show(dom.get('tw-c-loading'));
   };
   P.hideDialog = function () { dom.hide(dom.get('tw-c-loading')); };

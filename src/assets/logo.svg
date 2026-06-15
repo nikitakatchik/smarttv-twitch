@@ -1,10 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" rx="224" fill="#17171d"/>
-  <!-- rounded chat bubble (deliberately NOT the angular Twitch glitch), teal on charcoal -->
-  <g fill="none" stroke="#f4f4f7" stroke-width="44" stroke-linejoin="round">
-    <rect x="266" y="220" width="492" height="392" rx="76"/>
+  <!-- Twellie mark: a friendly smiling TV (matches assets/icon + the app logo). -->
+  <rect width="1024" height="1024" rx="232" fill="#1c2454"/>
+  <!-- antennas -->
+  <g stroke="#f6f7fb" stroke-width="26" stroke-linecap="round">
+    <line x1="475" y1="360" x2="372" y2="206"/>
+    <line x1="549" y1="360" x2="652" y2="206"/>
   </g>
-  <polygon points="372,592 372,742 486,604" fill="#f4f4f7"/>
-  <!-- play -->
-  <polygon points="452,332 452,500 600,416" fill="#23d3a3"/>
+  <circle cx="372" cy="206" r="24" fill="#f6f7fb"/>
+  <circle cx="652" cy="206" r="24" fill="#f6f7fb"/>
+  <!-- legs -->
+  <g stroke="#f6f7fb" stroke-width="26" stroke-linecap="round">
+    <line x1="372" y1="806" x2="340" y2="864"/>
+    <line x1="652" y1="806" x2="684" y2="864"/>
+  </g>
+  <!-- tv body -->
+  <rect x="176" y="338" width="672" height="474" rx="66" fill="#f6f7fb"/>
+  <!-- screen -->
+  <rect x="246" y="408" width="532" height="334" rx="38" fill="#10142f"/>
+  <!-- eyes -->
+  <rect x="420" y="486" width="34" height="86" rx="17" fill="#f6f7fb"/>
+  <rect x="570" y="486" width="34" height="86" rx="17" fill="#f6f7fb"/>
+  <!-- smile -->
+  <path d="M430 602 Q512 690 594 602" fill="none" stroke="#f6f7fb" stroke-width="30" stroke-linecap="round"/>
 </svg>
