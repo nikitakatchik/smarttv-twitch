@@ -31,12 +31,13 @@
   function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"'); }
 
   function post(query, onData, onFail) {
+    // GraphQL is ALWAYS anonymous. gql.twitch.tv authorizes the public web
+    // Client-ID below; it does NOT accept a user OAuth token minted by a
+    // different (device-flow) client — sending one gets the whole request 401'd,
+    // which breaks browse for every logged-in user. Login lives on Helix only
+    // (followed channels); sub-only playback has no public third-party path
+    // (see docs/LOGIN.md). Do not attach Authorization here.
     var headers = { 'Client-ID': TW.config.api.clientId };
-    // When logged in, present the user's OAuth token so playback tokens for
-    // sub-only content are authorized. Anonymous (no token) is unchanged.
-    if (TW.auth && TW.auth.token && TW.auth.token()) {
-      headers['Authorization'] = 'OAuth ' + TW.auth.token();
-    }
     TW.http.postJson(TW.config.api.gqlUrl, headers, { query: query },
       function (json) {
         // A GraphQL error (e.g. a bad argument) yields data:null + errors[];

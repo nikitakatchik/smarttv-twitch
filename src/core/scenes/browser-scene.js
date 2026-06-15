@@ -239,7 +239,14 @@
     var onOk = function (result) { self.onPage(result); };
     var onFail = function () {
       self.loading = false;
-      if (self.items.length === 0) { self.showDialog(TW.i18n.t('ERROR_LOAD')); }
+      if (self.items.length === 0) {
+        self.showDialog(TW.i18n.t('ERROR_LOAD'));
+      } else {
+        // A later page failed: stop paginating so a near-end scroll doesn't
+        // silently re-fire loadData() on every move. Switching tabs re-fetches.
+        self.cursor = false;
+        TW.log.warn('browse: page load failed, stopping pagination');
+      }
     };
 
     if (this.mode === MODE.GAMES) { TW.api.topGames(cursor, onOk, onFail); }

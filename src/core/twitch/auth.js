@@ -4,9 +4,10 @@
  * A TV has no browser to bounce an OAuth redirect through, so we use the device
  * flow: the app shows a short code, the user approves it at twitch.tv/activate
  * on a phone, and we poll for the token. This is a PUBLIC client — no secret,
- * no backend. The user registers their own free Twitch application once and
- * gives us its Client-ID (see docs/LOGIN.md); the token it mints drives Helix
- * (followed channels) and is also offered to GraphQL for sub-only playback.
+ * no backend. The Client-ID is the app's own registered Twitch application
+ * (config.api.userClientId; see docs/LOGIN.md), the same for every user. The
+ * token it mints drives Helix (followed channels) only — it is NOT sent to
+ * GraphQL, whose public web client rejects a token minted by a different app.
  *
  * Tokens + identity are persisted via TW.storage; all requests go through
  * TW.net (direct on TVs, dev-proxied in the harness).
@@ -44,7 +45,9 @@
   }
 
   function clientId() {
-    return TW.storage.get('clientId') || (TW.config.api && TW.config.api.userClientId) || '';
+    // The app's registered Twitch client, set in config (or overridden at boot
+    // by the harness ?clientId= param). There is no per-user/runtime override.
+    return (TW.config.api && TW.config.api.userClientId) || '';
   }
 
   function token() { return TW.storage.get('auth.access'); }
@@ -116,6 +119,10 @@
       if (status === 0) { if (cb.onError) { cb.onError('network'); } return; }
       if (/expired/i.test(msg)) { if (cb.onError) { cb.onError('expired'); } return; }
       if (/denied/i.test(msg)) { if (cb.onError) { cb.onError('denied'); } return; }
+      // Only an explicit pending/slow_down state will resolve by polling. Any
+      // other response (5xx, 429, an unexpected 4xx) won't — fail fast instead of
+      // polling on to the code's ~30-min deadline behind a frozen screen.
+      if (!/authorization_pending|slow_down/i.test(msg)) { if (cb.onError) { cb.onError('failed'); } return; }
       // Still pending (Twitch returns 400 authorization_pending) — keep polling.
       TW.delay(interval, function () { poll(id, deviceCode, interval, deadline, cb); });
     });
@@ -140,7 +147,6 @@
 
   TW.auth = {
     clientId: clientId,
-    setClientId: function (id) { TW.storage.set('clientId', String(id || '').replace(/^\s+|\s+$/g, '')); },
     token: token,
     isLoggedIn: isLoggedIn,
     user: user,

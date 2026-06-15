@@ -249,19 +249,25 @@ html, body {
 .tw-login-logo { height: 44px; }
 .tw-login-title { font-size: 34px; color: #fff; margin: 14px 0 10px; }
 .tw-login-help { font-size: 20px; color: #c8c8cf; line-height: 1.4; margin: 0 auto 22px; max-width: 660px; }
-.tw-login-input {
-  width: 560px; height: 64px; font-size: 26px; text-align: center; border: 0;
-  border-radius: 0; background: #fff; color: #111; box-sizing: border-box;
-}
-.tw-login-input.tw-focused { outline: 4px solid #f4f4f7; }
 .tw-login-btn {
   display: inline-block; margin-top: 22px; padding: 16px 54px; font-size: 24px;
   background: #3f3f47; color: #efeff1; border-radius: 0;
 }
 .tw-login-btn.tw-focused { background: #f4f4f7; color: #18181b; }
-.tw-login-hint { font-size: 16px; color: #8d8d96; margin-top: 18px; }
-.tw-login-code { font-size: 64px; font-weight: 700; letter-spacing: 6px; color: #f4f4f7; margin: 16px 0 6px; }
-.tw-login-uri { font-size: 22px; color: #fff; margin-bottom: 18px; }
+.tw-login-code { font-size: 64px; font-weight: 700; letter-spacing: 6px; color: #f4f4f7; margin: 16px 0 10px; }
+/* Separator between the typed code and the scannable QR — large but light. */
+.tw-login-or { font-size: 32px; font-weight: 200; letter-spacing: 6px; color: #a0a0a8; margin: 6px 0 4px; }
+/* QR of the activation URL: crisp black modules on a white rounded card whose
+   padding doubles as the required quiet zone. A <table> renders identically on
+   every target, old Orsay WebKit included. */
+.tw-login-qr {
+  display: inline-block; margin: 14px auto 4px; padding: 20px;
+  background: #fff; border-radius: 14px; line-height: 0;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.5);
+}
+.tw-login-qr table { border-collapse: collapse; border-spacing: 0; }
+.tw-login-qr td { width: 7px; height: 7px; padding: 0; }
+.tw-login-qr td.on { background: #0e0e10; }
 .tw-login-msg { font-size: 20px; color: #ffd479; margin-top: 18px; min-height: 24px; }
 
 /* --- loading spinner ---------------------------------------------------- */

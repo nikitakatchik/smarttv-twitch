@@ -82,7 +82,7 @@ Grab the one for your computer — each always points at the newest release:
 - [x] Browser dev-harness with real playback
 - [x] Public GraphQL backend — no API key, no backend, no proxy
 - [x] 💬 Live chat overlay (revive the long-abandoned IRC experiment)
-- [x] 🔐 Logged-in mode (followed channels, sub-only streams)
+- [x] 🔐 Logged-in mode (followed channels; QR or device-code sign-in)
 - [x] 📼 VODs & clips
 - [x] 📦 TizenBrew module — install on 2017+ Tizen TVs with no signing
 - [x] 📲 Apps2Samsung `.wgt` — native install on 2015+ Tizen TVs (it signs for you)

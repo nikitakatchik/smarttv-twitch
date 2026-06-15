@@ -38,6 +38,7 @@ function loadAuth(net, withHelix) {
 
 test('startDeviceFlow refuses without a client-id', () => {
   const TW = loadAuth(netMock({}));
+  TW.config.api.userClientId = ''; // simulate a build with no baked-in default
   let err = null;
   TW.auth.startDeviceFlow(['user:read:follows'], { onError: (r) => { err = r; } });
   assert.equal(err, 'no-client-id');
@@ -50,7 +51,7 @@ test('startDeviceFlow posts client_id + scopes and surfaces the user code', () =
     token: { status: 400, json: { message: 'authorization_pending' } },
   });
   const TW = loadAuth(net);
-  TW.auth.setClientId('myid');
+  TW.config.api.userClientId = 'myid';
   let code = null;
   TW.auth.startDeviceFlow(['user:read:follows'], { onCode: (i) => { code = i; } });
   assert.equal(code.user_code, 'WXYZ-1234');
@@ -66,7 +67,7 @@ test('a successful token exchange stores the token and identity', () => {
     token: { status: 200, json: { access_token: 'AT', refresh_token: 'RT', expires_in: 3600 } },
   });
   const TW = loadAuth(net);
-  TW.auth.setClientId('myid');
+  TW.config.api.userClientId = 'myid';
   let ok = false;
   TW.auth.startDeviceFlow(['user:read:follows'], { onSuccess: () => { ok = true; } });
   assert.equal(ok, true);
@@ -82,7 +83,7 @@ test('polling continues through authorization_pending until it succeeds', async 
     token: () => { n++; return n < 3 ? { status: 400, json: { message: 'authorization_pending' } } : { status: 200, json: { access_token: 'AT2' } }; },
   });
   const TW = loadAuth(net);
-  TW.auth.setClientId('myid');
+  TW.config.api.userClientId = 'myid';
   await new Promise((resolve) => { TW.auth.startDeviceFlow(['s'], { onSuccess: resolve, onError: resolve }); });
   assert.equal(TW.auth.token(), 'AT2');
   assert.ok(n >= 3);
@@ -94,7 +95,7 @@ test('logout clears the stored session', () => {
     token: { status: 200, json: { access_token: 'AT', refresh_token: 'RT', expires_in: 3600 } },
   });
   const TW = loadAuth(net);
-  TW.auth.setClientId('myid');
+  TW.config.api.userClientId = 'myid';
   TW.auth.startDeviceFlow(['s'], {});
   assert.equal(TW.auth.isLoggedIn(), true);
   let done = false;
@@ -114,7 +115,7 @@ test('helix.followedStreams maps the Helix shape and sizes the thumbnail', () =>
   const TW = loadAuth(net, true);
   // Stand in for a logged-in user so helix skips the /users lookup.
   TW.storage.set('auth.access', 'AT'); TW.storage.set('auth.uid', '42');
-  TW.storage.set('clientId', 'CID');
+  TW.config.api.userClientId = 'CID';
   let res = null;
   TW.twitch.helix.followedStreams(null, (r) => { res = r; }, () => {});
   assert.equal(res.items.length, 1);
@@ -125,7 +126,10 @@ test('helix.followedStreams maps the Helix shape and sizes the thumbnail', () =>
   assert.equal(res.cursor, 'cur');
 });
 
-test('GraphQL attaches the OAuth token only when logged in', () => {
+test('GraphQL never attaches the OAuth token — browse stays anonymous even when logged in', () => {
+  // A user token is minted by the device-flow client; gql.twitch.tv authorizes
+  // only the public web Client-ID, so attaching it 401s the whole request and
+  // breaks browse for logged-in users. Browse must always be anonymous.
   function gqlHeaders(loggedIn) {
     const XHR = mockXHR(() => ({ status: 200, text: JSON.stringify({ data: { streams: { edges: [] } } }) }));
     const g = loadCore([
@@ -137,5 +141,5 @@ test('GraphQL attaches the OAuth token only when logged in', () => {
     return XHR.log[XHR.log.length - 1].headers;
   }
   assert.equal(gqlHeaders(false).Authorization, undefined);
-  assert.equal(gqlHeaders(true).Authorization, 'OAuth USERTOKEN');
+  assert.equal(gqlHeaders(true).Authorization, undefined);
 });

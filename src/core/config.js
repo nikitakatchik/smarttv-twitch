@@ -20,7 +20,17 @@
 
     api: {
       // Public Twitch web Client-ID (same one the website and Streamlink use).
+      // Drives all anonymous traffic: GraphQL browsing, search and playback.
       clientId: 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+
+      // Login (followed channels) uses Twitch's OAuth Device Code flow, which the
+      // anonymous web Client-ID above cannot perform. This is *our* registered
+      // public Twitch app (dev.twitch.tv/console, device grant enabled), so users
+      // just approve a phone code and never type a Client-ID. Not a secret — a
+      // Client-ID rides in the clear on every request. Override it for local dev
+      // with the harness ?clientId= param (see src/platforms/web/boot.js).
+      userClientId: '8dcy6t9zgupyzueekq81g808x0fd9c',
+
       gqlUrl: 'https://gql.twitch.tv/gql',
       usherBase: 'https://usher.ttvnw.net/api/channel/hls/',
       usherVodBase: 'https://usher.ttvnw.net/vod/'
