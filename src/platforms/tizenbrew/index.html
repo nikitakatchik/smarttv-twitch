@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, user-scalable=no">
+  <title>Twellie</title>
+  <link rel="stylesheet" href="ui/styles.css">
+  <style>
+    /*
+     * TizenBrew serves this page full-panel inside its webview. The UI is
+     * authored on a 1280x720 stage (like the other builds) and scaled 1.5x to
+     * 1920x1080; the <video> sits behind it, CSS-fullscreen (no AVPlay display
+     * rect — playback is HTML5 <video> + hls.js, see platform/player.js).
+     */
+    html, body { width: 1920px; height: 1080px; margin: 0; overflow: hidden; background: #000; }
+    #tw-video { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #000; z-index: 0; }
+    #app { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform: scale(1.5); transform-origin: 0 0; z-index: 1; }
+  </style>
+</head>
+<body>
+  <video id="tw-video" playsinline></video>
+  <div id="app"></div>
+
+  <!-- hls.js powers playback (no privileged AVPlay under TizenBrew). Same build
+       the web target uses; jsDelivr serves it with CORS. -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+
+  <!-- core (load order matters: no bundler / ES modules) -->
+  <script src="core/polyfill.js"></script>
+  <script src="core/util.js"></script>
+  <script src="core/dom.js"></script>
+  <script src="core/keys.js"></script>
+  <script src="core/config.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/http.js"></script>
+  <script src="core/storage.js"></script>
+  <script src="core/net.js"></script>
+  <script src="lang/en.js"></script>
+  <script src="lang/de.js"></script>
+  <script src="lang/ru.js"></script>
+  <script src="lang/es.js"></script>
+  <script src="lang/fr.js"></script>
+  <script src="lang/pt-br.js"></script>
+  <script src="lang/uk.js"></script>
+  <script src="lang/sv.js"></script>
+  <script src="core/twitch/playlist.js"></script>
+  <script src="core/twitch/usher.js"></script>
+  <script src="core/twitch/gql.js"></script>
+  <script src="core/twitch/chat.js"></script>
+  <script src="core/twitch/helix.js"></script>
+  <script src="core/twitch/auth.js"></script>
+  <script src="core/twitch/api.js"></script>
+  <script src="core/scene-manager.js"></script>
+  <script src="core/scenes/browser-scene.js"></script>
+  <script src="core/scenes/channel-scene.js"></script>
+  <script src="core/scenes/login-scene.js"></script>
+  <script src="core/app.js"></script>
+
+  <!-- tizenbrew platform adapter -->
+  <script src="platform/player.js"></script>
+  <script src="platform/keys.js"></script>
+  <script src="platform/system.js"></script>
+  <script src="platform/boot.js"></script>
+</body>
+</html>

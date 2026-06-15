@@ -20,8 +20,25 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
 const DIST = path.join(ROOT, 'dist');
-const ALL = ['orsay', 'tizen', 'web'];
+const ALL = ['orsay', 'tizen', 'web', 'tizenbrew'];
 const PLATFORM_FILES = new Set(['index.html', 'config.xml', 'widget.info']);
+
+// The TizenBrew module manifest (emitted at dist/tizenbrew/package.json). This
+// is NOT the repo's package.json — it tells TizenBrew how to load the module:
+// packageType 'app', the entry html, and the remote keys to registerKey for us.
+const MODULE_PKG = {
+  name: 'twellie-tizenbrew',
+  version: '4.0.0',
+  description: 'Twellie — an unofficial Twitch viewer for Samsung TVs, as a TizenBrew app module (HTML5 video + hls.js).',
+  packageType: 'app',
+  appName: 'Twellie',
+  appPath: 'app/index.html',
+  keys: [
+    'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue',
+    'ChannelUp', 'ChannelDown', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+  ],
+};
 
 function copyDir(src, dst) {
   fs.mkdirSync(dst, { recursive: true });
@@ -52,14 +69,25 @@ function build(platform, outDir) {
   return out;
 }
 
+// TizenBrew wants the runnable app under app/ with the manifest as a root
+// sibling (appPath = 'app/index.html'). Reuse build() to assemble app/, then
+// drop the manifest beside it. Output: dist/tizenbrew/{package.json, app/...}.
+function buildTizenbrew(outDir) {
+  const out = outDir || path.join(DIST, 'tizenbrew');
+  fs.rmSync(out, { recursive: true, force: true });
+  build('tizenbrew', path.join(out, 'app'));
+  fs.writeFileSync(path.join(out, 'package.json'), JSON.stringify(MODULE_PKG, null, 2) + '\n');
+  return out;
+}
+
 function buildAll(target) {
   (target ? [target] : ALL).forEach((p) => {
-    const out = build(p);
+    const out = p === 'tizenbrew' ? buildTizenbrew() : build(p);
     console.log('built ' + p + ' -> ' + path.relative(ROOT, out));
   });
 }
 
-module.exports = { build, buildAll, ALL, ROOT, SRC, DIST };
+module.exports = { build, buildTizenbrew, buildAll, ALL, MODULE_PKG, ROOT, SRC, DIST };
 
 if (require.main === module) {
   try {
