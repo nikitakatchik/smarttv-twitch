@@ -224,20 +224,21 @@
     var c = this.focusedCell();
     if (!c) { frame.style.opacity = '0'; return; }
     var inner = c.firstChild;
+    var img = inner.getElementsByTagName('img')[0];
+    var target = img || inner;
     var row = this.rowEls[this.y];
     var rowTop = row ? row.offsetTop : 0;
     var reappearing = (frame.style.opacity !== '1');
     if (reappearing) { frame.style.webkitTransition = frame.style.transition = 'none'; }
-    frame.style.left = inner.offsetLeft + 'px';
-    frame.style.top = (inner.offsetTop - rowTop) + 'px';
-    frame.style.width = inner.offsetWidth + 'px';
-    frame.style.height = inner.offsetHeight + 'px';
+    frame.style.left = (inner.offsetLeft + (target === inner ? 0 : target.offsetLeft)) + 'px';
+    frame.style.top = (inner.offsetTop + (target === inner ? 0 : target.offsetTop) - rowTop) + 'px';
+    frame.style.width = target.offsetWidth + 'px';
+    frame.style.height = target.offsetHeight + 'px';
     if (reappearing) {
       frame.offsetWidth;   // commit the snap before transitions resume
       frame.style.webkitTransition = frame.style.transition = '';
     }
     frame.style.opacity = '1';
-    var img = inner.getElementsByTagName('img')[0];
     if (img && !img.complete) {
       var self = this;
       img.onload = function () { if (self.focusedCell() === c) { self.updateFrame(); } };

@@ -138,7 +138,7 @@
   P.showGrid = function () {
     dom.hide(dom.get('tw-b-loading'));
     dom.show(dom.get('tw-grid-wrap'));
-    dom.show(dom.get('tw-grid'));          // flat table (Channels/Games/Streams)
+    dom.show(dom.get('tw-grid'), 'table'); // flat table (Channels/Games/Streams)
     dom.hide(dom.get('tw-follow'));
     dom.hide(dom.get('tw-follow-empty'));
   };
@@ -188,17 +188,19 @@
     this.setScroll(row ? row.offsetTop : 0);
   };
 
-  // Position the fixed selection frame over the focused tile's RESTING spot
-  // (the row is pinned to the top, so top = cell-inner's offset minus the row's
-  // offset = the cell padding). offset* are layout coords, unaffected by the
-  // scroll transform, so the frame lands where the tile settles — and since the
-  // frame doesn't scroll, its top line never clips while content scrolls under.
+  // Position the fixed selection frame over the focused thumbnail's RESTING
+  // spot. The row is pinned to the top, so top = thumbnail offset minus the
+  // row's offset. offset* are layout coords, unaffected by the scroll transform,
+  // so the frame lands where the image settles — and since the frame doesn't
+  // scroll, its top line never clips while content scrolls under.
   P.updateFrame = function () {
     var frame = dom.get('tw-grid-frame');
     if (!frame) { return; }
     var c = this.focusedCell();
     if (!c) { frame.style.opacity = '0'; return; }
     var inner = c.firstChild;                       // .tw-cell-inner
+    var img = inner.getElementsByTagName('img')[0];
+    var target = img || inner;
     var row = this.rowEls[this.y];
     var rowTop = row ? row.offsetTop : 0;
     // If the frame is hidden it's (re)appearing — entering the grid or switching
@@ -206,10 +208,10 @@
     // only moves while it's already visible (Left/Right) animate.
     var reappearing = (frame.style.opacity !== '1');
     if (reappearing) { frame.style.webkitTransition = frame.style.transition = 'none'; }
-    frame.style.left = inner.offsetLeft + 'px';
-    frame.style.top = (inner.offsetTop - rowTop) + 'px';
-    frame.style.width = inner.offsetWidth + 'px';
-    frame.style.height = inner.offsetHeight + 'px';
+    frame.style.left = (inner.offsetLeft + (target === inner ? 0 : target.offsetLeft)) + 'px';
+    frame.style.top = (inner.offsetTop + (target === inner ? 0 : target.offsetTop) - rowTop) + 'px';
+    frame.style.width = target.offsetWidth + 'px';
+    frame.style.height = target.offsetHeight + 'px';
     if (reappearing) {
       frame.offsetWidth;   // force reflow so the snap commits before transitions resume
       frame.style.webkitTransition = frame.style.transition = '';   // restore (fade in only)
@@ -217,7 +219,6 @@
     frame.style.opacity = '1';
     // The thumbnail may still be loading (cell height collapsed); re-measure on
     // load so the frame matches the final tile, but only if focus hasn't moved.
-    var img = inner.getElementsByTagName('img')[0];
     if (img && !img.complete) {
       var self = this;
       // Re-measure only if this cell is STILL the focused grid tile — not if the
@@ -285,6 +286,26 @@
   };
 
   // --- rendering ----------------------------------------------------------
+  P.removePadCells = function (row) {
+    var nodes = row && row.childNodes;
+    if (!nodes) { return; }
+    while (nodes.length) {
+      var last = nodes[nodes.length - 1];
+      if (!last || (' ' + last.className + ' ').indexOf(' tw-cell-pad ') < 0) { break; }
+      row.removeChild(last);
+    }
+  };
+
+  P.padLastRow = function () {
+    var cols = TW.config.columns;
+    var last = this.rowEls[this.rowEls.length - 1];
+    if (!last) { return; }
+    this.removePadCells(last);
+    for (var p = last.childNodes.length; p < cols; p++) {
+      last.appendChild(dom.create('td', 'tw-cell tw-cell-pad'));
+    }
+  };
+
   P.appendCells = function (fromIndex) {
     var cols = TW.config.columns;
     var grid = dom.get('tw-grid');
@@ -297,10 +318,12 @@
       var ri = Math.floor(i / cols);
       var row = this.rowEls[ri];
       if (!row) { row = dom.create('tr'); grid.appendChild(row); this.rowEls[ri] = row; }
+      else { this.removePadCells(row); }
       var cell = this.createCell(this.items[i]);
       row.appendChild(cell);
       this.cells[i] = cell;
     }
+    this.padLastRow();
   };
 
   P.createCell = function (item) {
@@ -543,18 +566,19 @@
     var c = this.followCell();
     if (!c) { frame.style.opacity = '0'; return; }
     var inner = c.firstChild;
+    var img = inner.getElementsByTagName('img')[0];
+    var target = img || inner;
     var reappearing = (frame.style.opacity !== '1');
     if (reappearing) { frame.style.webkitTransition = frame.style.transition = 'none'; }
-    frame.style.left = inner.offsetLeft + 'px';
-    frame.style.top = (inner.offsetTop - this.fScroll) + 'px';
-    frame.style.width = inner.offsetWidth + 'px';
-    frame.style.height = inner.offsetHeight + 'px';
+    frame.style.left = (inner.offsetLeft + (target === inner ? 0 : target.offsetLeft)) + 'px';
+    frame.style.top = (inner.offsetTop + (target === inner ? 0 : target.offsetTop) - this.fScroll) + 'px';
+    frame.style.width = target.offsetWidth + 'px';
+    frame.style.height = target.offsetHeight + 'px';
     if (reappearing) {
       frame.offsetWidth;   // commit the snap before transitions resume
       frame.style.webkitTransition = frame.style.transition = '';
     }
     frame.style.opacity = '1';
-    var img = inner.getElementsByTagName('img')[0];
     if (img && !img.complete) {
       var self = this;
       img.onload = function () {

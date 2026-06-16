@@ -17,6 +17,7 @@ function setup(opts) {
     const e = {
       style: {}, className: '', textContent: '', innerHTML: '', children: [], _inner: null,
       appendChild(c) { this.children.push(c); return c; },
+      removeChild(c) { this.children = this.children.filter((child) => child !== c); return c; },
       getElementsByTagName() { return []; },
       offsetLeft: 0, offsetTop: 0, offsetWidth: 100, offsetHeight: 60, clientHeight: 600,
     };
@@ -54,7 +55,7 @@ function setup(opts) {
     api: {
       followedStreams: (cursor, ok) => ok({ items: (opts.live || []).slice(), cursor: null }),
       followedChannels: (cursor, ok) => ok({ items: (opts.follows || []).slice(), cursor: null }),
-      topStreams: (cursor, ok) => ok({ items: [], cursor: null }),
+      topStreams: (cursor, ok) => ok({ items: (opts.streams || []).slice(), cursor: null }),
       topGames: (cursor, ok) => ok({ items: (opts.games || []).slice(), cursor: null }),
       streamsByGame: (game, cursor, ok) => ok({ items: (opts.gameStreams || []).slice(), cursor: null }),
     },
@@ -110,6 +111,36 @@ test('a lone tile is padded to full columns so it keeps standard size', () => {
   // The rendered row carries 4 <td>s (1 real + 3 pads) -> table-layout:fixed
   // keeps 25% columns instead of stretching the single tile.
   assert.equal(scene.fRows[0].el.children.length, 4);
+});
+
+test('a lone top-level channel tile is padded to full columns', () => {
+  const { scene, els, MODE } = setup({ streams: [stream('solo')] });
+  scene.switchMode(MODE.ALL, true);
+  assert.equal(els['tw-grid'].style.display, 'table');
+  assert.equal(scene.cells.length, 1, 'one focusable channel tile');
+  assert.equal(scene.rowEls[0].childNodes.length, 4, '1 real tile + 3 pads');
+});
+
+test('flat grid selection frame surrounds the thumbnail, not the caption', () => {
+  const { scene, els, MODE } = setup({ streams: [stream('solo')] });
+  scene.switchMode(MODE.ALL, true);
+  const inner = scene.focusedCell().firstChild;
+  inner.offsetLeft = 5;
+  inner.offsetTop = 9;
+  inner.offsetWidth = 100;
+  inner.offsetHeight = 84; // thumbnail + caption
+  inner.getElementsByTagName = () => [{
+    offsetLeft: 0,
+    offsetTop: 0,
+    offsetWidth: 100,
+    offsetHeight: 60,
+    complete: true,
+  }];
+  scene.updateFrame();
+  assert.equal(els['tw-grid-frame'].style.left, '5px');
+  assert.equal(els['tw-grid-frame'].style.top, '9px');
+  assert.equal(els['tw-grid-frame'].style.width, '100px');
+  assert.equal(els['tw-grid-frame'].style.height, '60px');
 });
 
 test('top-level games use the tighter wrapper inset for cover padding', () => {

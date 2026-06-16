@@ -122,13 +122,13 @@ html, body {
   -webkit-transition: left 0.14s ease-out, opacity 0.18s ease-out;
   transition: left 0.14s ease-out, opacity 0.18s ease-out;
 }
-/* Caption bar inset 3px to match the thumbnail's gap, flush to its corners.
-   Channels caption is tight (half padding); games restore the roomier padding. */
+/* Caption text lives below the image, inset 3px to align with the visible
+   artwork inside the thumbnail's transparent border. */
 .tw-meta {
-  position: absolute; left: 3px; right: 3px; bottom: 3px; box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.62); padding: 4px 6px;
+  position: static; box-sizing: border-box;
+  background: transparent; padding: 7px 3px 0;
 }
-.tw-cell-game .tw-meta { padding: 7px 11px; }
+.tw-cell-game .tw-meta { padding: 9px 3px 0; }
 /* Stream title: the prominent top line, truncated to one line. */
 .tw-meta-title {
   font-size: 18px; color: #fff; white-space: nowrap; text-align: left;

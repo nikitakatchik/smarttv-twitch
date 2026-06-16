@@ -83,6 +83,29 @@ test('focus loads channel info and the VOD grid, focusing the first VOD', () => 
   assert.equal(scene.y, 0);
 });
 
+test('VOD selection frame surrounds the thumbnail, not the caption', () => {
+  const { scene, els } = setup({ vods: [vod('v1')] });
+  scene.handleFocus();
+  const inner = scene.focusedCell().firstChild;
+  inner.offsetLeft = 5;
+  inner.offsetTop = 14;
+  inner.offsetWidth = 100;
+  inner.offsetHeight = 84; // thumbnail + caption
+  inner.getElementsByTagName = () => [{
+    offsetLeft: 0,
+    offsetTop: 0,
+    offsetWidth: 100,
+    offsetHeight: 60,
+    complete: true,
+  }];
+  scene.rowEls[0].offsetTop = 4;
+  scene.updateFrame();
+  assert.equal(els['tw-cp-frame'].style.left, '5px');
+  assert.equal(els['tw-cp-frame'].style.top, '10px');
+  assert.equal(els['tw-cp-frame'].style.width, '100px');
+  assert.equal(els['tw-cp-frame'].style.height, '60px');
+});
+
 test('a channel with no VODs shows the empty message', () => {
   const { scene, els } = setup({ vods: [] });
   scene.handleFocus();
