@@ -1,7 +1,7 @@
 TW.i18n.register('sv', {
   CHANNELS: 'Kanaler',
   CHANNEL: 'Kanal',
-  GAMES: 'Spel',
+  GAMES: 'Kategorier',
   REFRESH: 'Uppdatera',
   QUALITY: 'Kvalitet',
   VIEWERS: 'Tittare',

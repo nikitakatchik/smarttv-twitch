@@ -1,7 +1,7 @@
 TW.i18n.register('fr', {
   CHANNELS: 'Chaînes',
   CHANNEL: 'Chaîne',
-  GAMES: 'Jeux',
+  GAMES: 'Catégories',
   REFRESH: 'Rafraîchir',
   QUALITY: 'Qualité',
   VIEWERS: 'Spectateurs',

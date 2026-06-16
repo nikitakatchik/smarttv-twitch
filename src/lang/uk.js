@@ -1,7 +1,7 @@
 TW.i18n.register('uk', {
   CHANNELS: 'Канали',
   CHANNEL: 'Канал',
-  GAMES: 'Ігри',
+  GAMES: 'Категорії',
   REFRESH: 'Оновити',
   QUALITY: 'Якість',
   VIEWERS: 'Глядачів',

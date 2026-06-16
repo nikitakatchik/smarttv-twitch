@@ -18,7 +18,7 @@
 
 ## ✨ Features
 
-- 🔴 **Live Twitch** — top streams, top games, browse-by-game, open any channel.
+- 🔴 **Live Twitch** — top streams, top categories, browse-by-category, open any channel.
 - 💬 **Live chat overlay** — anonymous IRC-over-WebSocket chat over the video, no login.
 - 📼 **VODs & clips** — each channel's past broadcasts and top clips, with playback.
 - 🔐 **Optional login** — device-code sign-in unlocks your **followed** channels ([guide](docs/LOGIN.md)). Everything else works signed-out.
