@@ -33,8 +33,25 @@ test('topStreams maps the GraphQL shape to normalized items', () => {
   assert.equal(result.items[0].login, 'alpha');
   assert.equal(result.items[0].display, 'Alpha');
   assert.equal(result.items[0].viewers, 100);
+  assert.equal(result.items[0].game, 'Chess');
   assert.match(result.items[0].thumb, /live_user_alpha/);
   assert.equal(result.cursor, 'c2');
+});
+
+test('streamInfo maps the current game for the player overlay', () => {
+  const body = JSON.stringify({ data: { user: {
+    displayName: 'Alpha',
+    profileImageURL: 'http://img/alpha.png',
+    stream: { title: 'Live now', viewersCount: 321, game: { name: 'Chess' } },
+  } } });
+  const { TW, log } = makeApp(() => ({ status: 200, text: body }));
+  let info = null;
+  TW.api.streamInfo('alpha', (i) => { info = i; }, () => {});
+  assert.equal(info.display, 'Alpha');
+  assert.equal(info.title, 'Live now');
+  assert.equal(info.viewers, 321);
+  assert.equal(info.game, 'Chess');
+  assert.match(log[log.length - 1].body, /game \{ name \}/);
 });
 
 test('requests are capped at GraphQL first:30', () => {

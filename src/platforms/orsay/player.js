@@ -104,6 +104,15 @@
           else if (plugin.JumpTo) { plugin.JumpTo(ms); }
           else if (plugin.Seek) { plugin.Seek(ms); }
         } catch (e) { TW.log.warn('seekTo: ' + e); }
+      },
+      pause: function () {
+        try { if (plugin.Pause) { plugin.Pause(); } } catch (e) {}
+      },
+      resume: function () {
+        try {
+          if (plugin.Resume) { plugin.Resume(); }
+          else if (plugin.PlayResume) { plugin.PlayResume(); }
+        } catch (e) {}
       }
     };
     return api;

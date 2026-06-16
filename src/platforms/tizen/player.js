@@ -87,7 +87,9 @@
       seekTo: function (seconds) {
         try { av.seekTo(Math.max(0, Math.floor((seconds || 0) * 1000))); }
         catch (e) { TW.log.warn('seekTo: ' + e); }
-      }
+      },
+      pause: function () { try { av.pause(); } catch (e) {} },
+      resume: function () { try { av.play(); } catch (e) {} }
     };
   }
 

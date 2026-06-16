@@ -46,8 +46,8 @@
       TW.sceneManager.focus('browser');
     },
 
-    // opts (optional): { vod: <vodItem>, from: 'channelPage' }. A vod plays that
-    // past broadcast instead of the live stream; `from` is where BACK returns to.
+    // opts (optional): { stream: <liveTile>, vod: <vodItem>, from: 'channelPage' }.
+    // A vod plays that past broadcast; `from` is where BACK returns to.
     goToChannel: function (login, opts) {
       opts = opts || {};
       TW.sceneManager.hide('browser');
@@ -57,6 +57,7 @@
         login: login,
         vod: opts.vod,
         item: opts.item,
+        stream: opts.stream,
         from: opts.from
       });
       TW.sceneManager.focus('channel');

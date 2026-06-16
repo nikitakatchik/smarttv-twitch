@@ -31,6 +31,8 @@
     var levelMap = [-1];        // quality index -> hls level index (-1 = auto)
     var qcb = null;
     var baseW = 0, baseH = 0;
+    var pendingSeek = null;
+    var seekTimer = null;
 
     function publishQualities() {
       if (qcb) { qcb(qualities); }
@@ -58,21 +60,35 @@
     TW.dom.on(video, 'playing', function () { cb.onBufferingComplete(); cb.onPlaying(); });
     TW.dom.on(video, 'ended', function () { cb.onEnded(); });
 
-    function seekStart() {
-      try { if (video.seekable && video.seekable.length) { return video.seekable.start(0) || 0; } } catch (e) {}
-      return 0;
-    }
-
-    function seekEnd() {
-      try { if (video.seekable && video.seekable.length) { return video.seekable.end(video.seekable.length - 1) || 0; } } catch (e) {}
-      return video.duration || 0;
-    }
-
     function playFromStartIfVod(isVod) {
       if (isVod) {
-        try { video.currentTime = seekStart(); } catch (e) {}
+        try { video.currentTime = 0; } catch (e) {}
       }
       video.play();
+    }
+
+    function duration() {
+      var d = video.duration || 0;
+      return d > 0 && d < 1000000000 ? d : 0;
+    }
+
+    function clearPendingSeek() {
+      if (seekTimer) { global.clearTimeout(seekTimer); seekTimer = null; }
+      pendingSeek = null;
+    }
+
+    function commitSeek() {
+      if (seekTimer) { global.clearTimeout(seekTimer); seekTimer = null; }
+      var t = pendingSeek;
+      pendingSeek = null;
+      if (t == null) { return; }
+      try { video.currentTime = t; } catch (e) {}
+    }
+
+    function scheduleSeek(t) {
+      pendingSeek = t;
+      if (seekTimer) { global.clearTimeout(seekTimer); }
+      seekTimer = global.setTimeout(commitSeek, 280);
     }
 
     return {
@@ -119,23 +135,23 @@
           cb.onError('HLS not supported on this TV');
         }
       },
-      stop: function () { try { if (hls) { hls.destroy(); hls = null; } video.removeAttribute('src'); video.load(); } catch (e) {} },
+      stop: function () { try { clearPendingSeek(); if (hls) { hls.destroy(); hls = null; } video.removeAttribute('src'); video.load(); } catch (e) {} },
       destroy: function () { this.stop(); },
       setDisplayArea: setVideoRect,
       getQualities: function (fn) { qcb = fn; fn(qualities); },
       selectQuality: function (i) { if (hls) { hls.currentLevel = levelMap[i] != null ? levelMap[i] : -1; } },
       canSeek: function () { return true; },
-      getPosition: function () { return Math.max(0, (video.currentTime || 0) - seekStart()); },
-      getDuration: function () {
-        var d = seekEnd() - seekStart();
-        return d > 0 && d < 1000000000 ? d : 0;
-      },
+      getPosition: function () { return Math.max(0, pendingSeek != null ? pendingSeek : (video.currentTime || 0)); },
+      getDuration: duration,
       seekTo: function (seconds) {
-        var d = this.getDuration();
+        var d = duration();
         var t = Math.max(0, seconds || 0);
         if (d > 0 && t > d) { t = d; }
-        try { video.currentTime = seekStart() + t; } catch (e) {}
-      }
+        scheduleSeek(t);
+      },
+      commitSeek: commitSeek,
+      pause: function () { try { video.pause(); } catch (e) {} },
+      resume: function () { try { video.play(); } catch (e) {} }
     };
   }
 

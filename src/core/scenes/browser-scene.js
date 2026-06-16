@@ -629,7 +629,7 @@
     var item = row.items[this.fc];
     if (!item) { return; }
     // Live -> straight to the player; offline -> the channel page (info + VODs).
-    if (item.kind === 'stream') { TW.app.goToChannel(item.login); }
+    if (item.kind === 'stream') { TW.app.goToChannel(item.login, { stream: item }); }
     else { TW.app.goToChannelPage(item.login); }
   };
 
@@ -859,7 +859,7 @@
       this.mode = MODE.GAMES_STREAMS;
       this.refresh();
     } else {
-      TW.app.goToChannel(item.login);
+      TW.app.goToChannel(item.login, { stream: item });
     }
   };
 

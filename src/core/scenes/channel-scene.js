@@ -18,6 +18,8 @@
  *   getPosition()              optional; seconds
  *   getDuration()              optional; seconds
  *   seekTo(seconds)            optional; exact seek for VOD/clip playback
+ *   commitSeek()               optional; flush a pending/debounced seek
+ *   pause()/resume()           optional; VOD/clip pause toggle
  * callbacks: onBufferingStart, onBufferingProgress(pct), onBufferingComplete,
  *            onPlaying, onError(msg), onEnded
  */
@@ -28,6 +30,14 @@
   var dom = TW.dom;
   var KEY = TW.KEY;
   var CHAT_WIDTH = 360;
+  var PANEL_WIDTH = 318;
+  var PANEL_HEIGHT = 184;
+  var PANEL_MARGIN = 24;
+  var PANEL_GAP = 16;
+  var OVERLAY_HIDE_MS = 3000;
+  var OVERLAY_BACK_GRACE_MS = 1000;
+  var SEEK_ACCEL_WINDOW_MS = 650;
+  var SEEK_STEPS = [10, 20, 30, 60, 120];
 
   function ChannelScene(adapter) {
     this.adapter = adapter;
@@ -39,9 +49,20 @@
     this.panelShown = false;
     this.infoTimer = null;
     this.startItem = null;
+    this.overlayShown = true;
+    this.overlayTimer = null;
+    this.overlayBackGrace = false;
+    this.overlayGraceTimer = null;
+    this.overlayFocus = 'buttons'; // 'seek' | 'buttons'
+    this.seekKey = null;
+    this.seekRepeat = 0;
+    this.seekLastAt = 0;
+    this.seekFlashTimer = null;
+    this.paused = false;
 
     this.contentKind = 'live'; // 'live' | 'vod' | 'clip'
     this.startVod = null;      // if set on entry, play this VOD instead of live
+    this.liveItem = null;      // selected live tile metadata, if available
     this.returnTo = null;      // where BACK exits to ('channelPage' | default browser)
     this.chatOn = false;
     this.chatClient = null;
@@ -71,7 +92,7 @@
     root.id = 'tw-channel';
     root.innerHTML =
       '<div class="tw-player-surface" id="tw-player-surface">' +
-        '<div class="tw-player-scrim tw-player-scrim-bottom"></div>' +
+        '<div class="tw-player-scrim tw-player-scrim-bottom" id="tw-player-scrim"></div>' +
         '<div class="tw-nowbar" id="tw-nowbar">' +
           '<img class="tw-now-icon" id="tw-c-icon" src="assets/icon/icon_85_70.png" alt="">' +
           '<div class="tw-now-copy">' +
@@ -80,7 +101,10 @@
               '<span class="tw-now-sep"></span>' +
               '<span class="tw-now-viewers" id="tw-c-viewers"></span>' +
             '</div>' +
-            '<div class="tw-now-name" id="tw-c-name"></div>' +
+            '<div class="tw-now-headline">' +
+              '<span class="tw-now-name" id="tw-c-name"></span>' +
+              '<span class="tw-now-game" id="tw-c-game"></span>' +
+            '</div>' +
             '<div class="tw-now-title" id="tw-c-title"></div>' +
           '</div>' +
         '</div>' +
@@ -89,6 +113,8 @@
           '<span class="tw-progress-track"><span class="tw-progress-fill" id="tw-c-progress-fill"></span></span>' +
           '<span class="tw-progress-time tw-progress-total" id="tw-c-duration"></span>' +
         '</div>' +
+        '<div class="tw-seek-flash" id="tw-seek-flash"></div>' +
+        '<div class="tw-pause-indicator" id="tw-pause-indicator"><span></span><span></span></div>' +
         '<div class="tw-controls" id="tw-controls">' +
           '<span class="tw-control" id="tw-ctl-back">-10s</span>' +
           '<span class="tw-control" id="tw-ctl-forward">+10s</span>' +
@@ -107,8 +133,9 @@
             '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="tw-loading" id="tw-c-loading"><div class="tw-spinner"></div>' +
-          '<div class="tw-loading-text" id="tw-c-loading-text"></div></div>' +
+        '<div class="tw-loading" id="tw-c-loading"><div class="tw-status-box">' +
+          '<div class="tw-spinner"></div><div class="tw-loading-text" id="tw-c-loading-text"></div>' +
+        '</div></div>' +
       '</div>' +
       '<div class="tw-chat" id="tw-chat">' +
         '<div class="tw-chat-list" id="tw-chat-list"></div>' +
@@ -117,6 +144,7 @@
     this.root = root;
     dom.text(dom.get('tw-c-quality-label'), TW.i18n.t('QUALITY'));
     dom.text(dom.get('tw-c-kind'), TW.i18n.t('LIVE'));
+    dom.text(dom.get('tw-c-game'), '');
     dom.text(dom.get('tw-ctl-channel'), TW.i18n.t('CHANNEL'));
     dom.text(dom.get('tw-ctl-chat'), TW.i18n.t('CHAT'));
     dom.text(dom.get('tw-ctl-quality'), TW.i18n.t('QUALITY'));
@@ -130,6 +158,7 @@
     this.login = data && data.login;
     this.startVod = (data && data.vod) || null;   // play this VOD instead of live
     this.startItem = (data && data.item) || null;
+    this.liveItem = (data && data.stream) || null;
     this.returnTo = (data && data.from) || null;   // e.g. 'channelPage'
     dom.show(this.root);
   };
@@ -143,6 +172,7 @@
 
     this.player = this.adapter.createPlayer(this.playerCallbacks());
     this.applyPlayerLayout();
+    this.showOverlay();
     // Entered from the channel page on a specific VOD? Play it; otherwise live.
     if (this.startVod) {
       var v = this.startVod;
@@ -164,11 +194,17 @@
     var self = this;
     this.contentKind = 'live';
     this.duration = 0;
+    this.paused = false;
+    this.hidePauseIndicator();
+    this.overlayFocus = 'buttons';
     this.stopProgressTimer();
+    this.resetSeekAcceleration();
     this.setContentBadge('LIVE');
-    dom.text(dom.get('tw-c-name'), this.login || '');
-    dom.text(dom.get('tw-c-title'), '');
-    this.setViewers('');
+    dom.text(dom.get('tw-c-name'), (this.liveItem && this.liveItem.display) || this.login || '');
+    dom.text(dom.get('tw-c-title'), (this.liveItem && this.liveItem.title) || '');
+    this.setGame((this.liveItem && this.liveItem.game) || '');
+    this.setViewers((this.liveItem && this.liveItem.viewers) ?
+      (TW.addCommas(this.liveItem.viewers) + ' ' + TW.i18n.t('VIEWERS')) : '');
     dom.attr(dom.get('tw-c-icon'), 'src', 'assets/icon/icon_85_70.png');
     this.refreshControls();
     this.resetChat();
@@ -178,7 +214,7 @@
     TW.api.playbackUrl(this.login, function (masterUrl) {
       self.loadInto(masterUrl);
     }, function () {
-      self.showDialog(TW.i18n.t('ERROR_TOKEN'));
+      self.showError(TW.i18n.t('ERROR_TOKEN'));
     });
 
     this.stopInfoTimer();
@@ -205,10 +241,15 @@
 
   P.showContentInfo = function (item) {
     this.setContentBadge(item.kind === 'vod' ? 'VODS' : 'CLIPS');
+    this.paused = false;
+    this.hidePauseIndicator();
+    this.overlayFocus = 'seek';
     dom.text(dom.get('tw-c-name'), this.login || '');
     dom.text(dom.get('tw-c-title'), item.title || '');
+    this.setGame('');
     this.setViewers(TW.addCommas(item.viewers) + ' ' + TW.i18n.t('VIEWERS'));
     this.duration = item.duration || 0;
+    this.resetSeekAcceleration();
     this.refreshControls();
     this.updateProgress();
   };
@@ -231,6 +272,13 @@
     else { dom.removeClass(this.root, 'tw-has-viewers'); }
   };
 
+  P.setGame = function (text) {
+    dom.text(dom.get('tw-c-game'), text || '');
+    if (!this.root) { return; }
+    if (text) { dom.addClass(this.root, 'tw-has-game'); }
+    else { dom.removeClass(this.root, 'tw-has-game'); }
+  };
+
   P.playVod = function (item) {
     var self = this;
     this.contentKind = 'vod';
@@ -243,7 +291,7 @@
     this.showLoading();
     TW.api.vodPlaybackUrl(item.id, function (url) {
       self.loadInto(url);
-    }, function () { self.showDialog(TW.i18n.t('ERROR_TOKEN')); });
+    }, function () { self.showError(TW.i18n.t('ERROR_TOKEN')); });
   };
 
   P.playClip = function (item) {
@@ -258,7 +306,7 @@
     this.showLoading();
     TW.api.clipPlayback(item.slug, function (info) {
       self.loadInto(info.url);
-    }, function () { self.showDialog(TW.i18n.t('ERROR_RENDER')); });
+    }, function () { self.showError(TW.i18n.t('ERROR_RENDER')); });
   };
 
   P.handleBlur = function () {
@@ -270,6 +318,10 @@
   P.handleHide = function () {
     this.stopInfoTimer();
     this.stopProgressTimer();
+    this.clearOverlayTimer();
+    this.clearOverlayGrace();
+    this.hideSeekFlash();
+    this.hidePauseIndicator();
     this.closeChat();
     this.stopChatCapture();
     if (this.player) { try { this.player.stop(); this.player.destroy(); } catch (e) {} this.player = null; }
@@ -279,28 +331,67 @@
   P.playerCallbacks = function () {
     var self = this;
     return {
-      onBufferingStart: function () { self.showDialog(TW.i18n.t('BUFFERING')); },
-      onBufferingProgress: function (pct) { self.showDialog(TW.i18n.t('BUFFERING') + ': ' + pct + '%'); },
+      onBufferingStart: function () { self.showBuffering(TW.i18n.t('BUFFERING')); },
+      onBufferingProgress: function (pct) { self.showBuffering(TW.i18n.t('BUFFERING') + ': ' + pct + '%'); },
       onBufferingComplete: function () { self.hideDialog(); },
-      onPlaying: function () { self.hideDialog(); self.updateProgress(); },
+      onPlaying: function () { self.paused = false; self.hidePauseIndicator(); self.hideDialog(); self.updateProgress(); },
       onEnded: function () { self.onContentEnded(); },
-      onError: function (msg) { self.showDialog(msg || TW.i18n.t('ERROR_RENDER')); }
+      onError: function (msg) { self.showError(msg || TW.i18n.t('ERROR_RENDER')); }
     };
   };
 
   // --- overlay ------------------------------------------------------------
-  // Indeterminate loading: the modern ring spinner alone, no text.
+  P.showPauseIndicator = function () {
+    dom.show(dom.get('tw-pause-indicator'));
+  };
+
+  P.hidePauseIndicator = function () {
+    dom.hide(dom.get('tw-pause-indicator'));
+  };
+
+  P.syncPauseIndicator = function () {
+    if (this.paused) { this.showPauseIndicator(); }
+    else { this.hidePauseIndicator(); }
+  };
+
+  // Indeterminate loading: status tile with spinner only.
   P.showLoading = function () {
-    dom.removeClass(dom.get('tw-c-loading'), 'tw-msg');
-    dom.show(dom.get('tw-c-loading'));
+    var el = dom.get('tw-c-loading');
+    dom.text(dom.get('tw-c-loading-text'), '');
+    dom.removeClass(el, 'tw-msg');
+    dom.removeClass(el, 'tw-error');
+    dom.show(el);
+    this.hidePauseIndicator();
   };
-  // Status message (errors, buffering %): text only, no spinner.
-  P.showDialog = function (text) {
+
+  // Buffering remains a player state: spinner plus short status text.
+  P.showBuffering = function (text) {
+    var el = dom.get('tw-c-loading');
     dom.text(dom.get('tw-c-loading-text'), text || '');
-    dom.addClass(dom.get('tw-c-loading'), 'tw-msg');
-    dom.show(dom.get('tw-c-loading'));
+    dom.addClass(el, 'tw-msg');
+    dom.removeClass(el, 'tw-error');
+    dom.show(el);
+    this.hidePauseIndicator();
   };
-  P.hideDialog = function () { dom.hide(dom.get('tw-c-loading')); };
+
+  // Error/status dialog: message only.
+  P.showError = function (text) {
+    var el = dom.get('tw-c-loading');
+    dom.text(dom.get('tw-c-loading-text'), text || '');
+    dom.addClass(el, 'tw-msg');
+    dom.addClass(el, 'tw-error');
+    dom.show(el);
+    this.hidePauseIndicator();
+  };
+
+  P.showDialog = function (text) {
+    this.showError(text);
+  };
+
+  P.hideDialog = function () {
+    dom.hide(dom.get('tw-c-loading'));
+    this.syncPauseIndicator();
+  };
 
   P.updateInfo = function () {
     var self = this;
@@ -308,6 +399,7 @@
     TW.api.streamInfo(this.login, function (info) {
       dom.text(dom.get('tw-c-name'), info.display);
       dom.text(dom.get('tw-c-title'), info.title);
+      self.setGame(info.game || '');
       self.setViewers(info.online ? (TW.addCommas(info.viewers) + ' ' + TW.i18n.t('VIEWERS')) : '');
       if (info.logo) { dom.attr(dom.get('tw-c-icon'), 'src', info.logo); }
     }, TW.noop);
@@ -320,13 +412,142 @@
     dom.text(dom.get('tw-c-quality'), this.qualities[i]);
   };
 
-  P.showPanel = function () { this.qualityIndex = this.playingIndex; this.renderQuality(); dom.show(dom.get('tw-panel')); this.panelShown = true; };
+  P.clearOverlayTimer = function () {
+    if (this.overlayTimer) { global.clearTimeout(this.overlayTimer); this.overlayTimer = null; }
+  };
+
+  P.clearOverlayGrace = function () {
+    if (this.overlayGraceTimer) { global.clearTimeout(this.overlayGraceTimer); this.overlayGraceTimer = null; }
+    this.overlayBackGrace = false;
+  };
+
+  P.startOverlayGrace = function () {
+    var self = this;
+    this.clearOverlayGrace();
+    this.overlayBackGrace = true;
+    this.overlayGraceTimer = global.setTimeout(function () {
+      self.overlayBackGrace = false;
+      self.overlayGraceTimer = null;
+    }, OVERLAY_BACK_GRACE_MS);
+  };
+
+  P.startOverlayTimer = function () {
+    var self = this;
+    this.clearOverlayTimer();
+    if (!this.overlayShown) { return; }
+    this.overlayTimer = global.setTimeout(function () { self.hideOverlay(true); }, OVERLAY_HIDE_MS);
+  };
+
+  P.showOverlay = function () {
+    this.overlayShown = true;
+    this.clearOverlayGrace();
+    this.hideSeekFlash();
+    if (!this.canSeek()) { this.overlayFocus = 'buttons'; }
+    else if (this.overlayFocus !== 'buttons') { this.overlayFocus = 'seek'; }
+    dom.show(dom.get('tw-player-scrim'));
+    dom.show(dom.get('tw-nowbar'));
+    dom.show(dom.get('tw-controls'));
+    this.refreshControls();
+    this.startOverlayTimer();
+  };
+
+  P.hideOverlay = function (auto) {
+    this.clearOverlayTimer();
+    this.hidePanel();
+    this.overlayShown = false;
+    dom.hide(dom.get('tw-player-scrim'));
+    dom.hide(dom.get('tw-nowbar'));
+    dom.hide(dom.get('tw-controls'));
+    dom.hide(dom.get('tw-progress'));
+    if (auto) { this.startOverlayGrace(); }
+    else { this.clearOverlayGrace(); }
+  };
+
+  P.noteOverlayActivity = function () {
+    if (!this.overlayShown) { this.showOverlay(); }
+    else { this.startOverlayTimer(); }
+  };
+
+  P.hideSeekFlash = function () {
+    if (this.seekFlashTimer) { global.clearTimeout(this.seekFlashTimer); this.seekFlashTimer = null; }
+    dom.hide(dom.get('tw-seek-flash'));
+  };
+
+  P.showSeekFlash = function (seconds) {
+    var el = dom.get('tw-seek-flash');
+    var self = this;
+    if (!el) { return; }
+    if (this.seekFlashTimer) { global.clearTimeout(this.seekFlashTimer); this.seekFlashTimer = null; }
+    dom.removeClass(el, 'tw-seek-flash-left');
+    dom.removeClass(el, 'tw-seek-flash-right');
+    dom.addClass(el, seconds < 0 ? 'tw-seek-flash-left' : 'tw-seek-flash-right');
+    dom.text(el, (seconds < 0 ? '' : '+') + seconds + 's');
+    dom.show(el);
+    this.seekFlashTimer = global.setTimeout(function () {
+      dom.hide(el);
+      self.seekFlashTimer = null;
+    }, 650);
+  };
+
+  function intPx(v) {
+    var n = parseInt(v, 10);
+    return n === n ? n : 0;
+  }
+
+  function offsetWithin(el, root, prop) {
+    var value = 0, guard = 0;
+    while (el && el !== root && guard < 12) {
+      value += el[prop] || 0;
+      el = el.offsetParent;
+      guard++;
+    }
+    return value;
+  }
+
+  P.positionQualityPanel = function () {
+    var panel = dom.get('tw-panel');
+    var button = dom.get('tw-ctl-quality');
+    var surface = dom.get('tw-player-surface');
+    if (!panel || !button || !surface) { return; }
+
+    var surfaceW = surface.offsetWidth || intPx(surface.style.width) || TW.config.screen.width;
+    var surfaceH = surface.offsetHeight || intPx(surface.style.height) || TW.config.screen.height;
+    var panelW = panel.offsetWidth || PANEL_WIDTH;
+    var panelH = panel.offsetHeight || PANEL_HEIGHT;
+    var buttonLeft = offsetWithin(button, surface, 'offsetLeft');
+    var buttonTop = offsetWithin(button, surface, 'offsetTop') || (surfaceH - 72);
+    var buttonW = button.offsetWidth || 0;
+
+    var left = buttonLeft + Math.floor(buttonW / 2) - Math.floor(panelW / 2);
+    var maxLeft = surfaceW - panelW - PANEL_MARGIN;
+    if (left < PANEL_MARGIN) { left = PANEL_MARGIN; }
+    if (left > maxLeft) { left = maxLeft; }
+    if (left < 0) { left = 0; }
+
+    var bottom = surfaceH - buttonTop + PANEL_GAP;
+    if (this.canSeek()) { bottom += 34; } // keep clear of the VOD progress bar
+    if (bottom + panelH + PANEL_MARGIN > surfaceH) { bottom = surfaceH - panelH - PANEL_MARGIN; }
+    if (bottom < PANEL_MARGIN) { bottom = PANEL_MARGIN; }
+
+    panel.style.left = left + 'px';
+    panel.style.bottom = bottom + 'px';
+  };
+
+  P.showPanel = function () {
+    this.showOverlay();
+    this.qualityIndex = this.playingIndex;
+    this.renderQuality();
+    this.positionQualityPanel();
+    dom.show(dom.get('tw-panel'));
+    this.panelShown = true;
+  };
   P.hidePanel = function () { dom.hide(dom.get('tw-panel')); this.panelShown = false; };
 
   P.applyQuality = function () {
     this.playingIndex = this.qualityIndex;
     if (this.player.selectQuality) { this.player.selectQuality(this.qualityIndex); }
     this.hidePanel();
+    this.startOverlayTimer();
     // No forced spinner here: a platform that re-buffers on a quality switch
     // (Orsay re-plays the variant URL) drives the spinner via its own
     // onBufferingStart/Complete callbacks; hls.js and AVPlay switch seamlessly.
@@ -369,6 +590,7 @@
       chat.style.width = chatW + 'px';
     }
     if (this.player && this.player.setDisplayArea) { this.player.setDisplayArea(r.x, r.y, r.w, r.h); }
+    if (this.panelShown) { this.positionQualityPanel(); }
   };
 
   P.toggleChat = function () {
@@ -487,9 +709,67 @@
     this.updateProgress();
   };
 
+  P.confirmSeek = function () {
+    if (!this.canSeek() || !this.player) { return; }
+    if (this.player.commitSeek) { try { this.player.commitSeek(); } catch (e) {} }
+    this.resetSeekAcceleration();
+    this.updateProgress();
+  };
+
+  P.togglePlayback = function () {
+    if (!this.canSeek() || !this.player) { return; }
+    if (this.paused) {
+      if (this.player.resume) { try { this.player.resume(); } catch (e) {} }
+      this.paused = false;
+    } else {
+      if (this.player.pause) { try { this.player.pause(); } catch (e2) {} }
+      this.paused = true;
+    }
+    this.syncPauseIndicator();
+  };
+
+  function nowMs() {
+    if (global.Date && global.Date.now) { return global.Date.now(); }
+    return (new Date()).getTime();
+  }
+
+  P.resetSeekAcceleration = function () {
+    this.seekKey = null;
+    this.seekRepeat = 0;
+    this.seekLastAt = 0;
+  };
+
+  P.seekDeltaForKey = function (key) {
+    var now = nowMs();
+    if (this.seekKey === key && now - this.seekLastAt <= SEEK_ACCEL_WINDOW_MS) {
+      this.seekRepeat++;
+    } else {
+      this.seekRepeat = 0;
+    }
+    this.seekKey = key;
+    this.seekLastAt = now;
+    var step = SEEK_STEPS[Math.min(this.seekRepeat, SEEK_STEPS.length - 1)];
+    return key === KEY.LEFT ? -step : step;
+  };
+
+  P.handleSeekKey = function (key) {
+    if (!this.canSeek() || (key !== KEY.LEFT && key !== KEY.RIGHT)) { return false; }
+    if (!this.overlayShown) {
+      this.clearOverlayGrace();
+      this.resetSeekAcceleration();
+      var fixed = key === KEY.LEFT ? -10 : 10;
+      this.seekBy(fixed);
+      this.showSeekFlash(fixed);
+      return true;
+    }
+    if (this.overlayFocus !== 'seek') { return false; }
+    this.noteOverlayActivity();
+    this.seekBy(this.seekDeltaForKey(key));
+    return true;
+  };
+
   P.visibleControls = function () {
     var ids = [];
-    if (this.canSeek()) { ids.push('tw-ctl-back'); ids.push('tw-ctl-forward'); }
     ids.push('tw-ctl-channel');
     if (this.contentKind === 'live') { ids.push('tw-ctl-chat'); }
     ids.push('tw-ctl-quality');
@@ -499,17 +779,32 @@
   P.refreshControls = function () {
     var all = ['tw-ctl-back', 'tw-ctl-forward', 'tw-ctl-channel', 'tw-ctl-chat', 'tw-ctl-quality'];
     var visible = this.visibleControls();
+    var progress = dom.get('tw-progress');
     var i, el;
     for (i = 0; i < all.length; i++) {
       el = dom.get(all[i]);
       dom.removeClass(el, 'tw-focused');
       dom.hide(el);
     }
-    for (i = 0; i < visible.length; i++) { dom.show(dom.get(visible[i]), 'inline-block'); }
+    dom.removeClass(progress, 'tw-focused');
     if (this.controlIndex >= visible.length) { this.controlIndex = visible.length - 1; }
     if (this.controlIndex < 0) { this.controlIndex = 0; }
-    dom.addClass(dom.get(visible[this.controlIndex]), 'tw-focused');
-    dom.show(dom.get('tw-progress'), this.canSeek() ? 'block' : 'none');
+    if (this.overlayShown) {
+      dom.show(dom.get('tw-controls'));
+      for (i = 0; i < visible.length; i++) { dom.show(dom.get(visible[i]), 'inline-block'); }
+      if (this.canSeek()) {
+        dom.show(progress, 'block');
+        if (this.overlayFocus === 'seek') { dom.addClass(progress, 'tw-focused'); }
+        else { dom.addClass(dom.get(visible[this.controlIndex]), 'tw-focused'); }
+      } else {
+        this.overlayFocus = 'buttons';
+        dom.addClass(dom.get(visible[this.controlIndex]), 'tw-focused');
+        dom.hide(progress);
+      }
+    } else {
+      dom.hide(dom.get('tw-controls'));
+      dom.hide(progress);
+    }
     this.updateProgress();
   };
 
@@ -559,13 +854,55 @@
   };
 
   // --- keys ---------------------------------------------------------------
+  P.handleBackKey = function () {
+    this.resetSeekAcceleration();
+    if (this.panelShown) {
+      this.hidePanel();
+      this.startOverlayTimer();
+      return true;
+    }
+    if (this.overlayShown) { this.hideOverlay(false); return true; }
+    if (this.overlayBackGrace) { this.clearOverlayGrace(); return true; }
+    if (this.chatOn) { this.closeChat(); }
+    else { this.shutdown(); }
+    return true;
+  };
+
   P.handleKeyDown = function (key) {
-    if (this.panelShown) { return this.handlePanelKey(key); }
+    if (key === KEY.BACK) { return this.handleBackKey(); }
+    if (this.panelShown) {
+      this.resetSeekAcceleration();
+      this.noteOverlayActivity();
+      return this.handlePanelKey(key);
+    }
+    if (!this.overlayShown) {
+      if (this.handleSeekKey(key)) { return true; }
+      this.resetSeekAcceleration();
+      this.overlayFocus = this.canSeek() ? 'seek' : 'buttons';
+      this.showOverlay();
+      if (key === KEY.ENTER && this.canSeek()) { this.togglePlayback(); }
+      return true;
+    }
+    if (key === KEY.DOWN && this.overlayFocus === 'buttons') {
+      this.resetSeekAcceleration();
+      this.hideOverlay(false);
+      return true;
+    }
+    if (this.canSeek() && (key === KEY.UP || key === KEY.DOWN)) {
+      this.resetSeekAcceleration();
+      this.noteOverlayActivity();
+      this.overlayFocus = key === KEY.UP ? 'seek' : 'buttons';
+      this.refreshControls();
+      return true;
+    }
+    if (this.handleSeekKey(key)) { return true; }
+    this.resetSeekAcceleration();
+    this.noteOverlayActivity();
+    if (this.canSeek() && this.overlayFocus === 'seek' && key === KEY.ENTER) {
+      this.confirmSeek();
+      return true;
+    }
     switch (key) {
-      case KEY.BACK:
-        if (this.chatOn) { this.closeChat(); }
-        else { this.shutdown(); }
-        return true;
       case KEY.LEFT:
         this.moveControl(-1); return true;
       case KEY.RIGHT:

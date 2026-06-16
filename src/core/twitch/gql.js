@@ -118,7 +118,7 @@
     // not-live-verified fields; failure just leaves the overlay blank.
     streamInfo: function (login, onOk, onFail) {
       var q = '{ user(login: "' + login.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '") { displayName ' +
-        'profileImageURL(width: 150) stream { title viewersCount } } }';
+        'profileImageURL(width: 150) stream { title viewersCount game { name } } } }';
       post(q, function (data) {
         var u = data.user || {};
         onOk({
@@ -126,6 +126,7 @@
           logo: u.profileImageURL || '',
           title: (u.stream && u.stream.title) || '',
           viewers: (u.stream && u.stream.viewersCount) || 0,
+          game: (u.stream && u.stream.game && u.stream.game.name) || '',
           online: !!u.stream
         });
       }, onFail);

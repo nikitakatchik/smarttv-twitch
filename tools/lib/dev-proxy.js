@@ -20,7 +20,8 @@ const ALLOWED = ['ttvnw.net', 'twitch.tv', 'jtvnw.net', 'twitchcdn.net', 'cloudf
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Client-ID, Client-Id, Content-Type, Authorization'
+  'Access-Control-Allow-Headers': 'Client-ID, Client-Id, Content-Type, Authorization, Range, Accept',
+  'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges'
 };
 
 function hostAllowed(h) {
@@ -36,15 +37,25 @@ function rewriteM3u8(text, selfBase, baseUrl) {
   const CR = String.fromCharCode(13);
   const lines = text.split(NL);
   const out = [];
+  function proxied(uri) {
+    let abs;
+    try { abs = new URL(uri, baseUrl).href; } catch (e) { return uri; }
+    return selfBase + '/proxy?url=' + encodeURIComponent(abs);
+  }
+  function rewriteAttrs(line) {
+    return line.replace(/URI=("([^"]+)"|([^,]+))/g, (m, raw, quoted, bare) => {
+      const uri = quoted || bare;
+      const out = proxied(uri);
+      return quoted ? 'URI="' + out + '"' : 'URI=' + out;
+    });
+  }
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
     if (line.charAt(line.length - 1) === CR) { line = line.slice(0, -1); }
     if (line && line.charAt(0) !== '#') {
-      let abs;
-      try { abs = new URL(line, baseUrl).href; } catch (e) { out.push(line); continue; }
-      out.push(selfBase + '/proxy?url=' + encodeURIComponent(abs));
+      out.push(proxied(line));
     } else {
-      out.push(line);
+      out.push(rewriteAttrs(line));
     }
   }
   return out.join(NL);
@@ -66,7 +77,12 @@ function fetchUpstream(target, method, headers, body) {
       (resp) => {
         const chunks = [];
         resp.on('data', (c) => chunks.push(c));
-        resp.on('end', () => resolve({ status: resp.statusCode, type: resp.headers['content-type'], body: Buffer.concat(chunks) }));
+        resp.on('end', () => resolve({
+          status: resp.statusCode,
+          headers: resp.headers,
+          type: resp.headers['content-type'],
+          body: Buffer.concat(chunks)
+        }));
       }
     );
     r.on('error', reject);
@@ -75,11 +91,19 @@ function fetchUpstream(target, method, headers, body) {
   });
 }
 
+function mediaHeaders(headers) {
+  const out = {};
+  if (headers['content-range']) { out['Content-Range'] = headers['content-range']; }
+  if (headers['accept-ranges']) { out['Accept-Ranges'] = headers['accept-ranges']; }
+  if (headers['content-length']) { out['Content-Length'] = headers['content-length']; }
+  return out;
+}
+
 // Handle a GET/POST /proxy?url=<target> request on a Node http server.
 async function proxyHttp(req, res, target, selfBase) {
-  function send(status, body, type) {
-    res.writeHead(status, Object.assign({ 'Content-Type': type || 'text/plain' }, CORS));
-    res.end(body);
+  function send(status, body, type, extraHeaders) {
+    res.writeHead(status, Object.assign({ 'Content-Type': type || 'text/plain' }, CORS, extraHeaders || {}));
+    res.end(req.method === 'HEAD' ? '' : body);
   }
   let u;
   try { u = new URL(target); } catch (e) { return send(400, 'bad url'); }
@@ -87,9 +111,11 @@ async function proxyHttp(req, res, target, selfBase) {
 
   try {
     const headers = {};
+    if (req.headers.accept) { headers.Accept = req.headers.accept; }
     if (req.headers['client-id']) { headers['Client-Id'] = req.headers['client-id']; }
     if (req.headers['content-type']) { headers['Content-Type'] = req.headers['content-type']; }
     if (req.headers['authorization']) { headers['Authorization'] = req.headers['authorization']; }
+    if (req.headers.range) { headers.Range = req.headers.range; }
     let body = null;
     if (req.method === 'POST') {
       body = await readBody(req);
@@ -100,7 +126,7 @@ async function proxyHttp(req, res, target, selfBase) {
     if (text.indexOf('#EXTM3U') === 0) {
       send(up.status, rewriteM3u8(text, selfBase, target), 'application/vnd.apple.mpegurl');
     } else {
-      send(up.status, up.body, up.type || 'application/octet-stream');
+      send(up.status, up.body, up.type || 'application/octet-stream', mediaHeaders(up.headers || {}));
     }
   } catch (e) {
     send(502, 'proxy error: ' + e.message);
