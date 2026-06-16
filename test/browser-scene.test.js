@@ -246,3 +246,15 @@ test('UP from the top grid row hands focus to the tab row', () => {
   scene.handleFollowKey(KEY.UP);              // -> tab row
   assert.equal(scene.onTopNav, true);
 });
+
+test('BACK on the tab row selects Channels', () => {
+  const { scene, els, MODE, KEY } = setup({ streams: [stream('a')], games: [game('Chess')] });
+  scene.switchMode(MODE.GAMES, true);
+  scene.focusTopNav();
+  assert.equal(scene.navIndex, 1, 'Games tab focused');
+  scene.handleKeyDown(KEY.BACK);
+  assert.equal(scene.mode, MODE.ALL);
+  assert.equal(scene.onTopNav, true);
+  assert.equal(scene.navIndex, 0);
+  assert.match(els['tw-tip-all'].className, /tw-tip-active/);
+});

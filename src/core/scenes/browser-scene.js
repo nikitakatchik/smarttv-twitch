@@ -698,10 +698,11 @@
   // --- keys ---------------------------------------------------------------
   P.handleKeyDown = function (key) {
     if (key === KEY.BACK) {
-      // On the tab row already -> exit the app.
+      // On the tab row already -> jump to the first tab (Channels).
       if (this.onTopNav) {
-        if (this.adapter.system && this.adapter.system.exit) { this.adapter.system.exit(); return true; }
-        return false;
+        if (this.mode !== MODE.ALL) { this.switchMode(MODE.ALL, false); }
+        this.focusTopNav();
+        return true;
       }
       // A game's stream list is a sub-view -> step back to the games grid.
       if (this.mode === MODE.GAMES_STREAMS) { this.switchMode(MODE.GAMES, true); return true; }
