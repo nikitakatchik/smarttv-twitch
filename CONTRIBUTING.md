@@ -22,11 +22,6 @@ npm test          # unit tests
 npm start         # eyeball it in the harness against live Twitch
 ```
 
-## Commit style
-
-Conventional-ish prefixes: `feat(scope):`, `fix(scope):`, `docs:`, `refactor:`,
-`test:`, `chore:`. Small, focused commits.
-
 ## Adding a translation 🌍
 
 Copy `src/lang/en.js`, translate the values, register your language code, and
