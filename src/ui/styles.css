@@ -100,7 +100,7 @@ html, body {
 .tw-cell-game { padding: 10px; }
 .tw-cell-inner { position: relative; }
 .tw-thumb {
-  width: 100%; display: block; background: #18181b;
+  width: 100%; height: 167.15625px; display: block; background: #18181b;
   border: 3px solid transparent; border-radius: 0; box-sizing: border-box;
   /* keep the bg out from under the transparent border so the gap to the focus
      frame shows the page background, not the placeholder grey. */
@@ -108,7 +108,7 @@ html, body {
 }
 /* Game box art is portrait (285x380): fill the cell width like stream thumbs so
    the cell grows taller and the caption/focus frame line up with the cover. */
-.tw-cell-game .tw-thumb { width: 100%; max-height: none; }
+.tw-cell-game .tw-thumb { width: 100%; height: 380px; max-height: none; }
 /* Selection frame: a FIXED overlay positioned over the focused tile (sized via
    JS). It lives outside the scroller, so when Up/Down scrolls content under it
    the frame stays put and its top line never clips. The 3px transparent thumb

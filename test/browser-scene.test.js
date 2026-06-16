@@ -121,6 +121,22 @@ test('a lone top-level channel tile is padded to full columns', () => {
   assert.equal(scene.rowEls[0].childNodes.length, 4, '1 real tile + 3 pads');
 });
 
+test('browse grid thumbnails carry dimensions and placeholder fallback', () => {
+  const { scene } = setup();
+  const streamCell = scene.createCell({ kind: 'stream', display: 'A', title: 'T', viewers: 1, thumb: 'http://img/a.jpg' });
+  assert.match(streamCell.innerHTML, /class="tw-thumb" width="320" height="180" src="http:\/\/img\/a\.jpg"/);
+  assert.match(streamCell.innerHTML, /onerror="this\.removeAttribute\('src'\)"/);
+  const gameCell = scene.createCell({ kind: 'game', display: 'G', viewers: 2, box: 'http://img/g.jpg' });
+  assert.match(gameCell.innerHTML, /class="tw-thumb" width="285" height="380" src="http:\/\/img\/g\.jpg"/);
+});
+
+test('offline channel avatars keep their placeholder on load failure', () => {
+  const { scene } = setup();
+  const cell = scene.createChannelCell({ display: 'A', avatar: 'http://img/avatar.jpg' });
+  assert.match(cell.innerHTML, /class="tw-chan-avatar" width="96" height="96" src="http:\/\/img\/avatar\.jpg"/);
+  assert.match(cell.innerHTML, /onerror="this\.removeAttribute\('src'\)"/);
+});
+
 test('flat grid selection frame surrounds the thumbnail, not the caption', () => {
   const { scene, els, MODE } = setup({ streams: [stream('solo')] });
   scene.switchMode(MODE.ALL, true);

@@ -173,9 +173,10 @@
     var title = dom.escape(item.title || '');
     var views = TW.shortNumber(item.viewers);
     var dur = formatDuration(item.duration);
+    var imgSrc = item.thumb ? ' src="' + dom.escape(item.thumb) + '"' : '';
     td.innerHTML =
       '<div class="tw-cell-inner">' +
-        '<img class="tw-thumb" src="' + (item.thumb || '') + '">' +
+        '<img class="tw-thumb" width="320" height="180"' + imgSrc + ' alt="" onerror="this.removeAttribute(\'src\')">' +
         '<div class="tw-meta">' +
           '<div class="tw-meta-title">' + title + '</div>' +
           '<div class="tw-meta-row">' +

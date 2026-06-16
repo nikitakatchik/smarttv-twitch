@@ -83,6 +83,13 @@ test('focus loads channel info and the VOD grid, focusing the first VOD', () => 
   assert.equal(scene.y, 0);
 });
 
+test('VOD thumbnails carry dimensions and placeholder fallback', () => {
+  const { scene } = setup();
+  const cell = scene.createCell({ kind: 'vod', title: 'V', duration: 65, viewers: 1, thumb: 'http://img/v.jpg' });
+  assert.match(cell.innerHTML, /class="tw-thumb" width="320" height="180" src="http:\/\/img\/v\.jpg"/);
+  assert.match(cell.innerHTML, /onerror="this\.removeAttribute\('src'\)"/);
+});
+
 test('VOD selection frame surrounds the thumbnail, not the caption', () => {
   const { scene, els } = setup({ vods: [vod('v1')] });
   scene.handleFocus();

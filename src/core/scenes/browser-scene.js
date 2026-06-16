@@ -351,6 +351,8 @@
     var isGame = item.kind === 'game';
     var td = dom.create('td', 'tw-cell' + (isGame ? ' tw-cell-game' : ''));
     var img = isGame ? item.box : item.thumb;
+    var imgSrc = img ? ' src="' + dom.escape(img) + '"' : '';
+    var imgSize = isGame ? ' width="285" height="380"' : ' width="320" height="180"';
     // Streams: stream title on top, then channel name (left) + viewer count
     // (right) on one line. Games have no title — just the name + count row.
     var name = dom.escape(item.display || '');
@@ -358,7 +360,7 @@
     var views = TW.shortNumber(item.viewers);
     td.innerHTML =
       '<div class="tw-cell-inner">' +
-        '<img class="tw-thumb" src="' + img + '">' +
+        '<img class="tw-thumb"' + imgSize + imgSrc + ' alt="" onerror="this.removeAttribute(\'src\')">' +
         '<div class="tw-meta">' +
           (title ? '<div class="tw-meta-title">' + title + '</div>' : '') +
           '<div class="tw-meta-row">' +
@@ -526,7 +528,7 @@
     var td = dom.create('td', 'tw-cell tw-cell-channel');
     var name = dom.escape(item.display || item.login || '');
     var avatar = item.avatar
-      ? '<img class="tw-chan-avatar" src="' + item.avatar + '">'
+      ? '<img class="tw-chan-avatar" width="96" height="96" src="' + dom.escape(item.avatar) + '" alt="" onerror="this.removeAttribute(\'src\')">'
       : '<div class="tw-chan-avatar tw-chan-avatar-ph"></div>';
     td.innerHTML =
       '<div class="tw-cell-inner">' + avatar +
