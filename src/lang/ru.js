@@ -7,6 +7,7 @@ TW.i18n.register('ru', {
   VIEWERS: 'Зрителей',
   CATEGORY_VIEWERS: '{0} зрителей',
   CATEGORY_FOLLOWERS: '{0} подписчиков',
+  FOLLOW_LIVE_CATEGORIES: 'Категории в эфире',
   LOADING: 'Загрузка',
   BUFFERING: 'Буферизация',
   RETRYING: 'Попытка',

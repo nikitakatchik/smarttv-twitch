@@ -48,7 +48,9 @@
     this.navIndex = 0;         // which NAV item is focused while onTopNav
     this.pendingMode = null;   // mode to enter on next focus (e.g. after login)
 
-    // --- Following view (two sections: live + offline channels) -------------
+    // --- Following view (live categories + live + offline channels) ---------
+    this.fCategories = [];      // categories represented by followed live streams
+    this.fCategoryMap = {};     // lower-case category name -> category tile
     this.fLive = [];           // followed channels that are live now
     this.fOffline = [];        // the rest (offline), avatar tiles
     this.fLiveLogins = {};     // login -> true, to subtract live from offline
@@ -157,7 +159,7 @@
     dom.hide(dom.get('tw-follow'));
     dom.hide(dom.get('tw-follow-empty'));
   };
-  // Following: the two-section view replaces the flat table inside the scroller.
+  // Following: the sectioned view replaces the flat table inside the scroller.
   P.showFollow = function () {
     dom.hide(dom.get('tw-b-loading'));
     dom.show(dom.get('tw-grid-wrap'));
@@ -375,7 +377,7 @@
       }
     };
 
-    // FOLLOWED has its own two-section loader (see enterFollowing); it never
+    // FOLLOWED has its own sectioned loader (see enterFollowing); it never
     // reaches the flat-grid pagination here.
     if (this.mode === MODE.GAMES) { TW.api.topGames(cursor, onOk, onFail); }
     else if (this.mode === MODE.GAMES_STREAMS) { TW.api.streamsByGame(this.selectedGame, cursor, onOk, onFail); }
@@ -478,13 +480,12 @@
     if (nearEnd && this.cursor && !this.loading) { this.loadData(); }
   };
 
-  // --- Following (two sections: live + offline channels) ------------------
-  // The Following tab isn't a flat grid: it stacks a "Live" section (followed
-  // channels streaming now -> open the player) above a "Channels" section (the
-  // rest -> open the channel page). Tiles keep the standard size; the live
-  // section is hidden when nobody's live, and a zero-follows state shows a
-  // centred message. It owns its own focus model (fRows/fr/fc) and reuses the
-  // shared selection frame + pinned-scroll machinery.
+  // --- Following (live categories + live + offline channels) ---------------
+  // The Following tab isn't a flat grid: it stacks category tiles for followed
+  // live streams, live followed channels, then offline followed channels. Tiles
+  // keep the standard size; empty sections are hidden, and a zero-follows state
+  // shows a centred message. It owns its own focus model (fRows/fr/fc) and
+  // reuses the shared selection frame + pinned-scroll machinery.
   P.enterFollowing = function () {
     this.cleanFollow();
     this.loading = true;          // block grid keys until the first render lands
@@ -493,6 +494,8 @@
   };
 
   P.cleanFollow = function () {
+    this.fCategories = [];
+    this.fCategoryMap = {};
     this.fLive = [];
     this.fOffline = [];
     this.fLiveLogins = {};
@@ -518,10 +521,38 @@
           self.fLive.push(res.items[i]);
           self.fLiveLogins[res.items[i].login] = true;
         }
-        if (res.cursor) { page(res.cursor); } else { self.loadFollowOffline(); }
+        if (res.cursor) { page(res.cursor); } else { self.rebuildFollowCategories(); self.loadFollowOffline(); }
       }, function () { self.loadFollowOffline(); });   // proceed with what we have
     }
     page(null);
+  };
+
+  P.rebuildFollowCategories = function () {
+    this.fCategories = [];
+    this.fCategoryMap = {};
+    for (var i = 0; i < this.fLive.length; i++) {
+      var stream = this.fLive[i];
+      var name = stream.game || '';
+      if (!name) { continue; }
+      var key = String(name).toLowerCase();
+      var item = this.fCategoryMap[key];
+      if (!item) {
+        item = {
+          kind: 'game',
+          id: stream.gameId || '',
+          name: name,
+          display: name,
+          viewers: 0,
+          followers: null,
+          description: '',
+          box: stream.gameBox || ''
+        };
+        this.fCategoryMap[key] = item;
+        this.fCategories.push(item);
+      }
+      item.viewers += stream.viewers || 0;
+      if (!item.box && stream.gameBox) { item.box = stream.gameBox; }
+    }
   };
 
   P.loadFollowOffline = function () {
@@ -554,7 +585,7 @@
   P.onFollowLoaded = function () {
     this.loading = false;
     this.renderFollowing();
-    if (this.fLive.length === 0 && this.fOffline.length === 0 && this.fOffCursor === false) {
+    if (this.fCategories.length === 0 && this.fLive.length === 0 && this.fOffline.length === 0 && this.fOffCursor === false) {
       this.showFollowEmpty();
       return;
     }
@@ -580,6 +611,7 @@
     var follow = dom.get('tw-follow');
     dom.html(follow, '');
     this.fRows = [];
+    if (this.fCategories.length) { this.appendFollowSection(follow, TW.i18n.t('FOLLOW_LIVE_CATEGORIES'), this.fCategories, 'game'); }
     if (this.fLive.length) { this.appendFollowSection(follow, TW.i18n.t('FOLLOW_LIVE'), this.fLive, 'stream'); }
     if (this.fOffline.length) { this.appendFollowSection(follow, TW.i18n.t('FOLLOW_OFFLINE'), this.fOffline, 'channel'); }
   };
@@ -736,8 +768,9 @@
     if (!row) { return; }
     var item = row.items[this.fc];
     if (!item) { return; }
-    // Live -> straight to the player; offline -> the channel page (info + VODs).
-    if (item.kind === 'stream') { TW.app.goToChannel(item.login, { stream: item }); }
+    // Category -> shared category stream view; live -> player; offline -> channel page.
+    if (item.kind === 'game') { this.openCategory(item); }
+    else if (item.kind === 'stream') { TW.app.goToChannel(item.login, { stream: item }); }
     else { TW.app.goToChannelPage(item.login); }
   };
 

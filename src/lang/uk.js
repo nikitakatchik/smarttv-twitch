@@ -7,6 +7,7 @@ TW.i18n.register('uk', {
   VIEWERS: 'Глядачів',
   CATEGORY_VIEWERS: '{0} глядачів',
   CATEGORY_FOLLOWERS: '{0} підписників',
+  FOLLOW_LIVE_CATEGORIES: 'Категорії наживо',
   LOADING: 'Завантаження',
   BUFFERING: 'Буферизація',
   RETRYING: 'Пробую ще',

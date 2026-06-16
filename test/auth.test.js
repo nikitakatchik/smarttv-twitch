@@ -108,7 +108,10 @@ test('logout clears the stored session', () => {
 test('helix.followedStreams maps the Helix shape and sizes the thumbnail', () => {
   const net = netMock({
     followed: { status: 200, json: {
-      data: [{ user_login: 'a', user_name: 'A', title: 't', viewer_count: 5, game_name: 'G', thumbnail_url: 'http://x/{width}x{height}.jpg' }],
+      data: [{
+        user_login: 'a', user_name: 'A', title: 't', viewer_count: 5,
+        game_id: '99', game_name: 'G', thumbnail_url: 'http://x/{width}x{height}.jpg',
+      }],
       pagination: { cursor: 'cur' },
     } },
   });
@@ -122,6 +125,9 @@ test('helix.followedStreams maps the Helix shape and sizes the thumbnail', () =>
   assert.equal(res.items[0].kind, 'stream');
   assert.equal(res.items[0].login, 'a');
   assert.equal(res.items[0].viewers, 5);
+  assert.equal(res.items[0].gameId, '99');
+  assert.equal(res.items[0].game, 'G');
+  assert.match(res.items[0].gameBox, /ttv-boxart\/G-285x380\.jpg/);
   assert.match(res.items[0].thumb, /320x180/);
   assert.equal(res.cursor, 'cur');
 });

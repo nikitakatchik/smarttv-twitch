@@ -14,6 +14,7 @@ TW.i18n.register('en', {
   NO_VODS: 'No videos found.',
   NO_CLIPS: 'No clips found.',
   FOLLOWING: 'Following',
+  FOLLOW_LIVE_CATEGORIES: 'Live Categories',
   FOLLOW_LIVE: 'Live',
   FOLLOW_OFFLINE: 'Offline',
   FOLLOW_NONE: 'You are not following any channels',

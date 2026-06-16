@@ -46,6 +46,10 @@
     return String(url || '').replace('{width}', '320').replace('{height}', '180');
   }
 
+  function boxUrl(name) {
+    return name ? ('https://static-cdn.jtvnw.net/ttv-boxart/' + encodeURIComponent(name) + '-285x380.jpg') : '';
+  }
+
   function mapStreams(j) {
     var items = [], data = j.data || [];
     for (var i = 0; i < data.length; i++) {
@@ -56,7 +60,9 @@
         display: s.user_name || s.user_login,
         title: s.title || '',
         viewers: s.viewer_count || 0,
+        gameId: s.game_id || '',
         game: s.game_name || '',
+        gameBox: boxUrl(s.game_name),
         thumb: thumb(s.thumbnail_url)
       });
     }

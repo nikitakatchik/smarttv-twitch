@@ -7,6 +7,7 @@ TW.i18n.register('es', {
   VIEWERS: 'Espectadores',
   CATEGORY_VIEWERS: '{0} espectadores',
   CATEGORY_FOLLOWERS: '{0} seguidores',
+  FOLLOW_LIVE_CATEGORIES: 'Categorías en vivo',
   LOADING: 'Cargando',
   BUFFERING: 'Almacenando',
   RETRYING: 'Reintentando',

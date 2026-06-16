@@ -7,6 +7,7 @@ TW.i18n.register('sv', {
   VIEWERS: 'Tittare',
   CATEGORY_VIEWERS: '{0} tittare',
   CATEGORY_FOLLOWERS: '{0} följare',
+  FOLLOW_LIVE_CATEGORIES: 'Livekategorier',
   LOADING: 'Laddar',
   BUFFERING: 'Buffrar',
   RETRYING: 'Försöker igen',

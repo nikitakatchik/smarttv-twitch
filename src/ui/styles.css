@@ -173,8 +173,8 @@ html, body {
 .tw-cell-game .tw-meta-name { font-size: 19px; }
 .tw-cell-game .tw-meta-views { font-size: 17px; }
 
-/* --- Following (two sections + offline channel tiles) ------------------- */
-/* The two-section view lives inside the same scroller as the flat grid; only
+/* --- Following (sectioned view + offline channel tiles) ------------------ */
+/* The sectioned view lives inside the same scroller as the flat grid; only
    one is shown at a time. */
 .tw-follow { display: none; }
 .tw-sec { margin: 0 0 10px; }

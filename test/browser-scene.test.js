@@ -7,7 +7,7 @@ const path = require('path');
 const vm = require('vm');
 
 // The browse scene is DOM-heavy; stub TW.dom richly enough to exercise the
-// Following view's two-section build, focus model, and routing without a real
+// Following view's sectioned build, focus model, and routing without a real
 // DOM. Elements track appended children and expose zeroed layout metrics so the
 // selection-frame math runs without throwing.
 function setup(opts) {
@@ -79,7 +79,10 @@ function setup(opts) {
   return { scene, calls, els, MODE: TW.BrowserScene.MODE, KEY: TW.KEY };
 }
 
-const stream = (login, display) => ({ kind: 'stream', login, display: display || login, title: 't', viewers: 1, thumb: '' });
+const stream = (login, display, extra) => Object.assign(
+  { kind: 'stream', login, display: display || login, title: 't', viewers: 1, thumb: '' },
+  extra || {},
+);
 const channel = (login, display) => ({ kind: 'channel', login, display: display || login, avatar: '' });
 const game = (display) => ({ kind: 'game', name: display, display, viewers: 1, box: '' });
 
@@ -102,6 +105,24 @@ test('live + offline render as two sections, with live channels excluded from of
   assert.equal(scene.fRows[0].items[0].kind, 'stream');
   assert.equal(scene.fRows[1].items[0].kind, 'channel');
   assert.equal(scene.fRows[1].items[0].login, 'b', 'live channel a filtered out of offline');
+});
+
+test('Following renders Live Categories before live and offline rows', () => {
+  const { scene, MODE } = setup({
+    live: [
+      stream('a', 'A', { game: 'Chess', gameBox: 'http://img/chess.jpg', viewers: 2 }),
+      stream('b', 'B', { game: 'Chess', gameBox: 'http://img/chess.jpg', viewers: 3 }),
+    ],
+    follows: [channel('a', 'A'), channel('c', 'C')],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.fCategories.length, 1, 'duplicate live categories are merged');
+  assert.equal(scene.fCategories[0].name, 'Chess');
+  assert.equal(scene.fCategories[0].viewers, 5, 'category tile sums followed live viewers');
+  assert.equal(scene.fRows.length, 3, 'category row + live row + offline row');
+  assert.equal(scene.fRows[0].items[0].kind, 'game');
+  assert.equal(scene.fRows[1].items[0].kind, 'stream');
+  assert.equal(scene.fRows[2].items[0].kind, 'channel');
 });
 
 test('a lone tile is padded to full columns so it keeps standard size', () => {
@@ -281,6 +302,21 @@ test('selecting a live tile opens the player; an offline tile opens the channel 
   assert.deepEqual(calls.goToChannel, ['liveguy']);
   scene.fr = 1; scene.fc = 0; scene.activateFollow();
   assert.deepEqual(calls.goToChannelPage, ['offguy']);
+});
+
+test('selecting a live category enters the shared category stream view', () => {
+  const { scene, els, MODE } = setup({
+    live: [stream('liveguy', 'Live Guy', { game: 'Chess', gameBox: 'http://img/chess.jpg' })],
+    follows: [],
+    gameStreams: [stream('other')],
+    categoryInfo: { kind: 'game', name: 'Chess', display: 'Chess', viewers: 10, followers: 20, box: 'http://img/chess.jpg' },
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  scene.fr = 0; scene.fc = 0; scene.activateFollow();
+  assert.equal(scene.mode, MODE.GAMES_STREAMS);
+  assert.equal(scene.selectedGame.name, 'Chess');
+  assert.equal(els['tw-category-head'].style.display, 'block');
+  assert.equal(scene.items.length, 1);
 });
 
 test('UP from the top grid row hands focus to the tab row', () => {
