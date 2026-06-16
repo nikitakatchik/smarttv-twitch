@@ -38,6 +38,21 @@ test('topStreams maps the GraphQL shape to normalized items', () => {
   assert.equal(result.cursor, 'c2');
 });
 
+test('topGames uses Twitch-provided box art URLs', () => {
+  const body = JSON.stringify({ data: { games: { edges: [
+    { cursor: 'g1', node: {
+      id: '99', name: 'M&M Game', displayName: 'M&M Game', viewersCount: 77,
+      boxArtURL: 'https://img/game-285x380.jpg',
+    } },
+  ] } } });
+  const { TW, log } = makeApp(() => ({ status: 200, text: body }));
+  let result = null;
+  TW.api.topGames(null, (r) => { result = r; }, () => {});
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].box, 'https://img/game-285x380.jpg');
+  assert.match(log[log.length - 1].body, /boxArtURL\(width: 285, height: 380\)/);
+});
+
 test('streamInfo maps the current game for the player overlay', () => {
   const body = JSON.stringify({ data: { user: {
     displayName: 'Alpha',

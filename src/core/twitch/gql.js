@@ -89,7 +89,7 @@
 
     topGames: function (limit, cursor, onOk, onFail) {
       post('{ games(first: ' + cap(limit) + afterClause(cursor) + ') { edges { cursor node { ' +
-        'id name displayName viewersCount } } } }',
+        'id name displayName viewersCount boxArtURL(width: 285, height: 380) } } } }',
         function (data) {
           var items = [], edges = (data.games && data.games.edges) || [], last = null;
           for (var i = 0; i < edges.length; i++) {
@@ -98,7 +98,7 @@
             items.push({
               kind: 'game', id: n.id, name: n.name,
               display: n.displayName || n.name, viewers: n.viewersCount || 0,
-              box: boxUrl(n.name)
+              box: n.boxArtURL || boxUrl(n.name)
             });
           }
           onOk({ items: items, cursor: last });
