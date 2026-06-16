@@ -91,19 +91,21 @@ test('VOD selection frame surrounds the thumbnail, not the caption', () => {
   inner.offsetTop = 14;
   inner.offsetWidth = 100;
   inner.offsetHeight = 84; // thumbnail + caption
+  inner.getBoundingClientRect = () => ({ left: 20, top: 30, right: 120, bottom: 114 });
   inner.getElementsByTagName = () => [{
     offsetLeft: 0,
     offsetTop: 0,
     offsetWidth: 100,
     offsetHeight: 60,
     complete: true,
+    getBoundingClientRect: () => ({ left: 20, top: 30, right: 120.5, bottom: 90.25 }),
   }];
   scene.rowEls[0].offsetTop = 4;
   scene.updateFrame();
   assert.equal(els['tw-cp-frame'].style.left, '5px');
   assert.equal(els['tw-cp-frame'].style.top, '10px');
-  assert.equal(els['tw-cp-frame'].style.width, '100px');
-  assert.equal(els['tw-cp-frame'].style.height, '60px');
+  assert.equal(els['tw-cp-frame'].style.width, '100.5px');
+  assert.equal(els['tw-cp-frame'].style.height, '60.25px');
 });
 
 test('a channel with no VODs shows the empty message', () => {

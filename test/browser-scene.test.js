@@ -129,18 +129,45 @@ test('flat grid selection frame surrounds the thumbnail, not the caption', () =>
   inner.offsetTop = 9;
   inner.offsetWidth = 100;
   inner.offsetHeight = 84; // thumbnail + caption
+  inner.getBoundingClientRect = () => ({ left: 20, top: 30, right: 120, bottom: 114 });
   inner.getElementsByTagName = () => [{
     offsetLeft: 0,
     offsetTop: 0,
     offsetWidth: 100,
     offsetHeight: 60,
     complete: true,
+    getBoundingClientRect: () => ({ left: 20, top: 30, right: 120.5, bottom: 90.25 }),
   }];
   scene.updateFrame();
   assert.equal(els['tw-grid-frame'].style.left, '5px');
   assert.equal(els['tw-grid-frame'].style.top, '9px');
-  assert.equal(els['tw-grid-frame'].style.width, '100px');
-  assert.equal(els['tw-grid-frame'].style.height, '60px');
+  assert.equal(els['tw-grid-frame'].style.width, '100.5px');
+  assert.equal(els['tw-grid-frame'].style.height, '60.25px');
+});
+
+test('Following live selection frame preserves fractional thumbnail bounds', () => {
+  const { scene, els, MODE } = setup({ live: [stream('solo')], follows: [] });
+  scene.switchMode(MODE.FOLLOWED, true);
+  const inner = scene.followCell().firstChild;
+  inner.offsetLeft = 5;
+  inner.offsetTop = 21;
+  inner.offsetWidth = 100;
+  inner.offsetHeight = 84; // thumbnail + caption
+  inner.getBoundingClientRect = () => ({ left: 20, top: 30, right: 120, bottom: 114 });
+  inner.getElementsByTagName = () => [{
+    offsetLeft: 0,
+    offsetTop: 0,
+    offsetWidth: 100,
+    offsetHeight: 60,
+    complete: true,
+    getBoundingClientRect: () => ({ left: 20, top: 30, right: 120.5, bottom: 90.25 }),
+  }];
+  scene.fScroll = 4;
+  scene.followFrame();
+  assert.equal(els['tw-grid-frame'].style.left, '5px');
+  assert.equal(els['tw-grid-frame'].style.top, '17px');
+  assert.equal(els['tw-grid-frame'].style.width, '100.5px');
+  assert.equal(els['tw-grid-frame'].style.height, '60.25px');
 });
 
 test('top-level games use the tighter wrapper inset for cover padding', () => {

@@ -218,6 +218,26 @@
     this.setScroll(row ? row.offsetTop : 0);
   };
 
+  P.frameTargetBox = function (inner, target, topBase) {
+    var box = {
+      left: inner.offsetLeft + (target === inner ? 0 : target.offsetLeft),
+      top: topBase + (target === inner ? 0 : target.offsetTop),
+      width: target.offsetWidth,
+      height: target.offsetHeight
+    };
+    if (target.getBoundingClientRect) {
+      var tr = target.getBoundingClientRect();
+      box.width = tr.right - tr.left;
+      box.height = tr.bottom - tr.top;
+      if (inner.getBoundingClientRect) {
+        var ir = inner.getBoundingClientRect();
+        box.left = inner.offsetLeft + (tr.left - ir.left);
+        box.top = topBase + (tr.top - ir.top);
+      }
+    }
+    return box;
+  };
+
   P.updateFrame = function () {
     var frame = dom.get('tw-cp-frame');
     if (!frame) { return; }
@@ -228,12 +248,13 @@
     var target = img || inner;
     var row = this.rowEls[this.y];
     var rowTop = row ? row.offsetTop : 0;
+    var box = this.frameTargetBox(inner, target, inner.offsetTop - rowTop);
     var reappearing = (frame.style.opacity !== '1');
     if (reappearing) { frame.style.webkitTransition = frame.style.transition = 'none'; }
-    frame.style.left = (inner.offsetLeft + (target === inner ? 0 : target.offsetLeft)) + 'px';
-    frame.style.top = (inner.offsetTop + (target === inner ? 0 : target.offsetTop) - rowTop) + 'px';
-    frame.style.width = target.offsetWidth + 'px';
-    frame.style.height = target.offsetHeight + 'px';
+    frame.style.left = box.left + 'px';
+    frame.style.top = box.top + 'px';
+    frame.style.width = box.width + 'px';
+    frame.style.height = box.height + 'px';
     if (reappearing) {
       frame.offsetWidth;   // commit the snap before transitions resume
       frame.style.webkitTransition = frame.style.transition = '';
