@@ -200,6 +200,19 @@ test('game stream lists return to the standard wrapper inset', () => {
   assert.doesNotMatch(els['tw-grid-wrap'].className, /tw-grid-wrap-games/);
 });
 
+test('returning from another scene preserves the current browser mode', () => {
+  const { scene, els, MODE } = setup({ games: [game('Chess')] });
+  scene.switchMode(MODE.GAMES, true);
+  assert.equal(scene.mode, MODE.GAMES);
+  assert.equal(scene.items.length, 1);
+  scene.handleHide();
+  scene.handleShow();
+  scene.handleFocus();
+  assert.equal(scene.mode, MODE.GAMES);
+  assert.equal(scene.items.length, 1);
+  assert.match(els['tw-grid-wrap'].className, /tw-grid-wrap-games/);
+});
+
 test('the offline section lays out at 6 columns', () => {
   const { scene, MODE } = setup({
     live: [],

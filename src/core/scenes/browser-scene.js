@@ -111,13 +111,18 @@
 
   // --- lifecycle ----------------------------------------------------------
   P.handleShow = function () { dom.show(this.root); };
-  P.handleHide = function () { dom.hide(this.root); this.clean(); };
+  P.handleHide = function () { dom.hide(this.root); };
   P.handleFocus = function () {
     this.updateAccount();
-    this.clearNavFocus();
-    var m = (this.pendingMode == null) ? MODE.ALL : this.pendingMode;
+    var m = (this.pendingMode == null) ? (this.mode < 0 ? MODE.ALL : this.mode) : this.pendingMode;
+    var force = this.pendingMode != null || this.mode < 0;
     this.pendingMode = null;
-    this.switchMode(m, true);
+    if (force) {
+      this.clearNavFocus();
+      this.switchMode(m, true);
+    } else {
+      this.restoreFocus();
+    }
   };
   P.handleBlur = function () {};
 
@@ -252,6 +257,19 @@
   P.hideFrame = function () {
     var frame = dom.get('tw-grid-frame');
     if (frame) { frame.style.opacity = '0'; }   // fades out (CSS transition)
+  };
+
+  P.restoreFocus = function () {
+    if (this.onTopNav) { this.highlightNav(); return; }
+    if (this.mode === MODE.FOLLOWED) {
+      if (this.fFocused && this.fRows.length) { this.followAddFocus(); }
+      return;
+    }
+    var c = this.focusedCell();
+    if (!c) { return; }
+    dom.addClass(c.firstChild, 'tw-focused');
+    this.scrollToCursor();
+    this.updateFrame();
   };
 
   P.refresh = function () {
