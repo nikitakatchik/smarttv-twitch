@@ -77,6 +77,8 @@ html, body {
    pinned to the top ("first") row. Visible artwork sits on a constant 43px edge
    margin that matches the top bar: left/right are 35px + 5px cell padding + 3px
    transparent thumb border = 43px, lining thumbnails up under the logo/tabs/chip.
+   Game covers use 10px cells, so the Games wrapper tightens to 30px:
+   30px + 10px cell padding + 3px transparent border = the same 43px edge.
    top:114 puts the artwork 43px below the top row — the same as the row's 43px
    top margin — so the top row gets equal breathing room above and below. Item
    gutters stay smaller than this margin (games 20px, channels 10px) so the outer
@@ -85,6 +87,7 @@ html, body {
    while scrolling; the only bottom margin is the empty space once the last row
    reaches the top. */
 .tw-grid-wrap { position: absolute; left: 35px; right: 35px; top: 114px; bottom: 0; overflow: hidden; }
+.tw-grid-wrap-games { left: 30px; right: 30px; }
 /* GPU-composited transform + short transition = a smooth, lightweight scroll
    (one layer moves; no per-frame layout). translate3d set inline from JS. */
 .tw-grid-scroll {
@@ -366,20 +369,17 @@ html, body {
 .tw-chat-msg { color: #e6e8ee; }
 
 /* --- account chip (browser top bar) ------------------------------------- */
-/* Chip sits at the far right (43px edge), swapped with the tab bar. */
+/* Chip sits at the far right (43px edge), matching the logo's height and edge. */
 .tw-account {
-  position: absolute; top: 42px; right: 43px; height: 38px; line-height: 38px;
+  position: absolute; top: 43px; right: 43px; height: 36px; line-height: 36px;
   max-width: 300px; padding: 0 20px; box-sizing: border-box;
   font-size: 17px; font-weight: 500; text-align: center; color: #eff1f6;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   border: 0; border-radius: 0; outline: 0; background: #323239;
-  -webkit-transition: top 0.105s ease-out, right 0.105s ease-out, height 0.105s ease-out,
-    line-height 0.105s ease-out, padding 0.105s ease-out, background 0.105s ease-out, color 0.105s ease-out;
-  transition: top 0.105s ease-out, right 0.105s ease-out, height 0.105s ease-out,
-    line-height 0.105s ease-out, padding 0.105s ease-out, background 0.105s ease-out, color 0.105s ease-out;
+  -webkit-transition: background 0.105s ease-out, color 0.105s ease-out;
+  transition: background 0.105s ease-out, color 0.105s ease-out;
 }
 .tw-account.tw-focused {
-  top: 38px; right: 39px; height: 46px; line-height: 46px; max-width: 308px; padding: 0 24px;
   color: #111318; outline: 0; background: #f4f4f7;
 }
 

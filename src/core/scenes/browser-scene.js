@@ -233,8 +233,16 @@
   };
 
   P.refresh = function () {
+    this.syncGridInset();
     this.clean();
     this.loadData();
+  };
+
+  P.syncGridInset = function () {
+    var wrap = dom.get('tw-grid-wrap');
+    if (!wrap) { return; }
+    dom.removeClass(wrap, 'tw-grid-wrap-games');
+    if (this.mode === MODE.GAMES) { dom.addClass(wrap, 'tw-grid-wrap-games'); }
   };
 
   P.loadData = function () {
@@ -612,6 +620,7 @@
       : (mode === MODE.GAMES || mode === MODE.GAMES_STREAMS) ? 'tw-tip-games'
       : 'tw-tip-all';
     dom.addClass(dom.get(activeId), 'tw-tip-active');
+    this.syncGridInset();
 
     if (mode === MODE.FOLLOWED) {
       this.enterFollowing();

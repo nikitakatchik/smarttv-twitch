@@ -55,6 +55,8 @@ function setup(opts) {
       followedStreams: (cursor, ok) => ok({ items: (opts.live || []).slice(), cursor: null }),
       followedChannels: (cursor, ok) => ok({ items: (opts.follows || []).slice(), cursor: null }),
       topStreams: (cursor, ok) => ok({ items: [], cursor: null }),
+      topGames: (cursor, ok) => ok({ items: (opts.games || []).slice(), cursor: null }),
+      streamsByGame: (game, cursor, ok) => ok({ items: (opts.gameStreams || []).slice(), cursor: null }),
     },
     app: {
       goToChannel: (l) => calls.goToChannel.push(l),
@@ -77,6 +79,7 @@ function setup(opts) {
 
 const stream = (login, display) => ({ kind: 'stream', login, display: display || login, title: 't', viewers: 1, thumb: '' });
 const channel = (login, display) => ({ kind: 'channel', login, display: display || login, avatar: '' });
+const game = (display) => ({ kind: 'game', display, viewers: 1, box: '' });
 
 test('zero follows shows the empty state and builds no rows', () => {
   const { scene, els, MODE } = setup({ live: [], follows: [] });
@@ -107,6 +110,20 @@ test('a lone tile is padded to full columns so it keeps standard size', () => {
   // The rendered row carries 4 <td>s (1 real + 3 pads) -> table-layout:fixed
   // keeps 25% columns instead of stretching the single tile.
   assert.equal(scene.fRows[0].el.children.length, 4);
+});
+
+test('top-level games use the tighter wrapper inset for cover padding', () => {
+  const { scene, els, MODE } = setup({ games: [game('Chess')] });
+  scene.switchMode(MODE.GAMES, true);
+  assert.match(els['tw-grid-wrap'].className, /tw-grid-wrap-games/);
+});
+
+test('game stream lists return to the standard wrapper inset', () => {
+  const { scene, els, MODE } = setup({ games: [game('Chess')], gameStreams: [stream('a')] });
+  scene.switchMode(MODE.GAMES, true);
+  scene.activate();
+  assert.equal(scene.mode, MODE.GAMES_STREAMS);
+  assert.doesNotMatch(els['tw-grid-wrap'].className, /tw-grid-wrap-games/);
 });
 
 test('the offline section lays out at 6 columns', () => {
