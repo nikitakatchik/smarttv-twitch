@@ -1,5 +1,6 @@
 TW.i18n.register('sv', {
   CHANNELS: 'Kanaler',
+  CHANNEL: 'Kanal',
   GAMES: 'Spel',
   OPEN: 'Öppna',
   REFRESH: 'Uppdatera',

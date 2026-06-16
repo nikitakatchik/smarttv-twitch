@@ -14,6 +14,10 @@
  *   setDisplayArea(x,y,w,h)
  *   getQualities(cb)           cb(["Auto", "1080p60", ...]) when known
  *   selectQuality(index)       index into the getQualities() list
+ *   canSeek()                  optional; true when exact seeking is supported
+ *   getPosition()              optional; seconds
+ *   getDuration()              optional; seconds
+ *   seekTo(seconds)            optional; exact seek for VOD/clip playback
  * callbacks: onBufferingStart, onBufferingProgress(pct), onBufferingComplete,
  *            onPlaying, onError(msg), onEnded
  */
@@ -23,6 +27,7 @@
   var TW = global.TW;
   var dom = TW.dom;
   var KEY = TW.KEY;
+  var CHAT_WIDTH = 360;
 
   function ChannelScene(adapter) {
     this.adapter = adapter;
@@ -33,6 +38,7 @@
     this.playingIndex = 0;     // currently playing
     this.panelShown = false;
     this.infoTimer = null;
+    this.startItem = null;
 
     this.contentKind = 'live'; // 'live' | 'vod' | 'clip'
     this.startVod = null;      // if set on entry, play this VOD instead of live
@@ -40,15 +46,16 @@
     this.chatOn = false;
     this.chatClient = null;
     this.chatCount = 0;
+    this.chatMessages = [];
 
-    this.listMode = null;      // null | 'vods' | 'clips'
-    this.listItems = [];
-    this.listIndex = 0;
-    this.listCursor = null;
-    this.listLoading = false;
+    this.controlIndex = 0;
+    this.progressTimer = null;
+    this.duration = 0;
   }
 
-  var CHAT_MAX = 80;           // cap chat rows kept in the DOM
+  // Keep a small recent chat history. While the rail is closed this is memory
+  // only; when open, the same cap bounds DOM rows so video playback stays cheap.
+  var CHAT_MAX = 40;
 
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
   function formatDuration(sec) {
@@ -63,49 +70,66 @@
     var root = dom.create('div', 'tw-scene', '');
     root.id = 'tw-channel';
     root.innerHTML =
-      '<div class="tw-panel" id="tw-panel">' +
-        '<img class="tw-panel-logo" src="assets/logo.png" alt="">' +
-        '<div class="tw-panel-head">' +
-          '<img class="tw-panel-icon" id="tw-c-icon" src="">' +
-          '<div class="tw-panel-name" id="tw-c-name"></div>' +
-          '<div class="tw-panel-viewers" id="tw-c-viewers"></div>' +
+      '<div class="tw-player-surface" id="tw-player-surface">' +
+        '<div class="tw-player-scrim tw-player-scrim-bottom"></div>' +
+        '<div class="tw-nowbar" id="tw-nowbar">' +
+          '<img class="tw-now-icon" id="tw-c-icon" src="assets/icon/icon_85_70.png" alt="">' +
+          '<div class="tw-now-copy">' +
+            '<div class="tw-now-kicker">' +
+              '<span class="tw-now-kind" id="tw-c-kind"></span>' +
+              '<span class="tw-now-sep"></span>' +
+              '<span class="tw-now-viewers" id="tw-c-viewers"></span>' +
+            '</div>' +
+            '<div class="tw-now-name" id="tw-c-name"></div>' +
+            '<div class="tw-now-title" id="tw-c-title"></div>' +
+          '</div>' +
         '</div>' +
-        '<div class="tw-panel-title" id="tw-c-title"></div>' +
-        '<div class="tw-panel-quality">' +
-          '<span id="tw-c-quality-label"></span>' +
-          '<span class="tw-quality-name" id="tw-c-quality"></span>' +
-          '<span class="tw-quality-arrows"><i id="tw-c-up">&#9650;</i><i id="tw-c-down">&#9660;</i></span>' +
+        '<div class="tw-progress" id="tw-progress">' +
+          '<span class="tw-progress-time" id="tw-c-position"></span>' +
+          '<span class="tw-progress-track"><span class="tw-progress-fill" id="tw-c-progress-fill"></span></span>' +
+          '<span class="tw-progress-time tw-progress-total" id="tw-c-duration"></span>' +
         '</div>' +
+        '<div class="tw-controls" id="tw-controls">' +
+          '<span class="tw-control" id="tw-ctl-back">-10s</span>' +
+          '<span class="tw-control" id="tw-ctl-forward">+10s</span>' +
+          '<span class="tw-control" id="tw-ctl-channel"></span>' +
+          '<span class="tw-control" id="tw-ctl-chat"></span>' +
+          '<span class="tw-control" id="tw-ctl-quality"></span>' +
+        '</div>' +
+        '<div class="tw-panel" id="tw-panel">' +
+          '<div class="tw-panel-mark"></div>' +
+          '<div class="tw-panel-quality">' +
+            '<div class="tw-quality-label" id="tw-c-quality-label"></div>' +
+            '<div class="tw-quality-picker">' +
+              '<span class="tw-quality-arrow" id="tw-c-up">&#9650;</span>' +
+              '<span class="tw-quality-name" id="tw-c-quality"></span>' +
+              '<span class="tw-quality-arrow" id="tw-c-down">&#9660;</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="tw-loading" id="tw-c-loading"><div class="tw-spinner"></div>' +
+          '<div class="tw-loading-text" id="tw-c-loading-text"></div></div>' +
       '</div>' +
       '<div class="tw-chat" id="tw-chat">' +
-        '<div class="tw-chat-head" id="tw-chat-head"></div>' +
         '<div class="tw-chat-list" id="tw-chat-list"></div>' +
-      '</div>' +
-      '<div class="tw-clist" id="tw-clist">' +
-        '<div class="tw-clist-head" id="tw-clist-head"></div>' +
-        '<div class="tw-clist-body" id="tw-clist-body"></div>' +
-      '</div>' +
-      '<div class="tw-hints" id="tw-c-hints">' +
-        '<span><b class="tw-dot tw-green">B</b> <span id="tw-h-chat"></span></span>' +
-        '<span><b class="tw-dot tw-yellow">C</b> <span id="tw-h-vods"></span></span>' +
-        '<span><b class="tw-dot tw-blue">D</b> <span id="tw-h-clips"></span></span>' +
-        '<span><b class="tw-dot tw-red">A</b> <span id="tw-h-live"></span></span>' +
-      '</div>' +
-      '<div class="tw-loading" id="tw-c-loading"><div class="tw-spinner"></div>' +
-        '<div class="tw-loading-text" id="tw-c-loading-text"></div></div>';
+      '</div>';
     (dom.get('app') || global.document.body).appendChild(root);
     this.root = root;
     dom.text(dom.get('tw-c-quality-label'), TW.i18n.t('QUALITY'));
-    dom.text(dom.get('tw-chat-head'), TW.i18n.t('CHAT'));
-    dom.text(dom.get('tw-h-chat'), TW.i18n.t('CHAT'));
-    dom.text(dom.get('tw-h-vods'), TW.i18n.t('VODS'));
-    dom.text(dom.get('tw-h-clips'), TW.i18n.t('CLIPS'));
-    dom.text(dom.get('tw-h-live'), TW.i18n.t('LIVE'));
+    dom.text(dom.get('tw-c-kind'), TW.i18n.t('LIVE'));
+    dom.text(dom.get('tw-ctl-channel'), TW.i18n.t('CHANNEL'));
+    dom.text(dom.get('tw-ctl-chat'), TW.i18n.t('CHAT'));
+    dom.text(dom.get('tw-ctl-quality'), TW.i18n.t('QUALITY'));
+    dom.text(dom.get('tw-c-position'), '0:00');
+    dom.text(dom.get('tw-c-duration'), '0:00');
+    this.applyPlayerLayout();
+    this.refreshControls();
   };
 
   P.handleShow = function (data) {
     this.login = data && data.login;
     this.startVod = (data && data.vod) || null;   // play this VOD instead of live
+    this.startItem = (data && data.item) || null;
     this.returnTo = (data && data.from) || null;   // e.g. 'channelPage'
     dom.show(this.root);
   };
@@ -115,26 +139,40 @@
       this.adapter.system.setScreensaver(true, 100000);
     }
     this.hidePanel();
-    this.closeList();
     this.closeChat();
 
     this.player = this.adapter.createPlayer(this.playerCallbacks());
-    if (this.player.setDisplayArea) {
-      this.player.setDisplayArea(0, 0, TW.config.screen.width, TW.config.screen.height);
-    }
+    this.applyPlayerLayout();
     // Entered from the channel page on a specific VOD? Play it; otherwise live.
-    if (this.startVod) { var v = this.startVod; this.startVod = null; this.playVod(v); }
-    else { this.playLive(); }
+    if (this.startVod) {
+      var v = this.startVod;
+      this.startVod = null;
+      this.startItem = null;
+      this.playVod(v);
+    } else if (this.startItem) {
+      var item = this.startItem;
+      this.startItem = null;
+      if (item.kind === 'vod') { this.playVod(item); }
+      else { this.playClip(item); }
+    } else {
+      this.playLive();
+    }
   };
 
   // --- content sources ----------------------------------------------------
   P.playLive = function () {
     var self = this;
     this.contentKind = 'live';
+    this.duration = 0;
+    this.stopProgressTimer();
+    this.setContentBadge('LIVE');
     dom.text(dom.get('tw-c-name'), this.login || '');
     dom.text(dom.get('tw-c-title'), '');
-    dom.text(dom.get('tw-c-viewers'), '');
-    dom.attr(dom.get('tw-c-icon'), 'src', '');
+    this.setViewers('');
+    dom.attr(dom.get('tw-c-icon'), 'src', 'assets/icon/icon_85_70.png');
+    this.refreshControls();
+    this.resetChat();
+    this.startChatCapture();
     this.showLoading();
 
     TW.api.playbackUrl(this.login, function (masterUrl) {
@@ -166,17 +204,42 @@
   };
 
   P.showContentInfo = function (item) {
+    this.setContentBadge(item.kind === 'vod' ? 'VODS' : 'CLIPS');
     dom.text(dom.get('tw-c-name'), this.login || '');
     dom.text(dom.get('tw-c-title'), item.title || '');
-    dom.text(dom.get('tw-c-viewers'), TW.addCommas(item.viewers) + ' ' + TW.i18n.t('VIEWERS'));
+    this.setViewers(TW.addCommas(item.viewers) + ' ' + TW.i18n.t('VIEWERS'));
+    this.duration = item.duration || 0;
+    this.refreshControls();
+    this.updateProgress();
+  };
+
+  P.setContentBadge = function (key) {
+    var root = this.root;
+    if (root) {
+      dom.removeClass(root, 'tw-content-live');
+      dom.removeClass(root, 'tw-content-vods');
+      dom.removeClass(root, 'tw-content-clips');
+      dom.addClass(root, 'tw-content-' + String(key || '').toLowerCase());
+    }
+    dom.text(dom.get('tw-c-kind'), TW.i18n.t(key));
+  };
+
+  P.setViewers = function (text) {
+    dom.text(dom.get('tw-c-viewers'), text || '');
+    if (!this.root) { return; }
+    if (text) { dom.addClass(this.root, 'tw-has-viewers'); }
+    else { dom.removeClass(this.root, 'tw-has-viewers'); }
   };
 
   P.playVod = function (item) {
     var self = this;
     this.contentKind = 'vod';
     this.closeChat();
+    this.stopChatCapture();
+    this.resetChat();
     this.stopInfoTimer();
     this.showContentInfo(item);
+    this.startProgressTimer();
     this.showLoading();
     TW.api.vodPlaybackUrl(item.id, function (url) {
       self.loadInto(url);
@@ -187,8 +250,11 @@
     var self = this;
     this.contentKind = 'clip';
     this.closeChat();
+    this.stopChatCapture();
+    this.resetChat();
     this.stopInfoTimer();
     this.showContentInfo(item);
+    this.startProgressTimer();
     this.showLoading();
     TW.api.clipPlayback(item.slug, function (info) {
       self.loadInto(info.url);
@@ -203,8 +269,9 @@
 
   P.handleHide = function () {
     this.stopInfoTimer();
+    this.stopProgressTimer();
     this.closeChat();
-    this.closeList();
+    this.stopChatCapture();
     if (this.player) { try { this.player.stop(); this.player.destroy(); } catch (e) {} this.player = null; }
     dom.hide(this.root);
   };
@@ -215,7 +282,7 @@
       onBufferingStart: function () { self.showDialog(TW.i18n.t('BUFFERING')); },
       onBufferingProgress: function (pct) { self.showDialog(TW.i18n.t('BUFFERING') + ': ' + pct + '%'); },
       onBufferingComplete: function () { self.hideDialog(); },
-      onPlaying: function () { self.hideDialog(); },
+      onPlaying: function () { self.hideDialog(); self.updateProgress(); },
       onEnded: function () { self.onContentEnded(); },
       onError: function (msg) { self.showDialog(msg || TW.i18n.t('ERROR_RENDER')); }
     };
@@ -236,12 +303,12 @@
   P.hideDialog = function () { dom.hide(dom.get('tw-c-loading')); };
 
   P.updateInfo = function () {
+    var self = this;
     if (!this.login || this.contentKind !== 'live') { return; }
     TW.api.streamInfo(this.login, function (info) {
       dom.text(dom.get('tw-c-name'), info.display);
       dom.text(dom.get('tw-c-title'), info.title);
-      dom.text(dom.get('tw-c-viewers'),
-        info.online ? (TW.addCommas(info.viewers) + ' ' + TW.i18n.t('VIEWERS')) : '');
+      self.setViewers(info.online ? (TW.addCommas(info.viewers) + ' ' + TW.i18n.t('VIEWERS')) : '');
       if (info.logo) { dom.attr(dom.get('tw-c-icon'), 'src', info.logo); }
     }, TW.noop);
   };
@@ -265,7 +332,45 @@
     // onBufferingStart/Complete callbacks; hls.js and AVPlay switch seamlessly.
   };
 
-  // --- chat overlay (read-only, live only) --------------------------------
+  // --- chat rail (read-only, live only) -----------------------------------
+  P.playerRect = function () {
+    var sw = TW.config.screen.width, sh = TW.config.screen.height;
+    if (!this.chatOn) { return { x: 0, y: 0, w: sw, h: sh }; }
+
+    var chatW = Math.min(CHAT_WIDTH, Math.floor(sw * 0.4));
+    var availW = sw - chatW, availH = sh;
+    var w = availW;
+    var h = Math.round(w * sh / sw);
+    if (h > availH) {
+      h = availH;
+      w = Math.round(h * sw / sh);
+    }
+    return {
+      x: Math.floor((availW - w) / 2),
+      y: Math.floor((availH - h) / 2),
+      w: w,
+      h: h
+    };
+  };
+
+  P.applyPlayerLayout = function () {
+    var r = this.playerRect();
+    var surface = dom.get('tw-player-surface');
+    var chat = dom.get('tw-chat');
+    if (surface) {
+      surface.style.left = r.x + 'px';
+      surface.style.top = r.y + 'px';
+      surface.style.width = r.w + 'px';
+      surface.style.height = r.h + 'px';
+    }
+    if (chat) {
+      var chatW = Math.min(CHAT_WIDTH, Math.floor(TW.config.screen.width * 0.4));
+      chat.style.left = (TW.config.screen.width - chatW) + 'px';
+      chat.style.width = chatW + 'px';
+    }
+    if (this.player && this.player.setDisplayArea) { this.player.setDisplayArea(r.x, r.y, r.w, r.h); }
+  };
+
   P.toggleChat = function () {
     if (this.contentKind !== 'live') { return; }
     if (this.chatOn) { this.closeChat(); } else { this.openChat(); }
@@ -273,27 +378,54 @@
 
   P.openChat = function () {
     if (this.chatOn || !this.login) { return; }
-    var self = this;
     this.chatOn = true;
-    this.clearChat();
     dom.addClass(this.root, 'tw-chat-open');
     dom.show(dom.get('tw-chat'));
-    this.chatClient = TW.twitch.chat.connect(this.login, {
-      onMessage: function (m) { self.addChatLine(m); },
-      onError: function () {}
-    });
+    this.applyPlayerLayout();
+    this.renderChatMessages();
+    this.startChatCapture();
   };
 
   P.closeChat = function () {
-    if (this.chatClient) { try { this.chatClient.close(); } catch (e) {} this.chatClient = null; }
     this.chatOn = false;
     if (this.root) { dom.removeClass(this.root, 'tw-chat-open'); }
     dom.hide(dom.get('tw-chat'));
+    this.applyPlayerLayout();
+    this.clearChat();
   };
 
   P.clearChat = function () { this.chatCount = 0; dom.html(dom.get('tw-chat-list'), ''); };
 
-  P.addChatLine = function (m) {
+  P.resetChat = function () {
+    this.chatMessages = [];
+    this.clearChat();
+  };
+
+  P.startChatCapture = function () {
+    if (this.chatClient || !this.login || this.contentKind !== 'live') { return; }
+    var self = this;
+    this.chatClient = TW.twitch.chat.connect(this.login, {
+      onMessage: function (m) { self.addChatMessage(m); },
+      onError: function () {}
+    });
+  };
+
+  P.stopChatCapture = function () {
+    if (this.chatClient) { try { this.chatClient.close(); } catch (e) {} this.chatClient = null; }
+  };
+
+  P.addChatMessage = function (m) {
+    this.chatMessages.push(m);
+    while (this.chatMessages.length > CHAT_MAX) { this.chatMessages.shift(); }
+    if (this.chatOn) { this.appendChatLine(m); }
+  };
+
+  P.renderChatMessages = function () {
+    this.clearChat();
+    for (var i = 0; i < this.chatMessages.length; i++) { this.appendChatLine(this.chatMessages[i]); }
+  };
+
+  P.appendChatLine = function (m) {
     var list = dom.get('tw-chat-list');
     if (!list) { return; }
     var color = /^#[0-9a-fA-F]{6}$/.test(m.color) ? m.color : '#9b9bb0';
@@ -308,113 +440,116 @@
     list.scrollTop = list.scrollHeight;
   };
 
-  // --- VOD / Clip browse list ---------------------------------------------
-  P.openList = function (mode) {
-    if (this.listMode === mode) { return; }
-    this.listMode = mode;
-    this.listItems = [];
-    this.listIndex = 0;
-    this.listCursor = null;
-    this.hidePanel();
-    this.closeChat();
-    dom.text(dom.get('tw-clist-head'), TW.i18n.t(mode === 'vods' ? 'VODS' : 'CLIPS'));
-    dom.html(dom.get('tw-clist-body'), '');
-    if (this.root) { dom.addClass(this.root, 'tw-list-open'); }
-    dom.show(dom.get('tw-clist'));
-    this.loadListData();
+  // --- transport controls -------------------------------------------------
+  P.canSeek = function () {
+    if (this.contentKind === 'live' || !this.player || !this.player.seekTo) { return false; }
+    if (this.player.canSeek) { return this.player.canSeek(); }
+    return true;
   };
 
-  P.closeList = function () {
-    this.listMode = null;
-    if (this.root) { dom.removeClass(this.root, 'tw-list-open'); }
-    dom.hide(dom.get('tw-clist'));
+  P.startProgressTimer = function () {
+    var self = this;
+    this.stopProgressTimer();
+    this.updateProgress();
+    this.progressTimer = global.setInterval(function () { self.updateProgress(); }, 1000);
   };
 
-  P.listEmpty = function (msgKey) {
-    dom.html(dom.get('tw-clist-body'), '<div class="tw-clist-empty">' + dom.escape(TW.i18n.t(msgKey)) + '</div>');
+  P.stopProgressTimer = function () {
+    if (this.progressTimer) { global.clearInterval(this.progressTimer); this.progressTimer = null; }
   };
 
-  P.loadListData = function () {
-    if (this.listLoading || this.listCursor === false) { return; }
-    this.listLoading = true;
-    var self = this, mode = this.listMode, first = this.listItems.length === 0;
-    if (first) { this.listEmpty('LOADING'); }
-
-    var onOk = function (result) {
-      if (self.listMode !== mode) { self.listLoading = false; return; } // user switched lists
-      var start = self.listItems.length;
-      for (var i = 0; i < result.items.length; i++) { self.listItems.push(result.items[i]); }
-      self.listCursor = result.cursor ? result.cursor : false;
-      if (self.listItems.length === 0) { self.listEmpty(mode === 'vods' ? 'NO_VODS' : 'NO_CLIPS'); }
-      else { self.renderList(start); }
-      self.listLoading = false;
-    };
-    var onFail = function () {
-      self.listLoading = false;
-      if (self.listItems.length === 0) { self.listEmpty(mode === 'vods' ? 'NO_VODS' : 'NO_CLIPS'); }
-    };
-
-    if (mode === 'vods') { TW.api.channelVideos(this.login, this.listCursor || null, onOk, onFail); }
-    else { TW.api.channelClips(this.login, this.listCursor || null, onOk, onFail); }
-  };
-
-  P.renderList = function (fromIndex) {
-    var body = dom.get('tw-clist-body');
-    if (fromIndex === 0) { dom.html(body, ''); }
-    for (var i = fromIndex; i < this.listItems.length; i++) {
-      var it = this.listItems[i];
-      var meta = TW.addCommas(it.viewers) + ' ' + TW.i18n.t('VIEWERS');
-      if (it.duration) { meta += ' · ' + formatDuration(it.duration); }
-      var row = dom.create('div', 'tw-clist-row');
-      row.id = 'tw-clrow-' + i;
-      row.innerHTML =
-        '<img class="tw-clist-thumb" src="' + (it.thumb || '') + '">' +
-        '<div class="tw-clist-meta">' +
-          '<div class="tw-clist-title">' + dom.escape(it.title) + '</div>' +
-          '<div class="tw-clist-sub">' + meta + '</div>' +
-        '</div>';
-      body.appendChild(row);
+  P.updateProgress = function () {
+    var pos = 0, dur = this.duration || 0;
+    if (this.player && this.player.getPosition) {
+      try { pos = this.player.getPosition() || 0; } catch (e) { pos = 0; }
     }
-    if (fromIndex === 0) { this.listFocus(); }
+    if (this.player && this.player.getDuration) {
+      try { dur = this.player.getDuration() || dur; } catch (e2) {}
+    }
+    if (!(pos >= 0)) { pos = 0; }
+    if (!(dur > 0)) { dur = this.duration || 0; }
+    if (dur > 0 && pos > dur) { pos = dur; }
+
+    dom.text(dom.get('tw-c-position'), formatDuration(pos));
+    dom.text(dom.get('tw-c-duration'), dur > 0 ? formatDuration(dur) : '0:00');
+    var fill = dom.get('tw-c-progress-fill');
+    if (fill) { fill.style.width = dur > 0 ? (Math.round((pos / dur) * 1000) / 10) + '%' : '0%'; }
   };
 
-  P.listMove = function (idx) {
-    var old = dom.get('tw-clrow-' + this.listIndex);
-    if (old) { dom.removeClass(old, 'tw-focused'); }
-    this.listIndex = idx;
-    this.listFocus();
+  P.seekBy = function (seconds) {
+    if (!this.canSeek()) { return; }
+    var pos = 0, dur = this.duration || 0;
+    try { if (this.player.getPosition) { pos = this.player.getPosition() || 0; } } catch (e) {}
+    try { if (this.player.getDuration) { dur = this.player.getDuration() || dur; } } catch (e2) {}
+    var next = Math.max(0, pos + seconds);
+    if (dur > 0 && next > dur) { next = dur; }
+    try { this.player.seekTo(next); } catch (e3) {}
+    this.updateProgress();
   };
 
-  P.listFocus = function () {
-    var row = dom.get('tw-clrow-' + this.listIndex);
-    if (row) { dom.addClass(row, 'tw-focused'); if (row.scrollIntoView) { row.scrollIntoView(false); } }
-    if (this.listIndex + 4 >= this.listItems.length && this.listCursor && !this.listLoading) { this.loadListData(); }
+  P.visibleControls = function () {
+    var ids = [];
+    if (this.canSeek()) { ids.push('tw-ctl-back'); ids.push('tw-ctl-forward'); }
+    ids.push('tw-ctl-channel');
+    if (this.contentKind === 'live') { ids.push('tw-ctl-chat'); }
+    ids.push('tw-ctl-quality');
+    return ids;
   };
 
-  P.activateListItem = function () {
-    var it = this.listItems[this.listIndex];
-    if (!it) { return; }
-    this.closeList();
-    if (it.kind === 'vod') { this.playVod(it); } else { this.playClip(it); }
+  P.refreshControls = function () {
+    var all = ['tw-ctl-back', 'tw-ctl-forward', 'tw-ctl-channel', 'tw-ctl-chat', 'tw-ctl-quality'];
+    var visible = this.visibleControls();
+    var i, el;
+    for (i = 0; i < all.length; i++) {
+      el = dom.get(all[i]);
+      dom.removeClass(el, 'tw-focused');
+      dom.hide(el);
+    }
+    for (i = 0; i < visible.length; i++) { dom.show(dom.get(visible[i]), 'inline-block'); }
+    if (this.controlIndex >= visible.length) { this.controlIndex = visible.length - 1; }
+    if (this.controlIndex < 0) { this.controlIndex = 0; }
+    dom.addClass(dom.get(visible[this.controlIndex]), 'tw-focused');
+    dom.show(dom.get('tw-progress'), this.canSeek() ? 'block' : 'none');
+    this.updateProgress();
   };
 
-  P.handleListKey = function (key) {
-    if (key === KEY.UP) { if (this.listIndex > 0) { this.listMove(this.listIndex - 1); } return true; }
-    if (key === KEY.DOWN) { if (this.listIndex < this.listItems.length - 1) { this.listMove(this.listIndex + 1); } return true; }
-    if (key === KEY.ENTER) { this.activateListItem(); return true; }
-    if (key === KEY.BACK || key === KEY.RIGHT) { this.closeList(); return true; }
-    if (key === KEY.YELLOW) { this.openList('vods'); return true; }
-    if (key === KEY.BLUE) { this.openList('clips'); return true; }
-    if (key === KEY.RED) { this.closeList(); this.playLive(); return true; }
-    return true; // swallow everything else while the list is open
+  P.moveControl = function (delta) {
+    var visible = this.visibleControls();
+    if (!visible.length) { return; }
+    this.controlIndex += delta;
+    if (this.controlIndex < 0) { this.controlIndex = 0; }
+    if (this.controlIndex >= visible.length) { this.controlIndex = visible.length - 1; }
+    this.refreshControls();
   };
 
-  // A VOD or clip that plays to the end reopens its list (keep browsing this
-  // channel); a live stream ending returns to the grid.
+  P.activateControl = function () {
+    var visible = this.visibleControls();
+    var id = visible[this.controlIndex];
+    if (id === 'tw-ctl-back') { this.seekBy(-10); return; }
+    if (id === 'tw-ctl-forward') { this.seekBy(10); return; }
+    if (id === 'tw-ctl-channel') { this.openChannelPage(); return; }
+    if (id === 'tw-ctl-chat') { this.toggleChat(); return; }
+    if (id === 'tw-ctl-quality') { this.showPanel(); }
+  };
+
+  P.openChannelPage = function () {
+    TW.app.goToChannelPage(this.login);
+  };
+
+  P.handlePanelKey = function (key) {
+    if (key === KEY.BACK || key === KEY.LEFT || key === KEY.RIGHT) { this.hidePanel(); return true; }
+    if ((key === KEY.UP || key === KEY.CH_UP || key === KEY.N1) && this.qualityIndex > 0) {
+      this.qualityIndex--; this.renderQuality(); return true;
+    }
+    if ((key === KEY.DOWN || key === KEY.CH_DOWN || key === KEY.N4) && this.qualityIndex < this.qualities.length - 1) {
+      this.qualityIndex++; this.renderQuality(); return true;
+    }
+    if (key === KEY.ENTER) { this.applyQuality(); return true; }
+    return true;
+  };
+
   P.onContentEnded = function () {
-    if (this.contentKind === 'clip') { this.openList('clips'); }
-    else if (this.contentKind === 'vod') { this.openList('vods'); }
-    else { this.shutdown(); }
+    this.shutdown();
   };
 
   P.shutdown = function () {
@@ -425,34 +560,18 @@
 
   // --- keys ---------------------------------------------------------------
   P.handleKeyDown = function (key) {
-    if (this.listMode) { return this.handleListKey(key); }
+    if (this.panelShown) { return this.handlePanelKey(key); }
     switch (key) {
       case KEY.BACK:
-        if (this.panelShown) { this.hidePanel(); }
-        else if (this.chatOn) { this.closeChat(); }
+        if (this.chatOn) { this.closeChat(); }
         else { this.shutdown(); }
         return true;
-      case KEY.GREEN:
-        this.toggleChat(); return true;
-      case KEY.YELLOW:
-        this.openList('vods'); return true;
-      case KEY.BLUE:
-        this.openList('clips'); return true;
-      case KEY.RED:
-        if (this.contentKind !== 'live') { this.playLive(); }
-        return true;
       case KEY.LEFT:
-        this.showPanel(); return true;
+        this.moveControl(-1); return true;
       case KEY.RIGHT:
-        this.hidePanel(); return true;
+        this.moveControl(1); return true;
       case KEY.ENTER:
-        if (this.panelShown) { this.applyQuality(); } else { this.showPanel(); }
-        return true;
-      case KEY.CH_UP: case KEY.N1:
-        if (this.panelShown && this.qualityIndex > 0) { this.qualityIndex--; this.renderQuality(); }
-        return true;
-      case KEY.CH_DOWN: case KEY.N4:
-        if (this.panelShown && this.qualityIndex < this.qualities.length - 1) { this.qualityIndex++; this.renderQuality(); }
+        this.activateControl();
         return true;
       default:
         return false;

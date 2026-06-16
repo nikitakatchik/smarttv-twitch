@@ -1,5 +1,6 @@
 TW.i18n.register('ru', {
   CHANNELS: 'Каналы',
+  CHANNEL: 'Канал',
   GAMES: 'Игры',
   OPEN: 'Открыть',
   REFRESH: 'Обновить',

@@ -76,6 +76,17 @@
       selectQuality: function (i) {
         try { if (i > 0 && trackIndex[i] != null) { av.setSelectTrack('VIDEO', trackIndex[i]); } }
         catch (e) { TW.log.warn('setSelectTrack: ' + e); }
+      },
+      canSeek: function () { return true; },
+      getPosition: function () {
+        try { return (av.getCurrentTime() || 0) / 1000; } catch (e) { return 0; }
+      },
+      getDuration: function () {
+        try { return (av.getDuration() || 0) / 1000; } catch (e) { return 0; }
+      },
+      seekTo: function (seconds) {
+        try { av.seekTo(Math.max(0, Math.floor((seconds || 0) * 1000))); }
+        catch (e) { TW.log.warn('seekTo: ' + e); }
       }
     };
   }

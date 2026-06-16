@@ -60,6 +60,10 @@
       plugin.Play(hls(url));
     }
 
+    function hasSeek() {
+      return !!(plugin && (plugin.SeekTo || plugin.JumpTo || plugin.Seek));
+    }
+
     var api = {
       load: function (masterUrl) {
         active = { cb: cb };
@@ -80,6 +84,26 @@
       selectQuality: function (i) {
         if (i <= 0) { play(master); }
         else if (variants[i - 1]) { play(variants[i - 1].url); }
+      },
+      canSeek: function () { return hasSeek(); },
+      getPosition: function () {
+        try {
+          if (plugin.GetPlayingTime) { return (plugin.GetPlayingTime() || 0) / 1000; }
+          if (plugin.GetCurrentPlayTime) { return (plugin.GetCurrentPlayTime() || 0) / 1000; }
+        } catch (e) {}
+        return 0;
+      },
+      getDuration: function () {
+        try { if (plugin.GetDuration) { return (plugin.GetDuration() || 0) / 1000; } } catch (e) {}
+        return 0;
+      },
+      seekTo: function (seconds) {
+        var ms = Math.max(0, Math.floor((seconds || 0) * 1000));
+        try {
+          if (plugin.SeekTo) { plugin.SeekTo(ms); }
+          else if (plugin.JumpTo) { plugin.JumpTo(ms); }
+          else if (plugin.Seek) { plugin.Seek(ms); }
+        } catch (e) { TW.log.warn('seekTo: ' + e); }
       }
     };
     return api;

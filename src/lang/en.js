@@ -1,5 +1,6 @@
 TW.i18n.register('en', {
   CHANNELS: 'Channels',
+  CHANNEL: 'Channel',
   GAMES: 'Games',
   OPEN: 'Open',
   REFRESH: 'Refresh',

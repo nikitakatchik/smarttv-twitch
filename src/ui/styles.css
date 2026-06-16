@@ -228,75 +228,128 @@ html, body {
 #tw-cp-loading { top: 172px; }
 
 /* --- player overlay ----------------------------------------------------- */
+.tw-player-surface {
+  position: absolute; left: 0; top: 0; width: 1280px; height: 720px;
+  overflow: hidden; z-index: 2;
+}
+.tw-player-scrim {
+  position: absolute; left: 0; right: 0; pointer-events: none; z-index: 2;
+  background: rgba(6, 7, 10, 0.68);
+}
+.tw-player-scrim-bottom { bottom: 0; height: 252px; }
+.tw-nowbar {
+  position: absolute; left: 42px; right: 42px; bottom: 116px; height: 118px;
+  z-index: 4; box-sizing: border-box; padding: 0 0 0 92px; text-align: left;
+  overflow: hidden;
+}
+.tw-now-icon {
+  position: absolute; left: 0; top: 5px; width: 68px; height: 68px;
+  background: #18191f; border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px; box-sizing: border-box; object-fit: cover;
+}
+.tw-now-copy { padding-top: 0; }
+.tw-now-kicker {
+  height: 24px; line-height: 22px; font-size: 15px; color: #c5c9d3;
+  text-transform: uppercase; white-space: nowrap; overflow: hidden;
+}
+.tw-now-kind {
+  display: inline-block; height: 22px; line-height: 22px; padding: 0 8px;
+  background: #f4f4f7; color: #101116; border-radius: 4px;
+  font-size: 13px; font-weight: 700; vertical-align: top;
+}
+.tw-content-vods .tw-now-kind { background: #68d8e8; color: #071216; }
+.tw-content-clips .tw-now-kind { background: #ffce6a; color: #171006; }
+.tw-now-sep {
+  display: none; width: 1px; height: 15px; margin: 4px 10px 0;
+  background: rgba(255, 255, 255, 0.28); vertical-align: top;
+}
+.tw-has-viewers .tw-now-sep { display: inline-block; }
+.tw-now-viewers {
+  display: inline-block; height: 22px; line-height: 22px; vertical-align: top;
+  font-size: 15px; color: #d9dce4; font-weight: 500;
+}
+.tw-now-name {
+  margin-top: 5px; font-size: 30px; line-height: 34px; color: #fff; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tw-now-title {
+  margin-top: 3px; max-height: 48px; overflow: hidden; font-size: 20px; line-height: 24px;
+  color: #e1e4ec; font-weight: 300;
+}
+.tw-progress {
+  display: none; position: absolute; left: 42px; right: 42px; bottom: 82px; height: 24px;
+  z-index: 4; color: #e4e7ef; font-size: 16px; line-height: 24px; text-align: left;
+}
+.tw-progress-time {
+  position: absolute; left: 0; top: 0; width: 66px; height: 24px; text-align: left;
+}
+.tw-progress-total { left: auto; right: 0; text-align: right; }
+.tw-progress-track {
+  position: absolute; left: 76px; right: 76px; top: 8px; height: 8px;
+  background: rgba(255, 255, 255, 0.20); border-radius: 4px; overflow: hidden;
+}
+.tw-progress-fill {
+  display: block; width: 0%; height: 8px; background: #f4f4f7; border-radius: 4px;
+}
+.tw-controls {
+  position: absolute; left: 42px; right: 42px; bottom: 32px; height: 40px;
+  z-index: 4; text-align: left; white-space: nowrap;
+}
+.tw-control {
+  display: inline-block; height: 38px; line-height: 38px; margin-right: 10px; padding: 0 18px;
+  box-sizing: border-box; color: #eff1f6; font-size: 17px; font-weight: 500; text-align: center;
+  background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 6px; vertical-align: top;
+}
+.tw-control.tw-focused {
+  background: #f4f4f7; border-color: #f4f4f7; color: #111318;
+}
 .tw-panel {
-  position: absolute; right: 0; top: 0; width: 25%; height: 100%;
-  background: rgba(22, 22, 28, 0.94); box-sizing: border-box; padding: 24px; z-index: 5;
+  display: none; position: absolute; right: 42px; bottom: 132px; width: 318px; height: 184px;
+  background: rgba(18, 20, 27, 0.94); border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px; box-sizing: border-box; padding: 22px 22px 20px; z-index: 5;
+  text-align: left; box-shadow: 0 18px 54px rgba(0, 0, 0, 0.45);
 }
-.tw-panel-logo { height: 34px; }
-.tw-panel-head { margin-top: 26px; }
-.tw-panel-icon { width: 56px; height: 56px; border-radius: 50%; vertical-align: middle; background: #18181b; }
-.tw-panel-name { font-size: 24px; margin-top: 12px; }
-.tw-panel-viewers { font-size: 18px; color: #cdc8e0; margin-top: 4px; }
-.tw-panel-title { font-size: 18px; color: #e6e2f5; margin-top: 22px; line-height: 1.35; }
-.tw-panel-quality { margin-top: 30px; font-size: 22px; }
-.tw-quality-name { color: #fff; margin-left: 10px; }
-.tw-quality-arrows i { font-style: normal; margin-left: 8px; font-size: 16px; }
+.tw-panel-mark {
+  position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px; background: #f4f4f7;
+}
+.tw-panel-quality { margin-top: 0; }
+.tw-quality-label {
+  font-size: 16px; line-height: 20px; color: #aeb5c3; text-transform: uppercase;
+  font-weight: 600;
+}
+.tw-quality-picker {
+  margin-top: 12px; height: 76px; line-height: 76px; text-align: center;
+  background: rgba(255, 255, 255, 0.09); border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px; white-space: nowrap; overflow: hidden;
+}
+.tw-quality-arrow {
+  display: inline-block; width: 36px; height: 76px; line-height: 76px;
+  text-align: center; font-size: 17px; color: #f4f4f7; vertical-align: top;
+}
+.tw-quality-name {
+  display: inline-block; width: 174px; height: 76px; line-height: 76px;
+  color: #fff; font-size: 30px; font-weight: 600; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top;
+}
 
-/* --- chat overlay (read-only) ------------------------------------------- */
+/* --- chat rail (read-only) ---------------------------------------------- */
 .tw-chat {
-  display: none; position: absolute; left: 0; top: 0; width: 340px; height: 100%;
-  background: rgba(14, 14, 16, 0.78); box-sizing: border-box; z-index: 5;
-}
-.tw-chat-head {
-  height: 40px; line-height: 40px; padding: 0 16px; font-size: 18px; font-weight: 500;
-  text-align: left; color: #fff; background: rgba(255, 255, 255, 0.10);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: none; position: absolute; left: 0; top: 0; width: 360px; height: 720px;
+  background: rgba(13, 15, 20, 0.96); border-left: 1px solid rgba(255, 255, 255, 0.14);
+  box-sizing: border-box; z-index: 5; overflow: hidden;
 }
 .tw-chat-list {
-  position: absolute; left: 0; right: 0; top: 41px; bottom: 0; overflow: hidden;
-  padding: 8px 16px; box-sizing: border-box; text-align: left;
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0; overflow: hidden;
+  padding: 14px 18px 18px; box-sizing: border-box; text-align: left;
 }
-.tw-chat-row { font-size: 17px; line-height: 1.3; margin: 4px 0; word-wrap: break-word; }
-.tw-chat-nick { font-weight: 600; }
-.tw-chat-sep { color: #9b9bb0; }
-.tw-chat-msg { color: #e6e6ea; }
-
-/* --- VOD / clip browse list --------------------------------------------- */
-.tw-clist {
-  display: none; position: absolute; left: 0; top: 0; width: 560px; height: 100%;
-  background: rgba(14, 14, 16, 0.92); box-sizing: border-box; z-index: 6;
+.tw-chat-row {
+  font-size: 17px; line-height: 1.32; margin: 0 0 8px; word-wrap: break-word;
+  color: #e6e8ee;
 }
-.tw-clist-head {
-  height: 48px; line-height: 48px; padding: 0 20px; font-size: 22px; font-weight: 500;
-  text-align: left; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.tw-clist-body {
-  position: absolute; left: 0; right: 0; top: 49px; bottom: 0; overflow: auto;
-  padding: 8px 0; text-align: left;
-}
-.tw-clist-empty { padding: 30px 20px; font-size: 20px; color: #adadb8; }
-.tw-clist-row {
-  position: relative; padding: 8px 20px; min-height: 76px; box-sizing: border-box;
-  border-left: 4px solid transparent;
-}
-.tw-clist-row.tw-focused { background: rgba(255, 255, 255, 0.12); border-left-color: #f4f4f7; }
-.tw-clist-thumb {
-  position: absolute; left: 20px; top: 8px; width: 120px; height: 68px;
-  object-fit: cover; background: #18181b; border-radius: 0;
-}
-.tw-clist-meta { margin-left: 136px; }
-.tw-clist-title { font-size: 19px; color: #fff; line-height: 1.25; max-height: 48px; overflow: hidden; }
-.tw-clist-sub { font-size: 16px; color: #c8c8cf; margin-top: 6px; }
-.tw-list-open .tw-hints { display: none; }
-
-/* --- channel hint bar --------------------------------------------------- */
-.tw-hints {
-  position: absolute; left: 16px; bottom: 14px; z-index: 5; font-size: 16px;
-  color: #dedee3; text-align: left;
-}
-.tw-hints span.tw-h-item, .tw-hints > span { margin-right: 18px; }
-.tw-hints .tw-dot { width: 22px; height: 22px; line-height: 22px; font-size: 13px; }
-.tw-chat-open .tw-hints { display: none; }
+.tw-chat-nick { font-weight: 700; }
+.tw-chat-sep { color: #a4a9b7; }
+.tw-chat-msg { color: #e6e8ee; }
 
 /* --- account chip (browser top bar) ------------------------------------- */
 /* Chip sits at the far right (43px edge), swapped with the tab bar. */

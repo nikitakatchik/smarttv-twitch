@@ -30,29 +30,68 @@
     var qualities = ['Auto'];
     var levelMap = [-1];        // quality index -> hls level index (-1 = auto)
     var qcb = null;
+    var baseW = 0, baseH = 0;
 
     function publishQualities() {
       if (qcb) { qcb(qualities); }
+    }
+
+    function displayBase() {
+      if (!baseW || !baseH) {
+        var p = video.parentNode;
+        baseW = (p && p.offsetWidth) || video.offsetWidth || TW.config.screen.width;
+        baseH = (p && p.offsetHeight) || video.offsetHeight || TW.config.screen.height;
+      }
+    }
+
+    function setVideoRect(x, y, w, h) {
+      displayBase();
+      video.style.position = 'absolute';
+      video.style.left = Math.round(x * baseW / TW.config.screen.width) + 'px';
+      video.style.top = Math.round(y * baseH / TW.config.screen.height) + 'px';
+      video.style.width = Math.round(w * baseW / TW.config.screen.width) + 'px';
+      video.style.height = Math.round(h * baseH / TW.config.screen.height) + 'px';
+      video.style.objectFit = 'contain';
     }
 
     TW.dom.on(video, 'waiting', function () { cb.onBufferingStart(); });
     TW.dom.on(video, 'playing', function () { cb.onBufferingComplete(); cb.onPlaying(); });
     TW.dom.on(video, 'ended', function () { cb.onEnded(); });
 
+    function seekStart() {
+      try { if (video.seekable && video.seekable.length) { return video.seekable.start(0) || 0; } } catch (e) {}
+      return 0;
+    }
+
+    function seekEnd() {
+      try { if (video.seekable && video.seekable.length) { return video.seekable.end(video.seekable.length - 1) || 0; } } catch (e) {}
+      return video.duration || 0;
+    }
+
+    function playFromStartIfVod(isVod) {
+      if (isVod) {
+        try { video.currentTime = seekStart(); } catch (e) {}
+      }
+      video.play();
+    }
+
     return {
       load: function (rawUrl) {
+        var isVod = rawUrl.indexOf('/vod/') >= 0;
+
         // Clips are a progressive MP4, not HLS — play them on the <video>
         // element directly (single quality). Live + VODs are HLS (.m3u8).
         if (rawUrl.indexOf('.m3u8') < 0) {
           try { if (hls) { hls.destroy(); hls = null; } } catch (e) {}
           qualities = ['Source']; levelMap = [-1]; publishQualities();
           video.src = rawUrl;
+          try { video.currentTime = 0; } catch (e2) {}
           video.play();
           return;
         }
 
         if (Hls && Hls.isSupported()) {
-          hls = new Hls({ lowLatencyMode: true });
+          hls = new Hls({ lowLatencyMode: !isVod, startPosition: isVod ? 0 : -1 });
           hls.on(Hls.Events.MANIFEST_PARSED, function () {
             // Twitch lists source first; present highest-first after "Auto".
             var levels = hls.levels.slice();
@@ -65,7 +104,7 @@
               levelMap.push(order[k]);
             }
             publishQualities();
-            video.play();
+            playFromStartIfVod(isVod);
           });
           hls.on(Hls.Events.ERROR, function (e, data) {
             if (data && data.fatal) { cb.onError(TW.i18n.t('ERROR_RENDER')); }
@@ -73,8 +112,8 @@
           hls.loadSource(rawUrl);
           hls.attachMedia(video);
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.onloadedmetadata = function () { playFromStartIfVod(isVod); };
           video.src = rawUrl;
-          video.play();
           publishQualities();
         } else {
           cb.onError('HLS not supported on this TV');
@@ -82,9 +121,21 @@
       },
       stop: function () { try { if (hls) { hls.destroy(); hls = null; } video.removeAttribute('src'); video.load(); } catch (e) {} },
       destroy: function () { this.stop(); },
-      setDisplayArea: function () {},   // the <video> is CSS-fullscreen
+      setDisplayArea: setVideoRect,
       getQualities: function (fn) { qcb = fn; fn(qualities); },
-      selectQuality: function (i) { if (hls) { hls.currentLevel = levelMap[i] != null ? levelMap[i] : -1; } }
+      selectQuality: function (i) { if (hls) { hls.currentLevel = levelMap[i] != null ? levelMap[i] : -1; } },
+      canSeek: function () { return true; },
+      getPosition: function () { return Math.max(0, (video.currentTime || 0) - seekStart()); },
+      getDuration: function () {
+        var d = seekEnd() - seekStart();
+        return d > 0 && d < 1000000000 ? d : 0;
+      },
+      seekTo: function (seconds) {
+        var d = this.getDuration();
+        var t = Math.max(0, seconds || 0);
+        if (d > 0 && t > d) { t = d; }
+        try { video.currentTime = seekStart() + t; } catch (e) {}
+      }
     };
   }
 

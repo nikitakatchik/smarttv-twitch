@@ -36,8 +36,8 @@
       }
 
       TW.sceneManager.register('browser', new TW.BrowserScene(adapter));
-      TW.sceneManager.register('channel', new TW.ChannelScene(adapter));
       TW.sceneManager.register('channelPage', new TW.ChannelPageScene(adapter));
+      TW.sceneManager.register('channel', new TW.ChannelScene(adapter));
       TW.sceneManager.register('login', new TW.LoginScene(adapter));
 
       wireKeys(adapter);
@@ -49,20 +49,28 @@
     // opts (optional): { vod: <vodItem>, from: 'channelPage' }. A vod plays that
     // past broadcast instead of the live stream; `from` is where BACK returns to.
     goToChannel: function (login, opts) {
+      opts = opts || {};
       TW.sceneManager.hide('browser');
       TW.sceneManager.hide('channelPage');
+      TW.sceneManager.hide('login');
       TW.sceneManager.show('channel', {
         login: login,
-        vod: opts && opts.vod,
-        from: opts && opts.from
+        vod: opts.vod,
+        item: opts.item,
+        from: opts.from
       });
       TW.sceneManager.focus('channel');
+    },
+
+    playChannelItem: function (login, item) {
+      this.goToChannel(login, { item: item, from: 'channelPage' });
     },
 
     // A channel's landing page (info + VODs); reached from the Following tab.
     goToChannelPage: function (login) {
       TW.sceneManager.hide('browser');
       TW.sceneManager.hide('channel');
+      TW.sceneManager.hide('login');
       TW.sceneManager.show('channelPage', { login: login });
       TW.sceneManager.focus('channelPage');
     },
@@ -80,6 +88,7 @@
     goToLogin: function () {
       TW.sceneManager.hide('browser');
       TW.sceneManager.hide('channel');
+      TW.sceneManager.hide('channelPage');
       TW.sceneManager.show('login');
       TW.sceneManager.focus('login');
     }

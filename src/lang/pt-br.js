@@ -1,5 +1,6 @@
 TW.i18n.register('pt-br', {
   CHANNELS: 'Canais',
+  CHANNEL: 'Canal',
   GAMES: 'Jogos',
   OPEN: 'Abrir',
   REFRESH: 'Atualizar',

@@ -1,11 +1,11 @@
 /*!
- * core/scenes/channel-page-scene.js — a channel's landing page: info + VODs.
+ * core/scenes/channel-page-scene.js - a channel's landing page: info + VODs.
  *
- * Reached by selecting an OFFLINE channel in the Following tab (and, later, from
- * a button on the player). Unlike the channel/player scene, nothing plays here:
- * a header shows the channel (avatar, name, follower count, bio) and a grid below
- * lists its past broadcasts. Selecting a VOD hands off to the player scene to
- * play it; BACK returns to the Following tab.
+ * Reached by selecting an OFFLINE channel in the Following tab, or from the
+ * player channel button. Unlike the channel/player scene, nothing plays here:
+ * a header shows the channel (avatar, name, follower count, bio) and a grid
+ * below lists its past broadcasts. Selecting a VOD hands off to the player
+ * scene to play it; BACK returns to the Following tab.
  *
  * The VOD grid reuses the browse grid's look and its pinned-row scroll + fixed
  * selection frame, but kept local to this scene (its own ids) so the two never
@@ -66,6 +66,7 @@
     this.login = data && data.login;
     dom.show(this.root);
   };
+
   P.handleHide = function () { this.clean(); dom.hide(this.root); };
   P.handleBlur = function () {};
 
@@ -79,7 +80,7 @@
   // --- header -------------------------------------------------------------
   P.loadInfo = function () {
     var self = this;
-    // Prime with what we already know so the header isn't blank during the call.
+    // Prime with what we already know so the header is not blank during the call.
     dom.text(dom.get('tw-cp-name'), this.login || '');
     dom.text(dom.get('tw-cp-followers'), '');
     dom.text(dom.get('tw-cp-desc'), '');
@@ -95,8 +96,7 @@
 
   // --- VOD grid -----------------------------------------------------------
   P.showLoading = function () {
-    // The ring overlays the grid area (absolute, high z-index), so the grid can
-    // stay mounted underneath while VODs load.
+    // The ring overlays the grid area, so the grid can stay mounted underneath.
     dom.removeClass(dom.get('tw-cp-loading'), 'tw-msg');
     dom.hide(dom.get('tw-cp-empty'));
     dom.show(dom.get('tw-cp-loading'));
@@ -159,8 +159,7 @@
       row.appendChild(cell);
       this.cells[i] = cell;
     }
-    // Pad the short last row so table-layout:fixed keeps the 25% columns instead
-    // of stretching a lone VOD across the whole width.
+    // Pad the short last row so table-layout:fixed keeps the 25% columns.
     var last = this.rowEls[this.rowEls.length - 1];
     if (last) {
       for (var p = last.childNodes.length; p < cols; p++) {
