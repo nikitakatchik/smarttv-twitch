@@ -34,31 +34,30 @@ html, body {
    at 40+3=43. Matching that keeps the logo/tabs/chip flush with the artwork. */
 .tw-logo { position: absolute; left: 43px; top: 43px; height: 36px; }
 /* Tabs sit just after the logo, shifted with the rest of the top row onto the
-   43px margin; the first tab slot's 8px margin then sets the gap from the logo. */
-.tw-tips { position: absolute; left: 87px; top: 43px; }
-/* The equal-width slot (set via JS) — just allocates space + even spacing; it
-   carries no background or frame itself. */
+   43px margin; spacing is natural per label, like a tab strip rather than
+   fixed-width buttons. */
+.tw-tips { position: absolute; left: 87px; top: 45px; }
 .tw-tip {
-  display: inline-block; margin-left: 8px; vertical-align: middle; color: #c8c8cf;
-  text-align: left; box-sizing: border-box; white-space: nowrap;
+  display: inline-block; margin-left: 24px; vertical-align: middle; color: #a9a9b2;
+  text-align: left; white-space: nowrap;
 }
-/* The visible pill: background hugs the label (with padding), NOT the whole slot.
-   font-size:0 kills the text strut so the label sits centred; the label restores
-   its own font-size. */
+.tw-tip:first-child { margin-left: 8px; }
 .tw-tip-box {
-  display: inline-block; padding: 5px 12px; font-size: 0; line-height: 0;
+  display: inline-block; padding: 0 0 6px; font-size: 0; line-height: 0;
+  border-bottom: 3px solid transparent;
 }
 .tw-tip-label {
   display: inline-block; height: 26px; line-height: 26px; vertical-align: middle;
-  font-size: 20px;
+  font-size: 23px; font-weight: 300;
 }
-/* Selected tab: a soft grey pill around the content only. */
 .tw-tip-active { color: #fff; }
-.tw-tip-active .tw-tip-box { background: rgba(255, 255, 255, 0.10); }
-/* D-pad cursor for the tab row: a single overlay (sized/placed via JS) that
-   slides between tab boxes instead of the focus jumping instantly. */
+.tw-tip-active .tw-tip-box { border-bottom-color: rgba(244, 244, 247, 0.55); }
+.tw-tabs-focused .tw-tip-active .tw-tip-box { border-bottom-color: transparent; }
+/* D-pad cursor for the tab row: a sliding underline separate from the active
+   tab marker, so tabs don't read as push buttons. */
 .tw-tip-cursor {
-  position: absolute; opacity: 0; pointer-events: none; outline: 2px solid #f4f4f7;
+  position: absolute; opacity: 0; pointer-events: none; border-bottom: 3px solid #f4f4f7;
+  box-sizing: border-box;
   -webkit-transition: left 0.14s ease-out, width 0.14s ease-out, opacity 0.15s ease-out;
   transition: left 0.14s ease-out, width 0.14s ease-out, opacity 0.15s ease-out;
 }
@@ -369,10 +368,20 @@ html, body {
 /* --- account chip (browser top bar) ------------------------------------- */
 /* Chip sits at the far right (43px edge), swapped with the tab bar. */
 .tw-account {
-  position: absolute; top: 43px; right: 43px; font-size: 18px; line-height: 26px; color: #dedee3;
-  padding: 5px 14px; border-radius: 0; background: rgba(255, 255, 255, 0.06);
+  position: absolute; top: 42px; right: 43px; height: 38px; line-height: 38px;
+  max-width: 300px; padding: 0 20px; box-sizing: border-box;
+  font-size: 17px; font-weight: 500; text-align: center; color: #eff1f6;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border: 0; border-radius: 0; outline: 0; background: #323239;
+  -webkit-transition: top 0.105s ease-out, right 0.105s ease-out, height 0.105s ease-out,
+    line-height 0.105s ease-out, padding 0.105s ease-out, background 0.105s ease-out, color 0.105s ease-out;
+  transition: top 0.105s ease-out, right 0.105s ease-out, height 0.105s ease-out,
+    line-height 0.105s ease-out, padding 0.105s ease-out, background 0.105s ease-out, color 0.105s ease-out;
 }
-.tw-account.tw-focused { color: #fff; background: rgba(255, 255, 255, 0.16); outline: 3px solid #f4f4f7; }
+.tw-account.tw-focused {
+  top: 38px; right: 39px; height: 46px; line-height: 46px; max-width: 308px; padding: 0 24px;
+  color: #111318; outline: 0; background: #f4f4f7;
+}
 
 /* --- login scene -------------------------------------------------------- */
 #tw-login { background: #08080a; }

@@ -67,8 +67,8 @@
     root.innerHTML =
       '<div class="tw-topbar">' +
         '<img class="tw-logo" src="assets/logo.png" alt="">' +
-        '<div class="tw-account" id="tw-account">&#9679; <span id="tw-acct-label"></span></div>' +
-        '<div class="tw-tips">' +
+        '<div class="tw-account" id="tw-account"><span id="tw-acct-label"></span></div>' +
+        '<div class="tw-tips" id="tw-tips">' +
           '<span class="tw-tip" id="tw-tip-all"><span class="tw-tip-box"><span class="tw-tip-label" id="tw-l-all"></span></span></span>' +
           '<span class="tw-tip" id="tw-tip-games"><span class="tw-tip-box"><span class="tw-tip-label" id="tw-l-games"></span></span></span>' +
           '<span class="tw-tip" id="tw-tip-followed"><span class="tw-tip-box"><span class="tw-tip-label" id="tw-l-followed"></span></span></span>' +
@@ -98,22 +98,6 @@
     dom.text(dom.get('tw-follow-empty'), TW.i18n.t('FOLLOW_NONE'));
   };
 
-  // Force all tab pills to the width of the widest one (text left-aligned),
-  // so the row reads as a clean uniform set regardless of label length/language.
-  // Measured live because labels are i18n; runs when the scene is visible.
-  P.equalizeTabs = function () {
-    var ids = ['tw-tip-all', 'tw-tip-games', 'tw-tip-followed'];
-    var els = [], max = 0, i, el;
-    for (i = 0; i < ids.length; i++) {
-      el = dom.get(ids[i]);
-      if (el) { el.style.width = ''; els.push(el); }   // reset before measuring
-    }
-    for (i = 0; i < els.length; i++) { if (els[i].offsetWidth > max) { max = els[i].offsetWidth; } }
-    if (!max) { return; }   // hidden / not laid out yet
-    max += 8;   // a little slack so the widest label never wraps (sub-pixel safe)
-    for (i = 0; i < els.length; i++) { els[i].style.width = max + 'px'; }
-  };
-
   P.updateAccount = function () {
     var label;
     if (TW.auth.isLoggedIn()) {
@@ -126,7 +110,7 @@
   };
 
   // --- lifecycle ----------------------------------------------------------
-  P.handleShow = function () { dom.show(this.root); this.equalizeTabs(); };
+  P.handleShow = function () { dom.show(this.root); };
   P.handleHide = function () { dom.hide(this.root); this.clean(); };
   P.handleFocus = function () {
     this.updateAccount();
@@ -678,6 +662,7 @@
 
   P.clearNavFocus = function () {
     this.onTopNav = false;
+    dom.removeClass(dom.get('tw-tips'), 'tw-tabs-focused');
     dom.removeClass(dom.get('tw-account'), 'tw-focused');
     this.hideTabCursor();
   };
@@ -691,8 +676,13 @@
     // The account chip (mode null) keeps its own focus ring; the tabs share
     // a single cursor that slides between them.
     var item = NAV[this.navIndex];
-    if (item && item.mode === null) { dom.addClass(dom.get('tw-account'), 'tw-focused'); }
-    else { dom.removeClass(dom.get('tw-account'), 'tw-focused'); }
+    if (item && item.mode === null) {
+      dom.removeClass(dom.get('tw-tips'), 'tw-tabs-focused');
+      dom.addClass(dom.get('tw-account'), 'tw-focused');
+    } else {
+      dom.addClass(dom.get('tw-tips'), 'tw-tabs-focused');
+      dom.removeClass(dom.get('tw-account'), 'tw-focused');
+    }
     this.moveTabCursor();
   };
 
