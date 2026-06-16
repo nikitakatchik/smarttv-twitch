@@ -31,8 +31,8 @@ the privileged AVPlay API to modules, so Twellie uses the browser media path).
 3. TizenBrew lists **Twellie** — select it. It registers the remote keys, then
    opens the app.
 4. **Remote:** arrows + OK navigate, **Back** returns to the TizenBrew menu, the
-   **colour buttons** switch browse tabs (A Channels · B Games · C Followed · D
-   Open), **CH ▲/▼** change quality in the player — same bindings as every Twellie
+   **colour buttons** switch browse tabs (A Channels · B Games · C Followed),
+   **CH ▲/▼** change quality in the player — same bindings as every Twellie
    build.
 
 No certificate, no Samsung account, no Tizen Studio, no `.wgt` — TizenBrew is the

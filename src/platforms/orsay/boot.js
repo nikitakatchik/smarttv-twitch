@@ -15,8 +15,7 @@
       },
       keys: TW.platform.keys,
       createPlayer: TW.platform.createPlayer,
-      system: TW.platform.system,
-      ime: TW.platform.ime
+      system: TW.platform.system
     });
   }
 

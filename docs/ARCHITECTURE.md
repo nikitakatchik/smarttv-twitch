@@ -41,8 +41,7 @@ adapter = {
   config,                            // optional TW.config overrides
   keys:   { map(domEvent), register? },
   createPlayer(callbacks) -> player, // load/stop/setDisplayArea/getQualities/selectQuality
-  system: { setScreensaver, setVolumeControl, exit },
-  ime:    { edit(input, opts, done) }
+  system: { setScreensaver, setVolumeControl, exit }
 }
 ```
 

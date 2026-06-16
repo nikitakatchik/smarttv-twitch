@@ -60,6 +60,5 @@ A platform adapter is the only TV-specific surface (`src/platforms/<name>/`):
 - **player** — `load / stop / setDisplayArea / getQualities / selectQuality`
 - **keys** — native keyCode → canonical key (`UP`, `RED`, `ENTER`, …)
 - **system** — screensaver, volume, exit
-- **ime** — on-screen keyboard for the "Open channel" field
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design.

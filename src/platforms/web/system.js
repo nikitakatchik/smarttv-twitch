@@ -11,6 +11,4 @@
     setVolumeControl: function () {},
     exit: function () { TW.log.info('exit() — no-op in the browser harness'); }
   };
-
-  // No IME object: the harness uses a real keyboard on the focused input.
 })(this);

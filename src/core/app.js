@@ -12,7 +12,6 @@
  *   adapter.system.setScreensaver(on,ms)
  *   adapter.system.setVolumeControl(on)
  *   adapter.system.exit()
- *   adapter.ime.edit(inputEl,opts,onDone)   optional on-screen keyboard
  *   adapter.log(msg)                   optional log sink
  */
 (function (global) {

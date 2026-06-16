@@ -20,7 +20,6 @@
       keys: TW.platform.keys,
       createPlayer: TW.platform.createPlayer,
       system: TW.platform.system,
-      ime: TW.platform.ime,
       log: function (m) { if (global.console) { global.console.log(m); } }
     });
   }

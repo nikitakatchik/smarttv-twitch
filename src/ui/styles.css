@@ -67,11 +67,11 @@ html, body {
   text-align: center; color: #fff; font-weight: 700; font-size: 15px;
   vertical-align: middle;
 }
-/* The remote's A/B/C/D buttons render as uniform dark-grey chips — the letter is
+/* The remote's A/B/C buttons render as uniform dark-grey chips — the letter is
    the cue, so the on-screen hint doesn't reproduce the button colours. The class
    names still map to the physical button each represents. White letter (via
    .tw-dot) reads cleanly on this grey. */
-.tw-red, .tw-green, .tw-yellow, .tw-blue { background: #36363c; }
+.tw-red, .tw-green, .tw-yellow { background: #36363c; }
 
 /* --- grid --------------------------------------------------------------- */
 /* Clips the content; the inner scroller is translated so the focused row stays
@@ -184,20 +184,6 @@ html, body {
   -webkit-transform: translateY(-50%); transform: translateY(-50%);
   text-align: center; font-size: 34px; color: #5c5c66; padding: 0 40px;
 }
-
-/* --- open / search ------------------------------------------------------ */
-.tw-open { position: absolute; left: 20%; top: 30%; width: 60%; text-align: center; }
-.tw-open-input {
-  width: 100%; height: 76px; font-size: 34px; text-align: center;
-  border: 0; border-radius: 0; box-sizing: border-box; background: #fff; color: #111;
-}
-.tw-open-input.tw-focused { outline: 4px solid #f4f4f7; }
-.tw-open-go {
-  display: inline-block; margin-top: 28px; padding: 18px 60px; font-size: 28px;
-  background: #3f3f47; color: #efeff1; border-radius: 0;
-}
-/* Fill flips dark -> white on focus (works on every renderer, no outline). */
-.tw-open-go.tw-focused { background: #f4f4f7; color: #18181b; }
 
 /* --- channel page (info + VODs) ----------------------------------------- */
 #tw-cpage { background: #08080a; }

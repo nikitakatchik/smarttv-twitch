@@ -24,7 +24,6 @@
     RED: 'RED',
     GREEN: 'GREEN',
     YELLOW: 'YELLOW',
-    BLUE: 'BLUE',
 
     PLAY: 'PLAY',
     PAUSE: 'PAUSE',

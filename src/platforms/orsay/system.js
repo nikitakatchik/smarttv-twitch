@@ -29,10 +29,4 @@
     }
   };
 
-  // Minimal IME: focus the field so a TV with an on-screen keyboard / USB
-  // keyboard can type. Full legacy IMEShell wiring is left as a per-device
-  // enhancement (varies across firmware).
-  TW.platform.ime = {
-    edit: function (inputEl) { try { inputEl.focus(); } catch (e) {} }
-  };
 })(this);

@@ -32,8 +32,4 @@
     }
   };
 
-  // Tizen shows its on-screen keyboard when a text input is focused.
-  TW.platform.ime = {
-    edit: function (inputEl) { try { inputEl.focus(); } catch (e) {} }
-  };
 })(this);

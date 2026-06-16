@@ -45,7 +45,7 @@ function setup(opts) {
 
   const TW = {
     dom,
-    KEY: { BACK: 'back', ENTER: 'enter', UP: 'up', DOWN: 'down', LEFT: 'left', RIGHT: 'right', RED: 'red', GREEN: 'green', YELLOW: 'yellow', BLUE: 'blue' },
+    KEY: { BACK: 'back', ENTER: 'enter', UP: 'up', DOWN: 'down', LEFT: 'left', RIGHT: 'right', RED: 'red', GREEN: 'green', YELLOW: 'yellow' },
     i18n: { t: (k) => k },
     config: { columns: 4 },
     shortNumber: (n) => String(n),

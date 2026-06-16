@@ -119,7 +119,7 @@ menu differences: [docs/install/orsay-2013-2014.md](install/orsay-2013-2014.md).
 | --- | --- | --- |
 | Tizen 2015+ | AVPlay starts, quality switch, color buttons (needs `registerKey`), Back exits | quality track labels, `ADAPTIVE_INFO` syntax per year |
 | Orsay 2014 (H) | INFOLINK plays `|COMPONENT=HLS`, color buttons, Twitch reachable | screensaver via Common API |
-| Orsay 2013 (F) | basic nav, INFOLINK playback, modern-TLS reach | on-screen IME, CSS quirks |
+| Orsay 2013 (F) | basic nav, INFOLINK playback, modern-TLS reach | CSS quirks |
 
 ## 6. No TV at all? 💸
 

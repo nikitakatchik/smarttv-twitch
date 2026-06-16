@@ -2,8 +2,7 @@
  * platforms/web/keys.js — desktop keyboard + on-screen remote -> canonical keys.
  *
  * Mirrors a TV remote so the harness exercises the exact same key handling the
- * TVs use. Letters/digits are passed through untouched while the "Open" text
- * field is focused, so you can actually type a channel name.
+ * TVs use.
  */
 (function (global) {
   'use strict';
@@ -15,25 +14,17 @@
   var MAP = {
     37: KEY.LEFT, 38: KEY.UP, 39: KEY.RIGHT, 40: KEY.DOWN,
     13: KEY.ENTER, 8: KEY.BACK, 27: KEY.BACK,
-    82: KEY.RED, 71: KEY.GREEN, 89: KEY.YELLOW, 66: KEY.BLUE, // R G Y B
+    82: KEY.RED, 71: KEY.GREEN, 89: KEY.YELLOW, // R G Y
     32: KEY.PLAYPAUSE,
     48: KEY.N0, 49: KEY.N1, 50: KEY.N2, 51: KEY.N3, 52: KEY.N4,
     53: KEY.N5, 54: KEY.N6, 55: KEY.N7, 56: KEY.N8, 57: KEY.N9,
     33: KEY.CH_UP, 34: KEY.CH_DOWN // PageUp / PageDown
   };
 
-  // While typing into the Open field, only these reach the app; the rest are
-  // left for the input element so the user can type a channel name.
-  var NAV_ONLY = {};
-  NAV_ONLY[KEY.LEFT] = NAV_ONLY[KEY.RIGHT] = NAV_ONLY[KEY.UP] =
-    NAV_ONLY[KEY.DOWN] = NAV_ONLY[KEY.ENTER] = NAV_ONLY[KEY.BACK] = true;
-
   var keys = {
     map: function (e) {
       var key = MAP[e.keyCode];
       if (!key) { return null; }
-      var t = e.target;
-      if (t && t.id === 'tw-open-input' && !NAV_ONLY[key]) { return null; }
       return key;
     }
   };

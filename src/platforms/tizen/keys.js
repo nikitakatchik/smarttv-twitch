@@ -15,7 +15,7 @@
   var MAP = {
     37: KEY.LEFT, 38: KEY.UP, 39: KEY.RIGHT, 40: KEY.DOWN,
     13: KEY.ENTER, 10009: KEY.BACK, 461: KEY.BACK,
-    403: KEY.RED, 404: KEY.GREEN, 405: KEY.YELLOW, 406: KEY.BLUE,
+    403: KEY.RED, 404: KEY.GREEN, 405: KEY.YELLOW,
     10252: KEY.PLAYPAUSE, 415: KEY.PLAY, 19: KEY.PAUSE, 413: KEY.STOP,
     427: KEY.CH_UP, 428: KEY.CH_DOWN,
     48: KEY.N0, 49: KEY.N1, 50: KEY.N2, 51: KEY.N3, 52: KEY.N4,
@@ -26,7 +26,7 @@
     map: function (e) { return MAP[e.keyCode] || null; },
     register: function () {
       if (!global.tizen || !global.tizen.tvinputdevice) { return; }
-      var names = ['ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue',
+      var names = ['ColorF0Red', 'ColorF1Green', 'ColorF2Yellow',
         'ChannelUp', 'ChannelDown', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop',
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
       for (var i = 0; i < names.length; i++) {
