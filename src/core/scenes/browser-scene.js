@@ -41,6 +41,8 @@
     this.x = 0;
     this.y = 0;
     this.selectedGame = null;
+    this.categoryInfo = null;
+    this.categoryInfoToken = 0;
     this.built = false;
     this.onTopNav = false;     // top row (chip + tabs) holds d-pad focus
     this.navIndex = 0;         // which NAV item is focused while onTopNav
@@ -78,6 +80,14 @@
       '<div class="tw-loading" id="tw-b-loading"><div class="tw-spinner"></div>' +
         '<div class="tw-loading-text" id="tw-b-loading-text"></div></div>' +
       '<div class="tw-grid-wrap" id="tw-grid-wrap">' +
+        '<div class="tw-category-head" id="tw-category-head">' +
+          '<img class="tw-category-cover" id="tw-category-cover" width="108" height="144" alt="" onerror="this.removeAttribute(\'src\')">' +
+          '<div class="tw-category-copy">' +
+            '<div class="tw-category-name" id="tw-category-name"></div>' +
+            '<div class="tw-category-stats" id="tw-category-stats"></div>' +
+            '<div class="tw-category-desc" id="tw-category-desc"></div>' +
+          '</div>' +
+        '</div>' +
         '<div class="tw-grid-scroll" id="tw-grid-scroll">' +
           '<table class="tw-grid" id="tw-grid"></table>' +
           '<div class="tw-follow" id="tw-follow"></div>' +
@@ -193,6 +203,11 @@
     this.setScroll(row ? row.offsetTop : 0);
   };
 
+  P.gridViewportTop = function () {
+    var s = dom.get('tw-grid-scroll');
+    return (this.mode === MODE.GAMES_STREAMS && s) ? s.offsetTop : 0;
+  };
+
   P.frameTargetBox = function (inner, target, topBase) {
     var box = {
       left: inner.offsetLeft + (target === inner ? 0 : target.offsetLeft),
@@ -228,7 +243,7 @@
     var target = img || inner;
     var row = this.rowEls[this.y];
     var rowTop = row ? row.offsetTop : 0;
-    var box = this.frameTargetBox(inner, target, inner.offsetTop - rowTop);
+    var box = this.frameTargetBox(inner, target, this.gridViewportTop() + inner.offsetTop - rowTop);
     // If the frame is hidden it's (re)appearing — entering the grid or switching
     // tabs. Snap it to the new spot (no horizontal slide across the old grid);
     // only moves while it's already visible (Left/Right) animate.
@@ -282,7 +297,62 @@
     var wrap = dom.get('tw-grid-wrap');
     if (!wrap) { return; }
     dom.removeClass(wrap, 'tw-grid-wrap-games');
+    dom.removeClass(wrap, 'tw-grid-wrap-category');
     if (this.mode === MODE.GAMES) { dom.addClass(wrap, 'tw-grid-wrap-games'); }
+    if (this.mode === MODE.GAMES_STREAMS) { dom.addClass(wrap, 'tw-grid-wrap-category'); }
+    this.syncCategoryHeader();
+  };
+
+  P.syncCategoryHeader = function () {
+    var head = dom.get('tw-category-head');
+    if (!head) { return; }
+    if (this.mode !== MODE.GAMES_STREAMS || !this.selectedGame) {
+      dom.hide(head);
+      return;
+    }
+    this.renderCategoryHeader();
+    dom.show(head);
+  };
+
+  P.renderCategoryHeader = function () {
+    var info = this.categoryInfo || this.selectedGame || {};
+    var cover = dom.get('tw-category-cover');
+    var box = info.box || '';
+    if (cover) {
+      if (box) { dom.attr(cover, 'src', box); }
+      else if (cover.removeAttribute) { cover.removeAttribute('src'); }
+      else { dom.attr(cover, 'src', ''); }
+    }
+
+    dom.text(dom.get('tw-category-name'), info.display || info.name || '');
+
+    var stats = [];
+    if (info.viewers != null) { stats.push(TW.i18n.t('CATEGORY_VIEWERS', TW.shortNumber(info.viewers))); }
+    if (info.followers != null) { stats.push(TW.i18n.t('CATEGORY_FOLLOWERS', TW.shortNumber(info.followers))); }
+    dom.text(dom.get('tw-category-stats'), stats.join(' | '));
+    dom.text(dom.get('tw-category-desc'), info.description || '');
+  };
+
+  P.mergeCategoryInfo = function (base, extra) {
+    var out = {}, k;
+    base = base || {};
+    extra = extra || {};
+    for (k in base) { if (base.hasOwnProperty(k)) { out[k] = base[k]; } }
+    for (k in extra) { if (extra.hasOwnProperty(k) && extra[k] !== '' && extra[k] != null) { out[k] = extra[k]; } }
+    return out;
+  };
+
+  P.loadCategoryInfo = function (game) {
+    var self = this;
+    var token = ++this.categoryInfoToken;
+    this.categoryInfo = game || null;
+    this.syncCategoryHeader();
+    if (!game || !TW.api.categoryInfo) { return; }
+    TW.api.categoryInfo(game, function (info) {
+      if (token !== self.categoryInfoToken || self.mode !== MODE.GAMES_STREAMS) { return; }
+      self.categoryInfo = self.mergeCategoryInfo(game, info);
+      self.syncCategoryHeader();
+    }, function () {});
   };
 
   P.loadData = function () {
@@ -678,7 +748,11 @@
     if (mode === MODE.FOLLOWED && !TW.auth.isLoggedIn()) { TW.app.goToLogin(); return; }
     this.mode = mode;
     this.clearNavFocus();
-    this.selectedGame = (mode === MODE.GAMES_STREAMS) ? this.selectedGame : null;
+    if (mode !== MODE.GAMES_STREAMS) {
+      this.selectedGame = null;
+      this.categoryInfo = null;
+      this.categoryInfoToken++;
+    }
 
     var ids = ['tw-tip-all', 'tw-tip-games', 'tw-tip-followed'];
     for (var i = 0; i < ids.length; i++) { dom.removeClass(dom.get(ids[i]), 'tw-tip-active'); }
@@ -854,13 +928,18 @@
 
   P.move = function (x, y) { this.removeFocus(); this.x = x; this.y = y; this.addFocus(); };
 
+  P.openCategory = function (item) {
+    this.selectedGame = item;
+    this.categoryInfo = item;
+    this.switchMode(MODE.GAMES_STREAMS, true);
+    this.loadCategoryInfo(item);
+  };
+
   P.activate = function () {
     var item = this.items[this.indexOfCursor()];
     if (!item) { return; }
     if (item.kind === 'game') {
-      this.selectedGame = item;
-      this.mode = MODE.GAMES_STREAMS;
-      this.refresh();
+      this.openCategory(item);
     } else {
       TW.app.goToChannel(item.login, { stream: item });
     }

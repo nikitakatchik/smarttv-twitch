@@ -5,6 +5,8 @@ TW.i18n.register('uk', {
   REFRESH: 'Оновити',
   QUALITY: 'Якість',
   VIEWERS: 'Глядачів',
+  CATEGORY_VIEWERS: '{0} глядачів',
+  CATEGORY_FOLLOWERS: '{0} підписників',
   LOADING: 'Завантаження',
   BUFFERING: 'Буферизація',
   RETRYING: 'Пробую ще',

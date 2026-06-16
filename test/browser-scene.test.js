@@ -47,7 +47,7 @@ function setup(opts) {
   const TW = {
     dom,
     KEY: { BACK: 'back', ENTER: 'enter', UP: 'up', DOWN: 'down', LEFT: 'left', RIGHT: 'right', RED: 'red', GREEN: 'green', YELLOW: 'yellow' },
-    i18n: { t: (k) => k },
+    i18n: { t: (k, ...args) => args.length ? `${k}:${args.join(',')}` : k },
     config: { columns: 4 },
     shortNumber: (n) => String(n),
     addCommas: (n) => String(n),
@@ -58,6 +58,7 @@ function setup(opts) {
       topStreams: (cursor, ok) => ok({ items: (opts.streams || []).slice(), cursor: null }),
       topGames: (cursor, ok) => ok({ items: (opts.games || []).slice(), cursor: null }),
       streamsByGame: (game, cursor, ok) => ok({ items: (opts.gameStreams || []).slice(), cursor: null }),
+      categoryInfo: (game, ok) => ok(opts.categoryInfo || game),
     },
     app: {
       goToChannel: (l) => calls.goToChannel.push(l),
@@ -80,7 +81,7 @@ function setup(opts) {
 
 const stream = (login, display) => ({ kind: 'stream', login, display: display || login, title: 't', viewers: 1, thumb: '' });
 const channel = (login, display) => ({ kind: 'channel', login, display: display || login, avatar: '' });
-const game = (display) => ({ kind: 'game', display, viewers: 1, box: '' });
+const game = (display) => ({ kind: 'game', name: display, display, viewers: 1, box: '' });
 
 test('zero follows shows the empty state and builds no rows', () => {
   const { scene, els, MODE } = setup({ live: [], follows: [] });
@@ -198,6 +199,53 @@ test('game stream lists return to the standard wrapper inset', () => {
   scene.activate();
   assert.equal(scene.mode, MODE.GAMES_STREAMS);
   assert.doesNotMatch(els['tw-grid-wrap'].className, /tw-grid-wrap-games/);
+});
+
+test('game stream lists render a category header above the grid', () => {
+  const { scene, els, MODE } = setup({
+    games: [game('Chess')],
+    gameStreams: [stream('a')],
+    categoryInfo: {
+      kind: 'game',
+      name: 'Chess',
+      display: 'Chess',
+      viewers: 1234,
+      followers: 9876,
+      description: 'A strategic board game.',
+      box: 'http://img/chess.jpg',
+    },
+  });
+  scene.switchMode(MODE.GAMES, true);
+  scene.activate();
+  assert.equal(scene.mode, MODE.GAMES_STREAMS);
+  assert.match(els['tw-grid-wrap'].className, /tw-grid-wrap-category/);
+  assert.equal(els['tw-category-head'].style.display, 'block');
+  assert.equal(els['tw-category-name'].textContent, 'Chess');
+  assert.equal(els['tw-category-stats'].textContent, 'CATEGORY_VIEWERS:1234 | CATEGORY_FOLLOWERS:9876');
+  assert.equal(els['tw-category-desc'].textContent, 'A strategic board game.');
+});
+
+test('category stream selection frame accounts for the fixed header', () => {
+  const { scene, els, MODE } = setup({ games: [game('Chess')], gameStreams: [stream('solo')] });
+  scene.switchMode(MODE.GAMES, true);
+  scene.activate();
+  els['tw-grid-scroll'].offsetTop = 174;
+  const inner = scene.focusedCell().firstChild;
+  inner.offsetLeft = 5;
+  inner.offsetTop = 9;
+  inner.offsetWidth = 100;
+  inner.offsetHeight = 84;
+  inner.getBoundingClientRect = () => ({ left: 20, top: 30, right: 120, bottom: 114 });
+  inner.getElementsByTagName = () => [{
+    offsetLeft: 0,
+    offsetTop: 0,
+    offsetWidth: 100,
+    offsetHeight: 60,
+    complete: true,
+    getBoundingClientRect: () => ({ left: 20, top: 30, right: 120, bottom: 90 }),
+  }];
+  scene.updateFrame();
+  assert.equal(els['tw-grid-frame'].style.top, '183px');
 });
 
 test('returning from another scene preserves the current browser mode', () => {

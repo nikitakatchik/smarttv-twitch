@@ -5,6 +5,8 @@ TW.i18n.register('ru', {
   REFRESH: 'Обновить',
   QUALITY: 'Качество',
   VIEWERS: 'Зрителей',
+  CATEGORY_VIEWERS: '{0} зрителей',
+  CATEGORY_FOLLOWERS: '{0} подписчиков',
   LOADING: 'Загрузка',
   BUFFERING: 'Буферизация',
   RETRYING: 'Попытка',

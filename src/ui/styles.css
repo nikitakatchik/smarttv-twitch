@@ -88,6 +88,29 @@ html, body {
    reaches the top. */
 .tw-grid-wrap { position: absolute; left: 35px; right: 35px; top: 114px; bottom: 0; overflow: hidden; }
 .tw-grid-wrap-games { left: 30px; right: 30px; }
+.tw-grid-wrap-category .tw-grid-scroll { position: absolute; left: 0; right: 0; top: 174px; }
+.tw-category-head {
+  display: none; position: absolute; left: 0; right: 0; top: 0; height: 156px;
+  text-align: left; overflow: hidden;
+}
+.tw-category-cover {
+  position: absolute; left: 5px; top: 0; width: 108px; height: 144px;
+  background: #18181b; border: 3px solid transparent; box-sizing: border-box;
+  -webkit-background-clip: padding-box; background-clip: padding-box;
+}
+.tw-category-copy { margin-left: 132px; padding: 0 8px 0 0; }
+.tw-category-name {
+  font-size: 32px; line-height: 38px; color: #fff; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tw-category-stats {
+  margin-top: 7px; font-size: 18px; line-height: 22px; color: #c8c8cf;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tw-category-desc {
+  margin-top: 8px; max-height: 84px; overflow: hidden;
+  font-size: 17px; line-height: 21px; color: #dedee3;
+}
 /* GPU-composited transform + short transition = a smooth, lightweight scroll
    (one layer moves; no per-frame layout). translate3d set inline from JS. */
 .tw-grid-scroll {

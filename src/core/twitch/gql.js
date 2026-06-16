@@ -24,6 +24,20 @@
     return 'https://static-cdn.jtvnw.net/ttv-boxart/' + encodeURIComponent(name) + '-285x380.jpg';
   }
 
+  function mapGameNode(n) {
+    if (!n) { return null; }
+    return {
+      kind: 'game',
+      id: n.id,
+      name: n.name,
+      display: n.displayName || n.name,
+      viewers: n.viewersCount || 0,
+      followers: n.followersCount == null ? null : n.followersCount,
+      description: n.description || '',
+      box: n.boxArtURL || boxUrl(n.name)
+    };
+  }
+
   // Twitch GraphQL caps connection `first` arguments at 30.
   function cap(limit) { return Math.min(limit || 30, 30); }
 
@@ -93,16 +107,20 @@
         function (data) {
           var items = [], edges = (data.games && data.games.edges) || [], last = null;
           for (var i = 0; i < edges.length; i++) {
-            var n = edges[i].node; if (!n) { continue; }
+            var item = mapGameNode(edges[i].node); if (!item) { continue; }
             last = edges[i].cursor || last;
-            items.push({
-              kind: 'game', id: n.id, name: n.name,
-              display: n.displayName || n.name, viewers: n.viewersCount || 0,
-              box: n.boxArtURL || boxUrl(n.name)
-            });
+            items.push(item);
           }
           onOk({ items: items, cursor: last });
         }, onFail);
+    },
+
+    categoryInfo: function (game, onOk, onFail) {
+      var name = game && (game.name || game.display);
+      if (!name) { if (onFail) { onFail(-1); } return; }
+      post('{ game(name: "' + esc(name) + '") { id name displayName viewersCount followersCount description ' +
+        'boxArtURL(width: 285, height: 380) } }',
+        function (data) { onOk(mapGameNode(data.game) || game); }, onFail);
     },
 
     streamsByGame: function (game, limit, cursor, onOk, onFail) {

@@ -5,6 +5,8 @@ TW.i18n.register('sv', {
   REFRESH: 'Uppdatera',
   QUALITY: 'Kvalitet',
   VIEWERS: 'Tittare',
+  CATEGORY_VIEWERS: '{0} tittare',
+  CATEGORY_FOLLOWERS: '{0} följare',
   LOADING: 'Laddar',
   BUFFERING: 'Buffrar',
   RETRYING: 'Försöker igen',

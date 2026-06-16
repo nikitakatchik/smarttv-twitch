@@ -27,6 +27,9 @@
     streamsByGame: function (game, cursor, onOk, onFail) {
       backend().streamsByGame(game, TW.config.pageSize, cursor, onOk, onFail);
     },
+    categoryInfo: function (game, onOk, onFail) {
+      backend().categoryInfo(game, onOk, onFail);
+    },
     streamInfo: function (login, onOk, onFail) {
       backend().streamInfo(login, onOk, onFail);
     },

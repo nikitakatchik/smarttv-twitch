@@ -5,6 +5,8 @@ TW.i18n.register('de', {
   REFRESH: 'Neu laden',
   QUALITY: 'Qualität',
   VIEWERS: 'Zuschauer',
+  CATEGORY_VIEWERS: '{0} Zuschauer',
+  CATEGORY_FOLLOWERS: '{0} Follower',
   LOADING: 'Lädt',
   BUFFERING: 'Puffer',
   RETRYING: 'Versuch',

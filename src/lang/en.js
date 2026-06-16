@@ -5,6 +5,8 @@ TW.i18n.register('en', {
   REFRESH: 'Refresh',
   QUALITY: 'Quality',
   VIEWERS: 'Viewers',
+  CATEGORY_VIEWERS: '{0} viewers',
+  CATEGORY_FOLLOWERS: '{0} followers',
   CHAT: 'Chat',
   LIVE: 'Live',
   VODS: 'VODs',

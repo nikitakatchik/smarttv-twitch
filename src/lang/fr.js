@@ -5,6 +5,8 @@ TW.i18n.register('fr', {
   REFRESH: 'Rafraîchir',
   QUALITY: 'Qualité',
   VIEWERS: 'Spectateurs',
+  CATEGORY_VIEWERS: '{0} spectateurs',
+  CATEGORY_FOLLOWERS: '{0} abonnés',
   LOADING: 'Chargement',
   BUFFERING: 'Mise en mémoire tampon',
   RETRYING: 'Nouvelle tentative',

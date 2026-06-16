@@ -53,6 +53,27 @@ test('topGames uses Twitch-provided box art URLs', () => {
   assert.match(log[log.length - 1].body, /boxArtURL\(width: 285, height: 380\)/);
 });
 
+test('categoryInfo maps category metadata for the browse header', () => {
+  const body = JSON.stringify({ data: { game: {
+    id: '99',
+    name: 'Chess',
+    displayName: 'Chess',
+    viewersCount: 77,
+    followersCount: 1234,
+    description: 'A strategic board game.',
+    boxArtURL: 'https://img/chess-285x380.jpg',
+  } } });
+  const { TW, log } = makeApp(() => ({ status: 200, text: body }));
+  let info = null;
+  TW.api.categoryInfo({ name: 'Chess' }, (i) => { info = i; }, () => {});
+  assert.equal(info.display, 'Chess');
+  assert.equal(info.viewers, 77);
+  assert.equal(info.followers, 1234);
+  assert.equal(info.description, 'A strategic board game.');
+  assert.equal(info.box, 'https://img/chess-285x380.jpg');
+  assert.match(log[log.length - 1].body, /followersCount description/);
+});
+
 test('streamInfo maps the current game for the player overlay', () => {
   const body = JSON.stringify({ data: { user: {
     displayName: 'Alpha',
