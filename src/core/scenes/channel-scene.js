@@ -69,6 +69,7 @@
     this.chatCount = 0;
     this.chatMessages = [];
     this.chatViewerText = '';
+    this.liveOnline = true;
 
     this.controlIndex = 0;
     this.progressTimer = null;
@@ -162,7 +163,7 @@
     dom.text(dom.get('tw-ctl-channel'), TW.i18n.t('CHANNEL'));
     dom.text(dom.get('tw-ctl-chat'), TW.i18n.t('CHAT'));
     dom.text(dom.get('tw-ctl-quality'), TW.i18n.t('QUALITY'));
-    dom.text(dom.get('tw-chat-live-badge'), TW.i18n.t('LIVE'));
+    this.setChatLiveBadge(true);
     dom.text(dom.get('tw-c-position'), '0:00');
     dom.text(dom.get('tw-c-duration'), '0:00');
     this.setChatChannel('', '');
@@ -216,7 +217,9 @@
     this.overlayFocus = 'buttons';
     this.stopProgressTimer();
     this.resetSeekAcceleration();
+    this.liveOnline = true;
     this.setContentBadge('LIVE');
+    this.setChatLiveBadge(true);
     var displayName = (this.liveItem && this.liveItem.display) || this.login || '';
     dom.text(dom.get('tw-c-name'), displayName);
     dom.text(dom.get('tw-c-title'), (this.liveItem && this.liveItem.title) || '');
@@ -281,9 +284,15 @@
       dom.removeClass(root, 'tw-content-live');
       dom.removeClass(root, 'tw-content-vods');
       dom.removeClass(root, 'tw-content-clips');
-      dom.addClass(root, 'tw-content-' + String(key || '').toLowerCase());
+      if (key) { dom.addClass(root, 'tw-content-' + String(key).toLowerCase()); }
+    }
+    if (!key) {
+      dom.text(dom.get('tw-c-kind'), '');
+      dom.hide(dom.get('tw-c-kind'));
+      return;
     }
     dom.text(dom.get('tw-c-kind'), TW.i18n.t(key));
+    dom.show(dom.get('tw-c-kind'), 'inline-block');
   };
 
   P.setViewers = function (text) {
@@ -312,6 +321,33 @@
     if (!this.root) { return; }
     if (this.chatViewerText) { dom.addClass(this.root, 'tw-chat-has-viewers'); }
     else { dom.removeClass(this.root, 'tw-chat-has-viewers'); }
+  };
+
+  P.setChatLiveBadge = function (online) {
+    var badge = dom.get('tw-chat-live-badge');
+    if (online) {
+      dom.text(badge, TW.i18n.t('LIVE'));
+      dom.show(badge, 'inline-block');
+    } else {
+      dom.text(badge, '');
+      dom.hide(badge);
+    }
+  };
+
+  P.setLiveOnline = function (online) {
+    this.liveOnline = online;
+    if (online) {
+      this.setContentBadge('LIVE');
+      this.setChatLiveBadge(true);
+      this.startChatCapture();
+    } else {
+      this.setContentBadge(null);
+      this.setChatLiveBadge(false);
+      if (this.chatOn) { this.closeChat(); }
+      this.stopChatCapture();
+      this.resetChat();
+    }
+    this.refreshControls();
   };
 
   P.setGame = function (text) {
@@ -439,10 +475,12 @@
     var self = this;
     if (!this.login || this.contentKind !== 'live') { return; }
     TW.api.streamInfo(this.login, function (info) {
+      var online = !!info.online;
       dom.text(dom.get('tw-c-name'), info.display);
       dom.text(dom.get('tw-c-title'), info.title);
       self.setGame(info.game || '');
-      var viewerCount = info.online ? info.viewers : null;
+      self.setLiveOnline(online);
+      var viewerCount = online ? info.viewers : null;
       var viewerText = viewerCount != null ? self.formatViewerCount(viewerCount) : '';
       self.setViewers(viewerText);
       self.setChatChannel(info.display, info.logo);
@@ -640,12 +678,12 @@
   };
 
   P.toggleChat = function () {
-    if (this.contentKind !== 'live') { return; }
+    if (this.contentKind !== 'live' || this.liveOnline === false) { return; }
     if (this.chatOn) { this.closeChat(); } else { this.openChat(); }
   };
 
   P.openChat = function () {
-    if (this.chatOn || !this.login) { return; }
+    if (this.chatOn || !this.login || this.liveOnline === false) { return; }
     this.chatOn = true;
     dom.addClass(this.root, 'tw-chat-open');
     dom.show(dom.get('tw-chat'));
@@ -817,7 +855,7 @@
   P.visibleControls = function () {
     var ids = [];
     ids.push('tw-ctl-channel');
-    if (this.contentKind === 'live') { ids.push('tw-ctl-chat'); }
+    if (this.contentKind === 'live' && this.liveOnline !== false) { ids.push('tw-ctl-chat'); }
     ids.push('tw-ctl-quality');
     return ids;
   };

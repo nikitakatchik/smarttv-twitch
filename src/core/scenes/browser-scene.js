@@ -1012,8 +1012,8 @@
     if (!item) { return; }
     this.clearNavFocus();
     if (item.mode === null) { TW.app.goToLogin(); return; }
-    // Already on this tab -> just drop into the content; otherwise switch.
-    if (item.mode === this.mode) { this.leaveTopNav(); }
+    // Already on this tab -> force-refresh the current grid, matching colour keys.
+    if (item.mode === this.mode) { this.switchMode(item.mode, true); }
     else { this.switchMode(item.mode, false); }
   };
 

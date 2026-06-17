@@ -398,6 +398,9 @@ html, body {
 .tw-chat-avatar-wrap {
   position: absolute; left: 14px; top: 14px; width: 64px; height: 64px;
   border-radius: 50%; box-sizing: border-box;
+  background: #d9dce4; box-shadow: 0 0 0 2px rgba(217, 220, 228, 0.24);
+}
+.tw-content-live .tw-chat-avatar-wrap {
   background: #e91916; box-shadow: 0 0 0 2px rgba(233, 25, 22, 0.22);
 }
 .tw-chat-avatar {

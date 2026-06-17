@@ -29,6 +29,7 @@ function setup(opts) {
   }
   const get = (id) => (els[id] || (els[id] = mk()));
   const calls = { goToChannel: [], goToChannelPage: [], goToLogin: 0 };
+  const apiCalls = { followedStreams: 0, followedGames: 0, followedChannels: 0, topStreams: 0, topGames: 0, streamsByGame: 0 };
 
   const dom = {
     create: (t, c, h) => { const e = mk(); if (c) { e.className = c; } if (h != null) { e.innerHTML = h; } return e; },
@@ -53,12 +54,12 @@ function setup(opts) {
     addCommas: (n) => String(n),
     auth: { isLoggedIn: () => opts.loggedIn !== false, user: () => ({ display: 'Me' }) },
     api: {
-      followedStreams: (cursor, ok) => ok({ items: (opts.live || []).slice(), cursor: null }),
-      followedGames: (ok) => ok({ items: (opts.categories || []).slice(), cursor: false }),
-      followedChannels: (cursor, ok) => ok({ items: (opts.follows || []).slice(), cursor: null }),
-      topStreams: (cursor, ok) => ok({ items: (opts.streams || []).slice(), cursor: null }),
-      topGames: (cursor, ok) => ok({ items: (opts.games || []).slice(), cursor: null }),
-      streamsByGame: (game, cursor, ok) => ok({ items: (opts.gameStreams || []).slice(), cursor: null }),
+      followedStreams: (cursor, ok) => { apiCalls.followedStreams++; ok({ items: (opts.live || []).slice(), cursor: null }); },
+      followedGames: (ok) => { apiCalls.followedGames++; ok({ items: (opts.categories || []).slice(), cursor: false }); },
+      followedChannels: (cursor, ok) => { apiCalls.followedChannels++; ok({ items: (opts.follows || []).slice(), cursor: null }); },
+      topStreams: (cursor, ok) => { apiCalls.topStreams++; ok({ items: (opts.streams || []).slice(), cursor: null }); },
+      topGames: (cursor, ok) => { apiCalls.topGames++; ok({ items: (opts.games || []).slice(), cursor: null }); },
+      streamsByGame: (game, cursor, ok) => { apiCalls.streamsByGame++; ok({ items: (opts.gameStreams || []).slice(), cursor: null }); },
       categoryInfo: (game, ok) => ok(opts.categoryInfo || game),
     },
     app: {
@@ -77,7 +78,7 @@ function setup(opts) {
   vm.runInContext(code, g, { filename: 'browser-scene.js' });
   const scene = new TW.BrowserScene({});
   scene.initialize();
-  return { scene, calls, els, MODE: TW.BrowserScene.MODE, KEY: TW.KEY };
+  return { scene, calls, els, apiCalls, MODE: TW.BrowserScene.MODE, KEY: TW.KEY };
 }
 
 const stream = (login, display, extra) => Object.assign(
@@ -643,4 +644,18 @@ test('BACK on the tab row selects Channels', () => {
   assert.equal(scene.onTopNav, true);
   assert.equal(scene.navIndex, 0);
   assert.match(els['tw-tip-all'].className, /tw-tip-active/);
+});
+
+test('OK on the active tab row refreshes the current grid', () => {
+  const { scene, apiCalls, MODE, KEY } = setup({ streams: [stream('a')] });
+  scene.switchMode(MODE.ALL, true);
+  assert.equal(apiCalls.topStreams, 1);
+
+  scene.focusTopNav();
+  assert.equal(scene.navIndex, 0, 'Channels tab focused');
+  scene.handleKeyDown(KEY.ENTER);
+
+  assert.equal(scene.mode, MODE.ALL);
+  assert.equal(apiCalls.topStreams, 2);
+  assert.equal(scene.onTopNav, false);
 });

@@ -78,7 +78,9 @@ function setup(opts) {
       playbackUrl: (login, ok) => ok('http://example/live.m3u8'),
       vodPlaybackUrl: (id, ok) => ok(`http://example/${id}.m3u8`),
       clipPlayback: (slug, ok) => ok({ url: `http://example/${slug}.mp4` }),
-      streamInfo: (login, ok) => ok(opts.streamInfo || { display: login, title: 'title', online: true, viewers: 10, logo: 'avatar.png', game: 'Game' }),
+      streamInfo: (login, ok) => ok(typeof opts.streamInfo === 'function'
+        ? opts.streamInfo(login)
+        : (opts.streamInfo || { display: login, title: 'title', online: true, viewers: 10, logo: 'avatar.png', game: 'Game' })),
     },
     twitch: {
       chat: {
@@ -166,6 +168,47 @@ test('chat header mirrors refreshed live viewer count', () => {
   assert.equal(els['tw-chat-viewer-number'].textContent, '1234');
   assert.equal(els['tw-chat-viewer-label'].textContent, ' VIEWERS');
   assert.equal(scene.chatViewerText, '1234 VIEWERS');
+});
+
+test('live offline refresh removes LIVE badges and disables chat', () => {
+  let online = true;
+  const { scene, els, chat } = setup({
+    stream: { display: 'Seed Name', title: 'seed title', viewers: 42, game: 'Seed Game' },
+    streamInfo: () => ({
+      display: 'Some Guy',
+      title: online ? 'live title' : '',
+      online,
+      viewers: online ? 1234 : 0,
+      logo: 'some-guy.png',
+      game: online ? 'Live Game' : '',
+    }),
+  });
+
+  scene.openChat();
+  assert.equal(scene.chatOn, true);
+  assert.equal(chat.closed, 0);
+
+  online = false;
+  scene.updateInfo();
+
+  assert.equal(scene.chatOn, false);
+  assert.equal(chat.closed, 1);
+  assert.equal(els['tw-c-kind'].textContent, '');
+  assert.equal(els['tw-c-kind'].style.display, 'none');
+  assert.equal(els['tw-chat-live-badge'].textContent, '');
+  assert.equal(els['tw-chat-live-badge'].style.display, 'none');
+  assert.equal(els['tw-chat'].style.display, 'none');
+  assert.doesNotMatch(scene.root.className, /tw-content-live/);
+  assert.equal(els['tw-c-viewers'].textContent, '');
+  assert.equal(els['tw-chat-viewer-number'].textContent, '');
+  assert.equal(els['tw-ctl-chat'].style.display, 'none');
+  assert.equal(chat.connections.length, 1);
+});
+
+test('chat avatar ring is grey unless live content is active', () => {
+  const css = fs.readFileSync(path.resolve(__dirname, '..', 'src/ui/styles.css'), 'utf8');
+  assert.match(css, /\.tw-chat-avatar-wrap\s*\{[^}]*background: #d9dce4;[^}]*box-shadow: 0 0 0 2px rgba\(217, 220, 228, 0\.24\);/s);
+  assert.match(css, /\.tw-content-live \.tw-chat-avatar-wrap\s*\{[^}]*background: #e91916;[^}]*box-shadow: 0 0 0 2px rgba\(233, 25, 22, 0\.22\);/s);
 });
 
 test('player adapter receives source metadata for web playback fallbacks', () => {
