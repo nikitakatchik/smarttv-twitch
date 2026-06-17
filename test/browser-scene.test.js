@@ -128,6 +128,25 @@ test('Following renders Live Categories before live and offline rows', () => {
   assert.equal(scene.fRows[2].items[0].kind, 'channel');
 });
 
+test('Following sorts live categories and live channels by viewer count', () => {
+  const { scene, MODE } = setup({
+    categories: [
+      Object.assign(game('Low Category'), { viewers: 5 }),
+      Object.assign(game('High Category'), { viewers: 50 }),
+    ],
+    live: [
+      stream('low-live', 'Low Live', { viewers: 7 }),
+      stream('high-live', 'High Live', { viewers: 70 }),
+    ],
+    follows: [],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.fCategories[0].name, 'High Category');
+  assert.equal(scene.fLive[0].login, 'high-live');
+  assert.equal(scene.fRows[0].items[0].name, 'High Category');
+  assert.equal(scene.fRows[1].items[0].login, 'high-live');
+});
+
 test('Following shows followed live categories even when matching followed channels are not live', () => {
   const { scene, MODE } = setup({
     categories: [

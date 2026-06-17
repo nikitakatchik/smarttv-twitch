@@ -30,6 +30,20 @@
     { id: 'tw-account',      mode: null }          // chip -> login (far right)
   ];
 
+  function viewerCount(item) {
+    return (item && item.viewers) || 0;
+  }
+
+  function sortByViewersDesc(items) {
+    items.sort(function (a, b) {
+      var d = viewerCount(b) - viewerCount(a);
+      if (d) { return d; }
+      var an = String((a && (a.display || a.name || a.login)) || '').toLowerCase();
+      var bn = String((b && (b.display || b.name || b.login)) || '').toLowerCase();
+      return an < bn ? -1 : (an > bn ? 1 : 0);
+    });
+  }
+
   function BrowserScene(adapter) {
     this.adapter = adapter;
     this.mode = -1;
@@ -535,6 +549,7 @@
       this.fCategoryMap[key] = true;
       this.fCategories.push(it);
     }
+    sortByViewersDesc(this.fCategories);
   };
 
   // Load EVERY live followed channel first (usually a single page) so the offline
@@ -547,7 +562,7 @@
           self.fLive.push(res.items[i]);
           self.fLiveLogins[res.items[i].login] = true;
         }
-        if (res.cursor) { page(res.cursor); } else { self.loadFollowOffline(); }
+        if (res.cursor) { page(res.cursor); } else { sortByViewersDesc(self.fLive); self.loadFollowOffline(); }
       }, function () { self.loadFollowOffline(); });   // proceed with what we have
     }
     page(null);
