@@ -217,10 +217,19 @@
   // the frame within the current row (same offset -> no animation fires).
   P.setScroll = function (offset) {
     var s = dom.get('tw-grid-scroll');
-    if (!s) { return; }
+    var h = dom.get('tw-category-head');
     var t = 'translate3d(0,' + (-offset) + 'px,0)';
-    s.style.webkitTransform = t;
-    s.style.transform = t;
+    if (s) {
+      s.style.webkitTransform = t;
+      s.style.transform = t;
+    }
+    if (h) {
+      // Category detail header is visually part of the scrolled content even
+      // though it is a sibling of the grid, so it must move with the rows.
+      var ht = (this.mode === MODE.GAMES_STREAMS) ? t : 'translate3d(0,0,0)';
+      h.style.webkitTransform = ht;
+      h.style.transform = ht;
+    }
   };
 
   P.scrollToCursor = function () {

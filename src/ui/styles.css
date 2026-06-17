@@ -112,9 +112,11 @@ html, body {
   margin-top: 8px; max-height: 84px; overflow: hidden;
   font-size: 17px; line-height: 21px; color: #dedee3;
 }
-/* GPU-composited transform + short transition = a smooth, lightweight scroll
-   (one layer moves; no per-frame layout). translate3d set inline from JS. */
-.tw-grid-scroll {
+/* GPU-composited transform + short transition = a smooth, lightweight scroll.
+   The category header gets the same transform as the grid so it moves out with
+   the category content instead of sitting behind later rows. */
+.tw-grid-scroll,
+.tw-category-head {
   -webkit-transition: -webkit-transform 0.2s ease-out;
   transition: transform 0.2s ease-out;
 }

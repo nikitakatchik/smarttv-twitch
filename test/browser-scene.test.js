@@ -346,6 +346,19 @@ test('category stream selection frame accounts for the fixed header', () => {
   assert.equal(els['tw-grid-frame'].style.top, '183px');
 });
 
+test('category stream header scrolls with the grid content', () => {
+  const { scene, els, MODE } = setup({
+    games: [game('Chess')],
+    gameStreams: [stream('a'), stream('b'), stream('c'), stream('d'), stream('e')],
+  });
+  scene.switchMode(MODE.GAMES, true);
+  scene.activate();
+  scene.rowEls[1].offsetTop = 240;
+  scene.move(0, 1);
+  assert.equal(els['tw-grid-scroll'].style.transform, 'translate3d(0,-240px,0)');
+  assert.equal(els['tw-category-head'].style.transform, 'translate3d(0,-240px,0)');
+});
+
 test('returning from another scene preserves the current browser mode', () => {
   const { scene, els, MODE } = setup({ games: [game('Chess')] });
   scene.switchMode(MODE.GAMES, true);
