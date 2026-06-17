@@ -66,6 +66,9 @@ function build(platform, outDir) {
     fs.mkdirSync(path.dirname(dst), { recursive: true });
     fs.copyFileSync(path.join(pdir, e), dst);
   }
+  if (platform === 'web') {
+    fs.copyFileSync(path.join(SRC, 'assets', 'icon', 'favicon.ico'), path.join(out, 'favicon.ico'));
+  }
   return out;
 }
 

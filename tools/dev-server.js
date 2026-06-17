@@ -34,6 +34,7 @@ const INDEX = path.join(SRC, 'platforms', 'web', 'index.html');
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json',
+  '.ico': 'image/x-icon',
   '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml',
   '.m3u8': 'application/vnd.apple.mpegurl'
 };
@@ -67,6 +68,9 @@ const server = http.createServer((req, res) => {
   }
 
   if (u.pathname === '/' || u.pathname === '') { return serveFile(res, INDEX); }
+  if (u.pathname === '/favicon.ico') {
+    return serveFile(res, path.join(SRC, 'assets', 'icon', 'favicon.ico'));
+  }
 
   for (const prefix in MOUNTS) {
     if (u.pathname.indexOf(prefix) === 0) {

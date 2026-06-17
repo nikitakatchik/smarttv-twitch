@@ -109,8 +109,8 @@
     TW.dom.on(global.document, 'keydown', function (e) {
       var key = adapter.keys.map(e);
       if (!key) { return; }
-      var handled = TW.sceneManager.dispatchKey(key);
-      if (handled && e.preventDefault) { e.preventDefault(); }
+      if (e.preventDefault) { e.preventDefault(); }
+      TW.sceneManager.dispatchKey(key);
     });
   }
 

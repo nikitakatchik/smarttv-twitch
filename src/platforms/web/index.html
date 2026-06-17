@@ -3,14 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Twitch for Samsung TV — Dev Harness</title>
+  <title>Twellie — Web Preview</title>
+  <link rel="icon" href="assets/icon/favicon.ico" sizes="any">
+  <link rel="icon" href="assets/icon/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="assets/icon/favicon-16.png" type="image/png" sizes="16x16">
+  <link rel="apple-touch-icon" href="assets/icon/apple-touch-icon.png">
   <link rel="stylesheet" href="ui/styles.css">
   <style>
-    /* Harness chrome — overrides the TV-fullscreen assumptions in styles.css */
-    html, body { width: auto; height: auto; overflow: auto; background: #3a3a42; }
-    .tw-stage-wrap { display: block; text-align: center; padding: 20px 0; }
+    /* Web preview chrome overrides the TV-fullscreen assumptions in styles.css. */
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #3a3a42; }
+    body { position: relative; }
+    .page-title {
+      position: absolute; left: 0; right: 0; top: 14px; z-index: 3;
+      color: #efeff1; font: 700 18px/22px "Helvetica Neue", Arial, sans-serif;
+      text-align: center; letter-spacing: 0;
+    }
+    .tw-stage-wrap {
+      height: 100%; box-sizing: border-box; overflow: hidden; padding: 16px;
+      display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center;
+      -webkit-box-pack: center; justify-content: center; text-align: left;
+    }
     .tv-frame {
-      position: relative; width: 1280px; height: 720px; margin: 0 auto;
+      position: relative; width: 1280px; height: 720px; margin: 0;
+      -webkit-box-flex: 0; flex: 0 0 auto;
       overflow: hidden; border-radius: 10px; box-shadow: 0 16px 60px rgba(0,0,0,0.6);
       background: #000;
     }
@@ -18,63 +33,153 @@
     #tw-video { background: #000; z-index: 0; }
     #app { z-index: 1; }
     .remote {
-      width: 1280px; margin: 14px auto 40px; color: #adadb8; font: 13px/1.5 "Helvetica Neue", Arial, sans-serif;
-      text-align: center;
+      width: 138px; margin: 0 0 0 16px; color: #adadb8; font: 13px/1.5 "Helvetica Neue", Arial, sans-serif;
+      -webkit-box-flex: 0; flex: 0 0 138px; text-align: center;
     }
-    .remote h2 { color: #efeff1; font-size: 15px; font-weight: 600; margin: 0 0 8px; }
     .remote button {
-      min-width: 56px; height: 40px; margin: 3px; padding: 0 12px; cursor: pointer;
+      width: 40px; height: 40px; margin: 3px; padding: 0; cursor: pointer;
+      box-sizing: border-box; line-height: 38px; text-align: center; vertical-align: top; white-space: nowrap;
       background: #26262c; color: #efeff1; border: 1px solid #3a3a44; border-radius: 6px;
-      font-size: 14px;
+      font-size: 13px;
     }
     .remote button:hover { background: #34343c; }
     .remote .r { color: #bd6360; } .remote .g { color: #5f9a6a; }
     .remote .y { color: #c0a05e; }
-    .remote .hint { margin-top: 10px; color: #7d7d8c; }
-    .remote kbd {
-      background: #1f1f23; border: 1px solid #3a3a44; border-radius: 4px; padding: 1px 6px;
-      font-family: inherit; color: #dedee3;
+    .remote .r, .remote .g, .remote .y { font-weight: 700; }
+    .remote-button-row { font-size: 0; line-height: 0; }
+    .remote-row-spaced { margin-top: 8px; }
+    .keyboard-legend { margin-top: 12px; color: #9d9da9; font-size: 12px; }
+    .legend-separator {
+      width: 52px; height: 0; margin: 0 auto 15px;
+      border-top: 1px solid #4a4a55;
+    }
+    .legend-row { position: relative; height: 23px; margin-top: 4px; }
+    .legend-keys {
+      position: absolute; right: 50%; top: 0; margin-right: 6px;
+      text-align: right; white-space: nowrap;
+    }
+    .legend-key {
+      display: inline-block; color: #efeff1; font: inherit; font-weight: 700;
+      line-height: 20px; vertical-align: top;
+    }
+    .legend-keys .legend-key { margin-left: 6px; }
+    .legend-keys .legend-key:first-child { margin-left: 0; }
+    .legend-arrow { text-shadow: 0.45px 0 0 currentColor, -0.45px 0 0 currentColor; }
+    .legend-action {
+      position: absolute; left: 50%; top: 1px; margin-left: 6px;
+      text-align: left; white-space: nowrap;
     }
   </style>
 </head>
 <body>
-  <div class="tw-stage-wrap">
-    <div class="tv-frame">
+  <div class="page-title" id="tw-page-title">Twellie Web Preview</div>
+
+  <div class="tw-stage-wrap" id="tw-stage-wrap">
+    <div class="tv-frame" id="tw-frame">
       <video id="tw-video" playsinline></video>
       <div id="app"></div>
     </div>
+
+    <div class="remote" id="tw-remote">
+      <div class="remote-button-row">
+        <button data-tvkey="UP">▲</button>
+      </div>
+      <div class="remote-button-row">
+        <button data-tvkey="LEFT">◀</button>
+        <button data-tvkey="ENTER">OK</button>
+        <button data-tvkey="RIGHT">▶</button>
+      </div>
+      <div class="remote-button-row">
+        <button data-tvkey="DOWN">▼</button>
+      </div>
+      <div class="remote-button-row remote-row-spaced">
+        <button data-tvkey="RED" class="r">A</button>
+        <button data-tvkey="GREEN" class="g">B</button>
+        <button data-tvkey="YELLOW" class="y">C</button>
+      </div>
+      <div class="remote-button-row remote-row-spaced">
+        <button data-tvkey="BACK">Back</button>
+      </div>
+      <div class="keyboard-legend">
+        <div class="legend-separator"></div>
+        <div class="legend-row">
+          <span class="legend-keys"><span class="legend-key legend-arrow">↑</span><span class="legend-key legend-arrow">↓</span><span class="legend-key legend-arrow">←</span><span class="legend-key legend-arrow">→</span></span>
+          <span class="legend-action">navigate</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-keys"><span class="legend-key">Enter</span></span>
+          <span class="legend-action">select</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-keys"><span class="legend-key">Backspace</span></span>
+          <span class="legend-action">back</span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="remote">
-    <h2>📺 Virtual remote</h2>
-    <div>
-      <button data-tvkey="UP">▲</button>
-    </div>
-    <div>
-      <button data-tvkey="LEFT">◀</button>
-      <button data-tvkey="ENTER">OK</button>
-      <button data-tvkey="RIGHT">▶</button>
-    </div>
-    <div>
-      <button data-tvkey="DOWN">▼</button>
-    </div>
-    <div style="margin-top:8px">
-      <button data-tvkey="RED" class="r">A · Channels</button>
-      <button data-tvkey="GREEN" class="g">B · Categories</button>
-      <button data-tvkey="YELLOW" class="y">C · Followed</button>
-    </div>
-    <div style="margin-top:8px">
-      <button data-tvkey="BACK">Back</button>
-      <button data-tvkey="CH_UP">CH ▲ (quality)</button>
-      <button data-tvkey="CH_DOWN">CH ▼ (quality)</button>
-    </div>
-    <div class="hint">
-      Keyboard: <kbd>↑ ↓ ← →</kbd> navigate · <kbd>Enter</kbd> select · <kbd>Backspace</kbd> back ·
-      <kbd>R</kbd><kbd>G</kbd><kbd>Y</kbd> browse tabs ·
-      <kbd>PgUp</kbd>/<kbd>PgDn</kbd> quality. In the player, <kbd>← →</kbd> choose controls and <kbd>Enter</kbd> activates.
-      <br>No colour buttons? Press <kbd>↑</kbd> from the grid to reach the tab row, then <kbd>← →</kbd> and <kbd>Enter</kbd>.
-    </div>
-  </div>
+  <script>
+    (function (global) {
+      function setScale(el, scale) {
+        if (!el) { return; }
+        var value = scale === 1 ? '' : 'scale(' + scale + ')';
+        el.style.WebkitTransform = value;
+        el.style.transform = value;
+        el.style.WebkitTransformOrigin = 'left top';
+        el.style.transformOrigin = 'left top';
+      }
+
+      function fitWebPreview() {
+        var wrap = global.document.getElementById('tw-stage-wrap');
+        var frame = global.document.getElementById('tw-frame');
+        var remote = global.document.getElementById('tw-remote');
+        var title = global.document.getElementById('tw-page-title');
+        var video = global.document.getElementById('tw-video');
+        var app = global.document.getElementById('app');
+        if (!wrap || !frame || !remote) { return; }
+
+        var minSpace = 16;
+        var minPageWidth = 960;
+        var minPageHeight = 500;
+        var viewportWidth = Math.max(global.innerWidth || 1280, minPageWidth);
+        var viewportHeight = Math.max(global.innerHeight || 720, minPageHeight);
+        var remoteWidth = remote.offsetWidth;
+        var titleHeight = title ? title.offsetHeight : 0;
+        var titleGap = title ? 8 : 0;
+        var titleBand = title ? titleHeight + (titleGap * 2) : minSpace;
+        var widthScale = (viewportWidth - remoteWidth - (minSpace * 3)) / 1280;
+        var heightScale = (viewportHeight - (titleBand * 2)) / 720;
+        var scale = Math.min(1, widthScale, heightScale);
+        if (scale < 0.05) { scale = 0.05; }
+
+        var frameWidth = Math.round(1280 * scale);
+        var frameHeight = Math.round(720 * scale);
+        var space = Math.floor((viewportWidth - frameWidth - remoteWidth) / 3);
+        if (space < minSpace) { space = minSpace; }
+
+        wrap.style.width = viewportWidth + 'px';
+        wrap.style.height = viewportHeight + 'px';
+        wrap.style.padding = minSpace + 'px ' + space + 'px';
+        remote.style.marginLeft = space + 'px';
+        frame.style.width = frameWidth + 'px';
+        frame.style.height = frameHeight + 'px';
+        setScale(video, scale);
+        setScale(app, scale);
+
+        if (title) {
+          var frameRect = frame.getBoundingClientRect();
+          title.style.top = Math.max(0, (frameRect.top - title.offsetHeight) / 2) + 'px';
+        }
+      }
+
+      if (global.document.readyState === 'loading') {
+        global.document.addEventListener('DOMContentLoaded', fitWebPreview, false);
+      } else {
+        fitWebPreview();
+      }
+      global.addEventListener('resize', fitWebPreview, false);
+    })(this);
+  </script>
 
   <!-- hls.js powers playback in Chrome/Firefox; Safari uses native HLS. -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
