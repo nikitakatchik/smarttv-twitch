@@ -47,8 +47,8 @@
     // UI language; see lang/. Falls back to 'en'.
     language: 'en',
 
-    // Logical screen the layout is authored against. Orsay panels are 1280x720
-    // or 960x540; Tizen authors against 1920x1080; CSS scales to fit.
+    // Logical screen the layout is authored against. Platform pages may scale
+    // the DOM to the panel; native players translate these coordinates.
     screen: { width: 1280, height: 720 }
   };
 })(this);

@@ -4,7 +4,8 @@
  * Tizen plays through the native AVPlay (no browser Origin), and browse hits
  * gql.twitch.tv which sends permissive CORS — so it reaches Twitch directly. The UI is
  * authored on a 1280x720 stage and scaled to the panel's 1920x1080 in
- * index.html.
+ * index.html. AVPlay still receives native panel pixels; that conversion lives
+ * in platform/player.js so the scene can keep using logical UI coordinates.
  */
 (function (global) {
   'use strict';
@@ -14,9 +15,6 @@
   function start() {
     TW.app.start({
       name: 'tizen',
-      config: {
-        screen: { width: 1920, height: 1080 }  // AVPlay display rect (full panel)
-      },
       keys: TW.platform.keys,
       createPlayer: TW.platform.createPlayer,
       system: TW.platform.system,

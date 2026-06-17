@@ -14,7 +14,26 @@
   var TW = global.TW;
   TW.platform = TW.platform || {};
 
+  var NATIVE_WIDTH = 1920;
+  var NATIVE_HEIGHT = 1080;
+
   function avplay() { return global.webapis && global.webapis.avplay; }
+
+  function logicalScreen() {
+    return (TW.config && TW.config.screen) || { width: 1280, height: 720 };
+  }
+
+  function setNativeDisplayRect(av, x, y, w, h) {
+    var s = logicalScreen();
+    var sx = NATIVE_WIDTH / (s.width || 1280);
+    var sy = NATIVE_HEIGHT / (s.height || 720);
+    av.setDisplayRect(
+      Math.round((x || 0) * sx),
+      Math.round((y || 0) * sy),
+      Math.round((w || 0) * sx),
+      Math.round((h || 0) * sy)
+    );
+  }
 
   function labelFromTrack(t) {
     try {
@@ -49,7 +68,7 @@
       load: function (masterUrl) {
         try {
           av.open(masterUrl);
-          av.setDisplayRect(0, 0, TW.config.screen.width, TW.config.screen.height);
+          setNativeDisplayRect(av, 0, 0, logicalScreen().width, logicalScreen().height);
           try {
             av.setStreamingProperty('ADAPTIVE_INFO', 'STARTBITRATE=HIGHEST|SKIPBITRATE=LOWEST');
           } catch (e) {}
@@ -71,7 +90,7 @@
       },
       stop: function () { try { av.stop(); av.close(); } catch (e) {} },
       destroy: function () { this.stop(); },
-      setDisplayArea: function (x, y, w, h) { try { av.setDisplayRect(x, y, w, h); } catch (e) {} },
+      setDisplayArea: function (x, y, w, h) { try { setNativeDisplayRect(av, x, y, w, h); } catch (e) {} },
       getQualities: function (fn) { qcb = fn; fn(qualities); },
       selectQuality: function (i) {
         try { if (i > 0 && trackIndex[i] != null) { av.setSelectTrack('VIDEO', trackIndex[i]); } }

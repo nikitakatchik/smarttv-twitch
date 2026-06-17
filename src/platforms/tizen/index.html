@@ -10,7 +10,8 @@
        scale #app 1.5x. The body must be transparent so the AVPlay video plane
        (composited beneath the WebView) shows through in the player scene. */
     html, body { width: 1920px; height: 1080px; background: transparent; }
-    #app { transform: scale(1.5); transform-origin: 0 0; }
+    #tw-av-player { z-index: 0; }
+    #app { transform: scale(1.5); transform-origin: 0 0; z-index: 1; }
   </style>
   <!-- Required for webapis.avplay -->
   <script src="$WEBAPIS/webapis/webapis.js"></script>
