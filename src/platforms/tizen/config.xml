@@ -3,14 +3,14 @@
      onward). required_version 2.3 targets the widest range of Tizen TVs. -->
 <widget xmlns="http://www.w3.org/ns/widgets"
         xmlns:tizen="http://tizen.org/ns/widgets"
-        id="https://github.com/nikitakatchik/smarttv-twitch"
+        id="https://github.com/nkatchik/smarttv-twitch"
         version="4.0.0" viewmodes="maximized">
   <tizen:application id="Twellie001.Twellie" package="Twellie001" required_version="2.3"/>
   <tizen:profile name="tv"/>
 
   <name>Twellie</name>
   <description>Twellie — an unofficial live viewer for Twitch on Samsung Tizen TVs.</description>
-  <author href="https://github.com/nikitakatchik">Nikita Katchik</author>
+  <author href="https://github.com/nkatchik">Nikita Katchik</author>
   <content src="index.html"/>
   <icon src="assets/icon/icon.png"/>
 

@@ -1,5 +1,5 @@
 {
-  "name": "smarttv-twitch",
+  "name": "twellie",
   "version": "4.0.0",
   "private": true,
   "description": "Twellie — an unofficial viewer for Twitch on Samsung Smart TVs. One ES5 core; targets: Orsay (2013–2014), Tizen (2015+) as a native .wgt (Apps2Samsung) or TizenBrew module, and a desktop browser harness.",
@@ -13,11 +13,11 @@
     "hls",
     "iptv"
   ],
-  "homepage": "https://github.com/nikitakatchik/smarttv-twitch#readme",
-  "bugs": "https://github.com/nikitakatchik/smarttv-twitch/issues",
+  "homepage": "https://github.com/nkatchik/smarttv-twitch#readme",
+  "bugs": "https://github.com/nkatchik/smarttv-twitch/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nikitakatchik/smarttv-twitch.git"
+    "url": "https://github.com/nkatchik/smarttv-twitch.git"
   },
   "license": "GPL-3.0-or-later",
   "author": "Nikita Katchik",

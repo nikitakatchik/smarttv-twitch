@@ -61,7 +61,7 @@ test('web preview keeps the remote beside the fixed Twellie stage', () => {
     assert.ok(fs.existsSync(path.join(out, 'assets', 'icon', 'apple-touch-icon.png')), 'missing generated apple touch icon');
     assert.ok(html.includes('<div class="page-title" id="tw-page-title">📺 Twellie Web Preview</div>'), 'page should have a visible title');
     assert.ok(html.includes('<a class="repo-button" id="tw-repo-button"'), 'page should have a GitHub repository button');
-    assert.ok(html.includes('href="https://github.com/nikitakatchik/smarttv-twitch"'), 'repository button should point to the repo');
+    assert.ok(html.includes('href="https://github.com/nkatchik/smarttv-twitch"'), 'repository button should point to the repo');
     assert.ok(html.includes('tabindex="-1"'), 'repository button should not enter the keyboard focus loop');
     assert.ok(html.includes('class="repo-logo"'), 'repository button should show the GitHub logo');
     assert.ok(html.includes('<span>GitHub</span>'), 'repository button should label GitHub');

@@ -18,7 +18,7 @@ the TV's hardware **AVPlay** player). For a no-installer alternative see
   enter your computer's IP → reboot.
   ([Apps2Samsung's how-to](https://github.com/Apps2Samsung/Apps2Samsung/wiki/FAQ#-how-to-enable-developer-mode-on-your-tv).)
 - **`Twellie.wgt`** — grab it from the
-  [latest release](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/Twellie.wgt),
+  [latest release](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/Twellie.wgt),
   or build it yourself (below).
 
 ## Install

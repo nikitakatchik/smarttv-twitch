@@ -24,7 +24,7 @@ const { ROOT } = require('../build');
 
 const DIST = 'https://nodejs.org/dist';
 const CACHE = path.join(ROOT, 'dist', '.node-cache');
-const UA = { 'user-agent': 'twellie-build (+https://github.com/nikitakatchik/smarttv-twitch)' };
+const UA = { 'user-agent': 'twellie-build (+https://github.com/nkatchik/smarttv-twitch)' };
 
 // GET that follows redirects, streaming the body to `dest`.
 function download(url, dest) {

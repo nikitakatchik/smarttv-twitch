@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nikitakatchik/smarttv-twitch/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nikitakatchik/smarttv-twitch/ci.yml?branch=master&style=flat-square&label=ci" alt="ci"></a>
-  <a href="https://nikitakatchik.github.io/smarttv-twitch/"><img src="https://img.shields.io/badge/demo-GitHub%20Pages-2ea44f.svg?style=flat-square" alt="Live demo"></a>
+  <a href="https://github.com/nkatchik/smarttv-twitch/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nkatchik/smarttv-twitch/ci.yml?branch=master&style=flat-square&label=ci" alt="ci"></a>
+  <a href="https://nkatchik.github.io/twellie/"><img src="https://img.shields.io/badge/demo-GitHub%20Pages-2ea44f.svg?style=flat-square" alt="Live demo"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square" alt="License: GPL v3"></a>
   <img src="https://img.shields.io/badge/platform-Samsung%20Orsay%20%2B%20Tizen-23d3a3.svg?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/Made%20with-JavaScript%20(ES5)-F7DF1E.svg?style=flat-square&logo=javascript&logoColor=black" alt="Made with JavaScript">
@@ -19,7 +19,7 @@
 
 ## Web Demo
 
-Try the browser preview at [nikitakatchik.github.io/smarttv-twitch](https://nikitakatchik.github.io/smarttv-twitch/).
+Try the browser preview at [nkatchik.github.io/twellie](https://nkatchik.github.io/twellie/).
 It is built by GitHub Actions from `npm run build:web` and published to GitHub Pages on every push to `master`.
 The hosted preview is static, so live streams and VODs use Twitch's official embedded player; `npm start` still uses the local HLS proxy for development.
 
@@ -49,12 +49,12 @@ Full matrix, engines, and caveats: [docs/PLATFORMS.md](docs/PLATFORMS.md).
 ## Install on Your TV
 
 Download the package for your TV from the
-[**latest release**](https://github.com/nikitakatchik/smarttv-twitch/releases/latest),
+[**latest release**](https://github.com/nkatchik/smarttv-twitch/releases/latest),
 then follow the guide for your model year.
 
 | Your TV | Install | Guide |
 | ------- | ------- | ----- |
-| **2015 and newer** — Tizen (J · K · M · N · R · T · U …) | [Twellie.wgt](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/Twellie.wgt) with **Apps2Samsung** (signs and installs), or **TizenBrew** | [Apps2Samsung](docs/install/apps2samsung.md) · [TizenBrew](docs/install/tizenbrew.md) |
+| **2015 and newer** — Tizen (J · K · M · N · R · T · U …) | [Twellie.wgt](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/Twellie.wgt) with **Apps2Samsung** (signs and installs), or **TizenBrew** | [Apps2Samsung](docs/install/apps2samsung.md) · [TizenBrew](docs/install/tizenbrew.md) |
 | **2013–2014** — Orsay (F · H) | [Orsay installer](#orsay-installer) | [F / H guide](docs/install/orsay-2013-2014.md) |
 
 > Older **2011–2012** (D / E) Orsay sets aren't supported — their MAPLE engine and
@@ -77,9 +77,9 @@ Grab the one for your computer — each always points at the newest release:
 
 | Your computer | Download |
 | ------------- | -------- |
-| **macOS** (Apple Silicon · M1–M4) | [twellie-orsay-host-macos-arm64.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-macos-arm64.zip) |
-| **macOS** (Intel) | [twellie-orsay-host-macos-x64.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-macos-x64.zip) |
-| **Windows** (64-bit) | [twellie-orsay-host-windows-x64.zip](https://github.com/nikitakatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-windows-x64.zip) |
+| **macOS** (Apple Silicon · M1–M4) | [twellie-orsay-host-macos-arm64.zip](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-macos-arm64.zip) |
+| **macOS** (Intel) | [twellie-orsay-host-macos-x64.zip](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-macos-x64.zip) |
+| **Windows** (64-bit) | [twellie-orsay-host-windows-x64.zip](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-windows-x64.zip) |
 
 ## Credits and Heritage
 

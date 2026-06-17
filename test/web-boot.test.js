@@ -54,7 +54,7 @@ test('web boot defaults to the dev proxy on localhost', () => {
 });
 
 test('web boot uses the embed fallback on static GitHub Pages', () => {
-  const { TW } = runBoot('https://nikitakatchik.github.io/smarttv-twitch/');
+  const { TW } = runBoot('https://nkatchik.github.io/twellie/');
 
   assert.equal(TW.platform.proxyBase, '');
   assert.equal(TW.platform.useEmbedPlayer, true);
@@ -65,7 +65,7 @@ test('web boot uses the embed fallback on static GitHub Pages', () => {
 });
 
 test('web boot honors an explicit proxy override on static hosts', () => {
-  const { TW } = runBoot('https://nikitakatchik.github.io/smarttv-twitch/?proxy=https%3A%2F%2Fproxy.example');
+  const { TW } = runBoot('https://nkatchik.github.io/twellie/?proxy=https%3A%2F%2Fproxy.example');
 
   assert.equal(TW.platform.proxyBase, 'https://proxy.example');
   assert.equal(TW.platform.useEmbedPlayer, false);

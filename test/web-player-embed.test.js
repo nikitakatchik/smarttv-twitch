@@ -81,7 +81,7 @@ function loadPlayer(opts) {
   const g = {
     Hls: null,
     Twitch: { Player: FakePlayer },
-    location: { hostname: 'nikitakatchik.github.io' },
+    location: { hostname: 'nkatchik.github.io' },
     TW: {
       config: { screen: { width: 1280, height: 720 } },
       dom: {
@@ -146,7 +146,7 @@ test('static web player embeds live channels with the Pages parent domain', () =
   assert.equal(instances[0].id, 'tw-embed');
   assert.equal(instances[0].options.channel, 'dallas');
   assert.equal(instances[0].options.parent.length, 1);
-  assert.equal(instances[0].options.parent[0], 'nikitakatchik.github.io');
+  assert.equal(instances[0].options.parent[0], 'nkatchik.github.io');
   assert.equal(video.style.display, 'none');
   assert.equal(embed.style.display, 'block');
 

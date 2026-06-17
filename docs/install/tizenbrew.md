@@ -27,7 +27,7 @@ the privileged AVPlay API to modules, so Twellie uses the browser media path).
    README). Launch it.
 2. In TizenBrew's module manager, **add the module** by its reference:
    - npm: **`twellie-tizenbrew`** (TizenBrew resolves it as `npm/twellie-tizenbrew`), or
-   - GitHub: **`gh/nikitakatchik/<repo>@<tag>`** if hosted there instead.
+   - GitHub: **`gh/nkatchik/<repo>@<tag>`** if hosted there instead.
 3. TizenBrew lists **Twellie** — select it. It registers the remote keys, then
    opens the app.
 4. **Remote:** arrows + OK navigate, **Back** returns to the TizenBrew menu, the

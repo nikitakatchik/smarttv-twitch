@@ -85,7 +85,7 @@ function winReadme() {
     'It prints your computer\'s IP. On the TV, sign in as "develop", set that as\r\n' +
     'the App-Sync server IP, and run Start App Sync to install Twellie.\r\n\r\n' +
     'Then you can CLOSE this window — the TV streams Twitch directly.\r\n\r\n' +
-    'Full guide: https://github.com/nikitakatchik/smarttv-twitch/tree/master/docs/install\r\n';
+    'Full guide: https://github.com/nkatchik/smarttv-twitch/tree/master/docs/install\r\n';
 }
 function unixReadme() {
   return 'Twellie installer — for Samsung Orsay TVs (2013-2014)\n' +
@@ -102,7 +102,7 @@ function unixReadme() {
     'It prints your computer\'s IP. On the TV, sign in as "develop", set that as\n' +
     'the App-Sync server IP, and run Start App Sync to install Twellie.\n\n' +
     'Then you can CLOSE this window — the TV streams Twitch directly.\n\n' +
-    'Full guide: https://github.com/nikitakatchik/smarttv-twitch/tree/master/docs/install\n';
+    'Full guide: https://github.com/nkatchik/smarttv-twitch/tree/master/docs/install\n';
 }
 
 async function packageTarget(target) {

@@ -39,4 +39,4 @@ February 2022. This is a ground-up rewrite.
 - The abandoned NaCl C++ "WebIRC" chat stub and the old static HTML prototype.
 - Eclipse / Samsung SDK workspace cruft and the bundled jQuery copy.
 
-[4.0.0]: https://github.com/nikitakatchik/smarttv-twitch/releases/tag/4.0.0
+[4.0.0]: https://github.com/nkatchik/smarttv-twitch/releases/tag/4.0.0
