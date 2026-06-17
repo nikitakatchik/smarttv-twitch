@@ -54,6 +54,7 @@ function setup(opts) {
     auth: { isLoggedIn: () => true, user: () => ({ display: 'Me' }) },
     api: {
       followedStreams: (cursor, ok) => ok({ items: (opts.live || []).slice(), cursor: null }),
+      followedGames: (ok) => ok({ items: (opts.categories || []).slice(), cursor: false }),
       followedChannels: (cursor, ok) => ok({ items: (opts.follows || []).slice(), cursor: null }),
       topStreams: (cursor, ok) => ok({ items: (opts.streams || []).slice(), cursor: null }),
       topGames: (cursor, ok) => ok({ items: (opts.games || []).slice(), cursor: null }),
@@ -109,20 +110,36 @@ test('live + offline render as two sections, with live channels excluded from of
 
 test('Following renders Live Categories before live and offline rows', () => {
   const { scene, MODE } = setup({
-    live: [
-      stream('a', 'A', { game: 'Chess', gameBox: 'http://img/chess.jpg', viewers: 2 }),
-      stream('b', 'B', { game: 'Chess', gameBox: 'http://img/chess.jpg', viewers: 3 }),
+    categories: [
+      Object.assign(game('Chess'), { viewers: 5, followers: 20, box: 'http://img/chess.jpg' }),
+      Object.assign(game('Chess'), { viewers: 5, followers: 20, box: 'http://img/chess.jpg' }),
+      Object.assign(game('Offline Game'), { viewers: 0, followers: 20 }),
     ],
+    live: [stream('a', 'A')],
     follows: [channel('a', 'A'), channel('c', 'C')],
   });
   scene.switchMode(MODE.FOLLOWED, true);
   assert.equal(scene.fCategories.length, 1, 'duplicate live categories are merged');
   assert.equal(scene.fCategories[0].name, 'Chess');
-  assert.equal(scene.fCategories[0].viewers, 5, 'category tile sums followed live viewers');
+  assert.equal(scene.fCategories[0].viewers, 5);
   assert.equal(scene.fRows.length, 3, 'category row + live row + offline row');
   assert.equal(scene.fRows[0].items[0].kind, 'game');
   assert.equal(scene.fRows[1].items[0].kind, 'stream');
   assert.equal(scene.fRows[2].items[0].kind, 'channel');
+});
+
+test('Following shows followed live categories even when matching followed channels are not live', () => {
+  const { scene, MODE } = setup({
+    categories: [
+      Object.assign(game('Chess'), { viewers: 5, followers: 20, box: 'http://img/chess.jpg' }),
+    ],
+    live: [],
+    follows: [],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.fCategories.length, 1);
+  assert.equal(scene.fRows.length, 1);
+  assert.equal(scene.fRows[0].items[0].name, 'Chess');
 });
 
 test('a lone tile is padded to full columns so it keeps standard size', () => {
@@ -306,7 +323,8 @@ test('selecting a live tile opens the player; an offline tile opens the channel 
 
 test('selecting a live category enters the shared category stream view', () => {
   const { scene, els, MODE } = setup({
-    live: [stream('liveguy', 'Live Guy', { game: 'Chess', gameBox: 'http://img/chess.jpg' })],
+    categories: [Object.assign(game('Chess'), { viewers: 10, followers: 20, box: 'http://img/chess.jpg' })],
+    live: [stream('liveguy', 'Live Guy')],
     follows: [],
     gameStreams: [stream('other')],
     categoryInfo: { kind: 'game', name: 'Chess', display: 'Chess', viewers: 10, followers: 20, box: 'http://img/chess.jpg' },

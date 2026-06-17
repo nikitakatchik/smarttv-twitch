@@ -49,7 +49,7 @@
     this.pendingMode = null;   // mode to enter on next focus (e.g. after login)
 
     // --- Following view (live categories + live + offline channels) ---------
-    this.fCategories = [];      // categories represented by followed live streams
+    this.fCategories = [];      // followed categories that currently have viewers
     this.fCategoryMap = {};     // lower-case category name -> category tile
     this.fLive = [];           // followed channels that are live now
     this.fOffline = [];        // the rest (offline), avatar tiles
@@ -481,8 +481,8 @@
   };
 
   // --- Following (live categories + live + offline channels) ---------------
-  // The Following tab isn't a flat grid: it stacks category tiles for followed
-  // live streams, live followed channels, then offline followed channels. Tiles
+  // The Following tab isn't a flat grid: it stacks live followed categories,
+  // live followed channels, then offline followed channels. Tiles
   // keep the standard size; empty sections are hidden, and a zero-follows state
   // shows a centred message. It owns its own focus model (fRows/fr/fc) and
   // reuses the shared selection frame + pinned-scroll machinery.
@@ -490,7 +490,7 @@
     this.cleanFollow();
     this.loading = true;          // block grid keys until the first render lands
     this.showLoading();
-    this.loadFollowLive();
+    this.loadFollowCategories();
   };
 
   P.cleanFollow = function () {
@@ -511,6 +511,32 @@
     this.hideFrame();
   };
 
+  P.loadFollowCategories = function () {
+    var self = this;
+    if (!TW.api.followedGames) { this.loadFollowLive(); return; }
+    TW.api.followedGames(function (res) {
+      self.setFollowCategories((res && res.items) || []);
+      self.loadFollowLive();
+    }, function () {
+      self.setFollowCategories([]);
+      self.loadFollowLive();
+    });
+  };
+
+  P.setFollowCategories = function (items) {
+    this.fCategories = [];
+    this.fCategoryMap = {};
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var name = (it && (it.name || it.display)) || '';
+      if (!name || !(it.viewers > 0)) { continue; }
+      var key = String(name).toLowerCase();
+      if (this.fCategoryMap[key]) { continue; }
+      this.fCategoryMap[key] = true;
+      this.fCategories.push(it);
+    }
+  };
+
   // Load EVERY live followed channel first (usually a single page) so the offline
   // section can subtract them; then page through all follows.
   P.loadFollowLive = function () {
@@ -521,38 +547,10 @@
           self.fLive.push(res.items[i]);
           self.fLiveLogins[res.items[i].login] = true;
         }
-        if (res.cursor) { page(res.cursor); } else { self.rebuildFollowCategories(); self.loadFollowOffline(); }
+        if (res.cursor) { page(res.cursor); } else { self.loadFollowOffline(); }
       }, function () { self.loadFollowOffline(); });   // proceed with what we have
     }
     page(null);
-  };
-
-  P.rebuildFollowCategories = function () {
-    this.fCategories = [];
-    this.fCategoryMap = {};
-    for (var i = 0; i < this.fLive.length; i++) {
-      var stream = this.fLive[i];
-      var name = stream.game || '';
-      if (!name) { continue; }
-      var key = String(name).toLowerCase();
-      var item = this.fCategoryMap[key];
-      if (!item) {
-        item = {
-          kind: 'game',
-          id: stream.gameId || '',
-          name: name,
-          display: name,
-          viewers: 0,
-          followers: null,
-          description: '',
-          box: stream.gameBox || ''
-        };
-        this.fCategoryMap[key] = item;
-        this.fCategories.push(item);
-      }
-      item.viewers += stream.viewers || 0;
-      if (!item.box && stream.gameBox) { item.box = stream.gameBox; }
-    }
   };
 
   P.loadFollowOffline = function () {

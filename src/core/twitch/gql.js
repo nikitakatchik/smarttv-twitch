@@ -40,6 +40,7 @@
 
   // Twitch GraphQL caps connection `first` arguments at 30.
   function cap(limit) { return Math.min(limit || 30, 30); }
+  function capFollowedGames(limit) { return Math.min(limit || 100, 100); }
 
   // Escape a value for inlining into a GraphQL string literal.
   function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"'); }
@@ -121,6 +122,20 @@
       post('{ game(name: "' + esc(name) + '") { id name displayName viewersCount followersCount description ' +
         'boxArtURL(width: 285, height: 380) } }',
         function (data) { onOk(mapGameNode(data.game) || game); }, onFail);
+    },
+
+    followedGames: function (login, limit, onOk, onFail) {
+      if (!login) { if (onFail) { onFail(-1); } return; }
+      post('{ user(login: "' + esc(login) + '") { followedGames(first: ' + capFollowedGames(limit) + ') { nodes { ' +
+        'id name displayName viewersCount followersCount description boxArtURL(width: 285, height: 380) } } } }',
+        function (data) {
+          var items = [], nodes = (data.user && data.user.followedGames && data.user.followedGames.nodes) || [];
+          for (var i = 0; i < nodes.length; i++) {
+            var item = mapGameNode(nodes[i]);
+            if (item && item.viewers > 0) { items.push(item); }
+          }
+          onOk({ items: items, cursor: false });
+        }, onFail);
     },
 
     streamsByGame: function (game, limit, cursor, onOk, onFail) {

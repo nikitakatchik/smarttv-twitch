@@ -15,6 +15,16 @@
 
   function backend() { return TW.twitch.gql; }
 
+  function withLogin(run, onFail) {
+    if (!TW.auth.isLoggedIn()) { if (onFail) { onFail(-1); } return; }
+    var u = TW.auth.user();
+    if (u && u.login) { run(u.login); return; }
+    TW.twitch.helix.me(function (me) {
+      if (me && me.login) { TW.auth.setIdentity(me); run(me.login); }
+      else if (onFail) { onFail(-1); }
+    }, onFail);
+  }
+
   var api = {
     backendName: function () { return backend().name; },
 
@@ -37,6 +47,10 @@
     // Live channels the logged-in user follows (Helix; needs login).
     followedStreams: function (cursor, onOk, onFail) {
       TW.twitch.helix.followedStreams(cursor, onOk, onFail);
+    },
+    // Categories the logged-in user follows that currently have live viewers.
+    followedGames: function (onOk, onFail) {
+      withLogin(function (login) { backend().followedGames(login, 100, onOk, onFail); }, onFail);
     },
     // Every channel the user follows, live or not (Helix; needs login). Tiles
     // carry an avatar; the Following scene subtracts the live set for "offline".

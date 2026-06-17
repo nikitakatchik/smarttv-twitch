@@ -74,6 +74,37 @@ test('categoryInfo maps category metadata for the browse header', () => {
   assert.match(log[log.length - 1].body, /followersCount description/);
 });
 
+test('followedGames maps followed live categories and filters offline categories', () => {
+  const body = JSON.stringify({ data: { user: { followedGames: { nodes: [
+    {
+      id: '99',
+      name: 'Chess',
+      displayName: 'Chess',
+      viewersCount: 77,
+      followersCount: 1234,
+      description: 'A strategic board game.',
+      boxArtURL: 'https://img/chess-285x380.jpg',
+    },
+    {
+      id: '100',
+      name: 'Offline Game',
+      displayName: 'Offline Game',
+      viewersCount: 0,
+      followersCount: 12,
+      description: '',
+      boxArtURL: 'https://img/offline-285x380.jpg',
+    },
+  ] } } } });
+  const { TW, log } = makeApp(() => ({ status: 200, text: body }));
+  let result = null;
+  TW.twitch.gql.followedGames('someuser', 100, (r) => { result = r; }, () => {});
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].name, 'Chess');
+  assert.equal(result.items[0].viewers, 77);
+  assert.equal(result.items[0].followers, 1234);
+  assert.match(log[log.length - 1].body, /followedGames\(first: 100\)/);
+});
+
 test('streamInfo maps the current game for the player overlay', () => {
   const body = JSON.stringify({ data: { user: {
     displayName: 'Alpha',
