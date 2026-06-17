@@ -44,6 +44,15 @@
     });
   }
 
+  function offsetTopWithin(el, ancestor) {
+    var top = 0;
+    while (el && el !== ancestor) {
+      top += el.offsetTop || 0;
+      el = el.parentNode;
+    }
+    return top;
+  }
+
   function BrowserScene(adapter) {
     this.adapter = adapter;
     this.mode = -1;
@@ -691,8 +700,8 @@
     dom.addClass(c.firstChild, 'tw-focused');
     this.followScrollTo();
     // Offline avatar tiles indicate focus with a ring on the avatar (via the
-    // .tw-focused class), which suits their round shape; live tiles use the
-    // shared rectangular frame.
+    // .tw-focused class), which suits their round shape; live/category tiles
+    // use the shared rectangular frame outside the scrolling content.
     var item = this.fRows[this.fr].items[this.fc];
     if (item && item.kind === 'channel') { this.hideFrame(); }
     else { this.followFrame(); }
@@ -705,15 +714,33 @@
   P.followScrollTo = function () {
     var row = this.fRows[this.fr];
     if (!row) { return; }
-    var follow = dom.get('tw-follow'), wrap = dom.get('tw-grid-wrap');
     var lead = 46;   // ~ section heading height + gap
-    var off = row.el.offsetTop - lead;
-    var maxOff = follow.offsetHeight - (wrap ? wrap.clientHeight : 0);
-    if (maxOff < 0) { maxOff = 0; }
+    var off = this.followRowTop(row) - lead;
     if (off < 0) { off = 0; }
-    if (off > maxOff) { off = maxOff; }
     this.fScroll = off;
     this.setScroll(off);
+  };
+
+  P.followRowTop = function (row) {
+    var follow = dom.get('tw-follow');
+    if (!row || !row.el || !follow) { return 0; }
+    if (row.el.getBoundingClientRect && follow.getBoundingClientRect) {
+      var rr = row.el.getBoundingClientRect();
+      var fr = follow.getBoundingClientRect();
+      return rr.top - fr.top;
+    }
+    return offsetTopWithin(row.el, follow);
+  };
+
+  P.followInnerTop = function (inner) {
+    var follow = dom.get('tw-follow');
+    if (!inner || !follow) { return 0; }
+    if (inner.getBoundingClientRect && follow.getBoundingClientRect) {
+      var ir = inner.getBoundingClientRect();
+      var fr = follow.getBoundingClientRect();
+      return ir.top - fr.top;
+    }
+    return inner.offsetTop || 0;
   };
 
   P.followFrame = function () {
@@ -724,7 +751,7 @@
     var inner = c.firstChild;
     var img = inner.getElementsByTagName('img')[0];
     var target = img || inner;
-    var box = this.frameTargetBox(inner, target, inner.offsetTop - this.fScroll);
+    var box = this.frameTargetBox(inner, target, this.followInnerTop(inner) - this.fScroll);
     var reappearing = (frame.style.opacity !== '1');
     if (reappearing) { frame.style.webkitTransition = frame.style.transition = 'none'; }
     frame.style.left = box.left + 'px';

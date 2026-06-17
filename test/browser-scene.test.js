@@ -16,8 +16,8 @@ function setup(opts) {
   function mk() {
     const e = {
       style: {}, className: '', textContent: '', innerHTML: '', children: [], _inner: null,
-      appendChild(c) { this.children.push(c); return c; },
-      removeChild(c) { this.children = this.children.filter((child) => child !== c); return c; },
+      appendChild(c) { c.parentNode = this; this.children.push(c); return c; },
+      removeChild(c) { this.children = this.children.filter((child) => child !== c); if (c.parentNode === this) { c.parentNode = null; } return c; },
       getElementsByTagName() { return []; },
       offsetLeft: 0, offsetTop: 0, offsetWidth: 100, offsetHeight: 60, clientHeight: 600,
     };
@@ -244,6 +244,47 @@ test('Following live selection frame preserves fractional thumbnail bounds', () 
   assert.equal(els['tw-grid-frame'].style.height, '60.25px');
 });
 
+test('Following live selection frame subtracts the row-local table offset', () => {
+  const { scene, els, MODE } = setup({
+    live: [stream('a'), stream('b'), stream('c'), stream('d'), stream('e')],
+    follows: [],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  scene.fr = 1;
+  scene.fc = 0;
+  scene.fRows[1].el.offsetTop = 200;
+  const inner = scene.followCell().firstChild;
+  inner.offsetLeft = 5;
+  inner.offsetTop = 221;        // table-local: row offset + cell padding
+  inner.offsetWidth = 100;
+  inner.offsetHeight = 84;
+  inner.getBoundingClientRect = () => ({ left: 20, top: 30, right: 120, bottom: 114 });
+  inner.getElementsByTagName = () => [{
+    offsetLeft: 0,
+    offsetTop: 0,
+    offsetWidth: 100,
+    offsetHeight: 60,
+    complete: true,
+    getBoundingClientRect: () => ({ left: 20, top: 30, right: 120, bottom: 90 }),
+  }];
+  scene.fScroll = 154;
+  scene.followFrame();
+  assert.equal(els['tw-grid-frame'].style.top, '67px');
+});
+
+test('Following offline channel focus hides the floating frame', () => {
+  const { scene, els, MODE, KEY } = setup({
+    categories: [Object.assign(game('Chess'), { viewers: 10 })],
+    live: [],
+    follows: [channel('offguy')],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(els['tw-grid-frame'].style.opacity, '1');
+  scene.handleFollowKey(KEY.DOWN);
+  assert.match(scene.followCell().firstChild.className, /tw-focused/);
+  assert.equal(els['tw-grid-frame'].style.opacity, '0');
+});
+
 test('top-level games use the tighter wrapper inset for cover padding', () => {
   const { scene, els, MODE } = setup({ games: [game('Chess')] });
   scene.switchMode(MODE.GAMES, true);
@@ -329,6 +370,64 @@ test('the offline section lays out at 6 columns', () => {
   assert.equal(scene.fRows[0].el.childNodes.length, 6);
   assert.equal(scene.fRows[1].cells.length, 1);
   assert.equal(scene.fRows[1].el.childNodes.length, 6); // 1 real + 5 pads
+});
+
+test('Following pins a sparse bottom row instead of clamping it to the viewport bottom', () => {
+  const { scene, els, MODE } = setup({
+    live: [],
+    follows: [channel('a'), channel('b'), channel('c'), channel('d'), channel('e'), channel('f'), channel('g')],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  els['tw-follow'].offsetHeight = 1000;
+  els['tw-grid-wrap'].clientHeight = 600;
+  scene.fRows[1].el.offsetTop = 900;
+  scene.fr = 1;
+  scene.followScrollTo();
+  assert.equal(scene.fScroll, 854);
+  assert.equal(els['tw-grid-scroll'].style.transform, 'translate3d(0,-854px,0)');
+});
+
+test('Following scroll uses each row position in the full sectioned view', () => {
+  const { scene, els, MODE, KEY } = setup({
+    categories: [Object.assign(game('Chess'), { viewers: 10 })],
+    live: [],
+    follows: [channel('a'), channel('b')],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.fRows[0].items[0].kind, 'game');
+  assert.equal(scene.fRows[1].items[0].kind, 'channel');
+
+  var offlineTable = scene.fRows[1].el.parentNode;
+  var offlineSection = offlineTable.parentNode;
+  scene.fRows[1].el.offsetTop = 0;      // first row inside its own table
+  offlineTable.offsetTop = 38;          // section heading before the table
+  offlineSection.offsetTop = 470;       // category section above it
+
+  scene.handleFollowKey(KEY.DOWN);
+  assert.equal(scene.fr, 1);
+  assert.equal(scene.fScroll, 462);
+  assert.equal(els['tw-grid-scroll'].style.transform, 'translate3d(0,-462px,0)');
+});
+
+test('Following row positioning uses same-space rects to avoid double-counting sections', () => {
+  const { scene, els, MODE } = setup({
+    categories: [Object.assign(game('Chess'), { viewers: 10 })],
+    live: [],
+    follows: [channel('a')],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  var offlineTable = scene.fRows[1].el.parentNode;
+  var offlineSection = offlineTable.parentNode;
+  scene.fRows[1].el.offsetTop = 0;
+  offlineTable.offsetTop = 508;         // table offset is already section-relative in real layout
+  offlineSection.offsetTop = 470;       // parent-chain summing would wrongly add this again
+  scene.fRows[1].el.getBoundingClientRect = () => ({ top: -665, left: 0, right: 100, bottom: -605 });
+  els['tw-follow'].getBoundingClientRect = () => ({ top: -1173, left: 0, right: 100, bottom: -155 });
+
+  scene.fr = 1;
+  scene.followScrollTo();
+  assert.equal(scene.fScroll, 462);
+  assert.equal(els['tw-grid-scroll'].style.transform, 'translate3d(0,-462px,0)');
 });
 
 test('selecting a live tile opens the player; an offline tile opens the channel page', () => {
