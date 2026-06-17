@@ -29,9 +29,11 @@
       overflow: hidden; border-radius: 10px; box-shadow: 0 16px 60px rgba(0,0,0,0.6);
       background: #000;
     }
-    #tw-video, #app { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; }
+    #tw-video, #tw-embed, #app { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; }
     #tw-video { background: #000; z-index: 0; }
-    #app { z-index: 1; }
+    #tw-embed { background: #000; z-index: 0; display: none; }
+    #tw-embed iframe { width: 100%; height: 100%; border: 0; display: block; }
+    #app { z-index: 1; pointer-events: none; }
     .remote {
       width: 138px; margin: 0 0 0 16px; color: #adadb8; font: 13px/1.5 "Helvetica Neue", Arial, sans-serif;
       -webkit-box-flex: 0; flex: 0 0 138px; text-align: center;
@@ -77,6 +79,7 @@
   <div class="tw-stage-wrap" id="tw-stage-wrap">
     <div class="tv-frame" id="tw-frame">
       <video id="tw-video" playsinline></video>
+      <div id="tw-embed"></div>
       <div id="app"></div>
     </div>
 
@@ -135,6 +138,7 @@
         var remote = global.document.getElementById('tw-remote');
         var title = global.document.getElementById('tw-page-title');
         var video = global.document.getElementById('tw-video');
+        var embed = global.document.getElementById('tw-embed');
         var app = global.document.getElementById('app');
         if (!wrap || !frame || !remote) { return; }
 
@@ -164,6 +168,7 @@
         frame.style.width = frameWidth + 'px';
         frame.style.height = frameHeight + 'px';
         setScale(video, scale);
+        setScale(embed, scale);
         setScale(app, scale);
 
         if (title) {
@@ -183,6 +188,7 @@
 
   <!-- hls.js powers playback in Chrome/Firefox; Safari uses native HLS. -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+  <script src="https://player.twitch.tv/js/embed/v1.js"></script>
 
   <!-- core (load order matters: no bundler / ES modules) -->
   <script src="core/polyfill.js"></script>
@@ -219,6 +225,7 @@
   <script src="core/app.js"></script>
 
   <!-- web platform adapter -->
+  <script src="platform/embed-player.js"></script>
   <script src="platform/player.js"></script>
   <script src="platform/keys.js"></script>
   <script src="platform/system.js"></script>

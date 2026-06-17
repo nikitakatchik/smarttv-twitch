@@ -21,6 +21,7 @@
 
 Try the browser preview at [nikitakatchik.github.io/smarttv-twitch](https://nikitakatchik.github.io/smarttv-twitch/).
 It is built by GitHub Actions from `npm run build:web` and published to GitHub Pages on every push to `master`.
+The hosted preview is static, so live streams and VODs use Twitch's official embedded player; `npm start` still uses the local HLS proxy for development.
 
 ## Features
 
@@ -32,7 +33,7 @@ It is built by GitHub Actions from `npm run build:web` and published to GitHub P
 - Remote-first navigation: D-pad grids and color-button shortcuts, with no mouse required.
 - Eight languages: English, Deutsch, Русский, Español, Português, Українська, Français, Svenska.
 - One ES5 core for Orsay, Tizen, TizenBrew, and the browser harness.
-- No backend or proxy for browse/playback; public Twitch endpoints are used directly where possible.
+- No backend for browse/playback; TV builds use public Twitch endpoints directly, and the hosted web preview uses Twitch's official embed where browsers require it.
 - Browser harness for development: `npm start` runs the app with real Twitch playback.
 
 ## Supported TVs

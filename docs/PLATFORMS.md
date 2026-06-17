@@ -14,6 +14,7 @@ changed the player, the key codes, the packaging and the JS engine all at once.
 | 2017 | M | Tizen 3.0 | AVPlay (`.wgt`) · hls.js | Chromium M47 | Apps2Samsung · TizenBrew | ✅ |
 | 2018 | N | Tizen 4.0 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung · TizenBrew | ✅ |
 | 2019+ | R/T/U/… | Tizen 5–9 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung · TizenBrew | ✅ |
+| any | — | **Hosted web preview** | Twitch embed · `<video>` | Chrome/FF/Safari | Twitch embed | 🧪 demo |
 | any | — | **Browser harness** | hls.js | Chrome/FF/Safari | dev CORS proxy | 🧪 dev/test |
 
 > **Dropped: 2011–2012 (D/E).** The D-series runs MAPLE (Gecko 1.8.1, no native
@@ -42,8 +43,10 @@ On Tizen there are two install paths:
 Only the **browser harness** is hard CORS-bound: desktop browsers enforce CORS
 that the TV WebViews relax, and Twitch's usher/playlist hosts send no
 `Access-Control-Allow-Origin`, so `npm start` routes HLS playback through a small
-**dev-only CORS proxy** in the dev server (`tools/lib/dev-proxy.js`). Nothing
-ships it; Orsay plays direct and Tizen plays through the TizenBrew WebView.
+**dev-only CORS proxy** in the dev server (`tools/lib/dev-proxy.js`). GitHub
+Pages cannot host that endpoint, so the hosted preview uses Twitch's official
+embed for live/VOD playback and direct `<video>` for signed clip MP4s. Orsay
+plays direct and Tizen plays through the TizenBrew WebView.
 
 ## Engine constraints (why everything is hand-written ES5)
 

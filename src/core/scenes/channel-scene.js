@@ -8,7 +8,7 @@
  * with hls.js (harness), AVPlay (Tizen) and INFOLINK (Orsay).
  *
  * Player adapter contract (adapter.createPlayer(callbacks) returns):
- *   load(masterUrl)            start playback (auto quality)
+ *   load(masterUrl, meta)      start playback (auto quality); meta is optional
  *   stop()                     stop + release
  *   destroy()                  tear down
  *   setDisplayArea(x,y,w,h)
@@ -212,7 +212,7 @@
     this.showLoading();
 
     TW.api.playbackUrl(this.login, function (masterUrl) {
-      self.loadInto(masterUrl);
+      self.loadInto(masterUrl, { kind: 'live', login: self.login });
     }, function () {
       self.showError(TW.i18n.t('ERROR_TOKEN'));
     });
@@ -224,10 +224,10 @@
 
   // Hand a media URL (live master, VOD master, or clip MP4) to the player and
   // refresh the quality list. The player adapters detect HLS vs progressive.
-  P.loadInto = function (url) {
+  P.loadInto = function (url, meta) {
     var self = this;
     try { this.player.stop(); } catch (e) {}
-    this.player.load(url);
+    this.player.load(url, meta || null);
     this.player.getQualities(function (list) {
       self.qualities = (list && list.length) ? list : ['Auto'];
       self.qualityIndex = 0; self.playingIndex = 0;
@@ -290,7 +290,7 @@
     this.startProgressTimer();
     this.showLoading();
     TW.api.vodPlaybackUrl(item.id, function (url) {
-      self.loadInto(url);
+      self.loadInto(url, item);
     }, function () { self.showError(TW.i18n.t('ERROR_TOKEN')); });
   };
 
@@ -305,7 +305,7 @@
     this.startProgressTimer();
     this.showLoading();
     TW.api.clipPlayback(item.slug, function (info) {
-      self.loadInto(info.url);
+      self.loadInto(info.url, item);
     }, function () { self.showError(TW.i18n.t('ERROR_RENDER')); });
   };
 

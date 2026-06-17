@@ -44,7 +44,7 @@ Useful query overrides:
 ```
 ?lang=de                       UI language
 ?proxy=https://…               use a specific dev CORS proxy
-?proxy=none                    no proxy (direct; playback usually CORS-blocked)
+?proxy=none                    no proxy; use the static-host embed fallback
 ```
 
 Because the harness drives the same `core/` as the TVs, a bug you see here is a

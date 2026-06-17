@@ -27,10 +27,11 @@ function setup(opts) {
   const pauseCalls = [];
   const resumeCalls = [];
   const commitCalls = [];
+  const loadCalls = [];
   const player = {
     position: opts.position || 0,
     duration: opts.duration || 300,
-    load() {},
+    load(url, meta) { loadCalls.push({ url, meta }); },
     stop() {},
     destroy() {},
     setDisplayArea(x, y, w, h) { displayRects.push([x, y, w, h]); },
@@ -122,7 +123,7 @@ function setup(opts) {
     t.fn();
   }
   function tick(ms) { now += ms; }
-  return { scene, els, displayRects, chat, calls, runTimeout, tick, seekCalls, pauseCalls, resumeCalls, commitCalls, TW };
+  return { scene, els, displayRects, chat, calls, runTimeout, tick, seekCalls, pauseCalls, resumeCalls, commitCalls, loadCalls, TW };
 }
 
 test('chat rail opens on the right and shrinks the player to a 16:9 surface', () => {
@@ -141,6 +142,18 @@ test('chat rail opens on the right and shrinks the player to a 16:9 surface', ()
 
   scene.closeChat();
   assert.deepEqual(displayRects[displayRects.length - 1], [0, 0, 1280, 720]);
+});
+
+test('player adapter receives source metadata for web playback fallbacks', () => {
+  const live = setup();
+  assert.equal(live.loadCalls[0].url, 'http://example/live.m3u8');
+  assert.equal(live.loadCalls[0].meta.kind, 'live');
+  assert.equal(live.loadCalls[0].meta.login, 'someguy');
+
+  const vod = setup({ vod: true });
+  assert.equal(vod.loadCalls[0].url, 'http://example/v1.m3u8');
+  assert.equal(vod.loadCalls[0].meta.kind, 'vod');
+  assert.equal(vod.loadCalls[0].meta.id, 'v1');
 });
 
 test('hidden chat keeps only a small recent buffer and renders it on open', () => {

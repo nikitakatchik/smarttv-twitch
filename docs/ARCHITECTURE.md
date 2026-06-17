@@ -100,6 +100,8 @@ TizenBrew service-mod proxy). Only the **browser harness** is hard CORS-bound, s
 `npm start` routes HLS playback through a small **dev-only CORS proxy**
 (`tools/lib/dev-proxy.js`), whose key trick is **rewriting the m3u8 playlists** so
 every nested fetch (variant playlist, segment) routes back through it too.
-Nothing ships it.
+Nothing ships it. Static hosts such as GitHub Pages instead use Twitch's official
+embedded player for live/VOD playback because they cannot expose a `/proxy`
+endpoint.
 
 See [`docs/PLATFORMS.md`](PLATFORMS.md) for the measured per-host behaviour.
