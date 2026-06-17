@@ -121,9 +121,9 @@ html, body {
   transition: transform 0.2s ease-out;
 }
 .tw-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.tw-cell { width: 25%; padding: 5px; vertical-align: top; }
+.tw-cell { width: 25%; padding: 6px 5px 13px; vertical-align: top; }
 /* Game covers are big portrait tiles — keep them a touch more spaced. */
-.tw-cell-game { padding: 10px; }
+.tw-cell-game { padding: 9px 10px 17px; }
 .tw-cell-inner { position: relative; }
 .tw-thumb {
   width: 100%; height: 167.15625px; display: block; background: #18181b;
@@ -152,44 +152,52 @@ html, body {
    artwork inside the thumbnail's transparent border. */
 .tw-meta {
   position: static; box-sizing: border-box;
-  background: transparent; padding: 7px 3px 0;
+  background: transparent; padding: 8px 3px 0;
 }
-.tw-cell-game .tw-meta { padding: 9px 3px 0; }
+.tw-cell-game .tw-meta { padding: 10px 3px 0; }
 /* Stream title: the prominent top line, truncated to one line. */
 .tw-meta-title {
-  font-size: 18px; color: #fff; white-space: nowrap; text-align: left;
-  overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
+  font-size: 19px; line-height: 23px; font-weight: 500; color: #fff;
+  white-space: nowrap; text-align: left; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 4px;
 }
 /* overflow:hidden makes the row a block formatting context so it contains the
    floated viewer count (Orsay-safe — no flexbox). */
-.tw-meta-row { overflow: hidden; }
+.tw-meta-row { overflow: hidden; line-height: 20px; }
 /* Viewer count floats right; the name takes the rest and ellipsises — one line. */
 .tw-meta-views {
-  float: right; margin-left: 10px; font-size: 16px; color: #c8c8cf; font-weight: 400;
+  float: right; margin-left: 12px; font-size: 16px; line-height: 20px;
+  color: #c6c6ce; font-weight: 500;
 }
 .tw-meta-name {
   display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-  font-size: 16px; color: #dedee3; text-align: left;
+  font-size: 16px; line-height: 20px; color: #dedee3; text-align: left;
+  font-weight: 400;
 }
 /* Games tiles have no title line, so the name is the primary label — bump it
    (and the count) a touch larger than the channel-tile text. */
-.tw-cell-game .tw-meta-name { font-size: 19px; }
-.tw-cell-game .tw-meta-views { font-size: 17px; }
+.tw-cell-game .tw-meta-row { line-height: 22px; }
+.tw-cell-game .tw-meta-name { font-size: 19px; line-height: 22px; font-weight: 500; color: #fff; }
+.tw-cell-game .tw-meta-views { font-size: 17px; line-height: 22px; }
 
 /* --- Following (sectioned view + offline channel tiles) ------------------ */
 /* The sectioned view lives inside the same scroller as the flat grid; only
    one is shown at a time. */
 .tw-follow { display: none; }
-.tw-sec { margin: 0 0 10px; }
+.tw-sec { margin: 0 0 18px; }
 /* Section heading; its left padding lines the text up with the thumbnail
    artwork (5px cell padding + 3px transparent thumb border = 8px). */
-.tw-sec-head { font-size: 22px; font-weight: 500; color: #efeff1; text-align: left; padding: 4px 8px 8px; }
+.tw-sec-head {
+  font-size: 20px; line-height: 24px; font-weight: 600; color: #efeff1;
+  text-align: left; padding: 4px 8px 9px;
+}
 /* Empty pad cells keep table-layout:fixed honouring 25% columns when a section's
    last row is short, so a lone tile isn't stretched across the whole width. */
 .tw-cell-pad { background: none; }
 /* Offline channel tile: just a circular avatar + name, no card. The section runs
    at 6 columns (.tw-grid-6) since these tiles are more compact than 16:9 thumbs. */
 .tw-grid-6 .tw-cell { width: 16.6667%; }
+.tw-cell-channel { padding: 5px; }
 .tw-cell-channel .tw-cell-inner { text-align: center; padding: 10px 6px 14px; }
 .tw-chan-avatar {
   width: 96px; height: 96px; border-radius: 50%; background: #18181b;
