@@ -53,6 +53,11 @@ time. No Samsung account is involved on this side.
 - **Player:** the installed `.wgt` uses native **AVPlay** (privileged, declared in
   `config.xml`), which plays Twitch HLS without needing browser MSE — so it works
   on older Tizen sets (2015+) where the TizenBrew/hls.js path is shakier.
+- **Internet access:** `config.xml` must carry both
+  `http://tizen.org/privilege/internet` and
+  `<access origin="*" subdomains="true">`. The WebView uses that access for
+  Twitch browse/login/chat requests and for remote thumbnails; AVPlay then plays
+  the resolved stream URL natively.
 - **Updating:** re-run Apps2Samsung with a newer `Twellie.wgt`; it reuses the same
   author identity so the install overwrites cleanly.
 - **CORS/TLS:** the native player sends no browser `Origin` and reaches Twitch

@@ -80,7 +80,10 @@ public web Client-ID — the Streamlink/yt-dlp approach): browse + the live
 working 2026.
 
 Twitch's hosts behave differently in a browser, which is the whole reason the
-dev harness needs help — TVs don't, because native players send no `Origin`:
+dev harness needs help. On native Tizen, browse/auth/chat still run in the
+WebView and require the Tizen manifest's `internet` privilege plus
+`<access origin="*" subdomains="true">`; playback itself goes through AVPlay,
+whose native requests send no browser `Origin`:
 
 | Host | CORS for a non-Twitch browser origin |
 | ---- | ------------------------------------ |

@@ -33,6 +33,9 @@ On Tizen there are two install paths:
 
 - **Apps2Samsung** (2015+, recommended) installs a native `.wgt` that plays via the
   privileged **AVPlay** — no browser `Origin`, modern TLS, reaches Twitch directly.
+  Browse/auth/chat still run in the Tizen WebView, so the package declares both
+  the `internet` privilege and `<access origin="*" subdomains="true">` in
+  `config.xml` for Twitch and dynamically selected CDN hosts.
   Apps2Samsung mints a per-TV Samsung cert and re-signs the package for you (see
   [install/apps2samsung.md](install/apps2samsung.md)); AVPlay needs no MSE, so it
   works on older sets too.

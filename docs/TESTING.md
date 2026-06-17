@@ -79,6 +79,14 @@ Verify the package without a TV: `unzip -l dist/release/Twellie.wgt` should show
 `config.xml`, `author-signature.xml`, `signature1.xml` and the `core/` tree. On a
 real panel, install it through Apps2Samsung (it signs for your TV and pushes it).
 
+**Tizen TV Emulator note:** if Emulator 10 shows a `7011` dialog saying
+`Fast RWI is used` and starts on `about:blank`, that is the emulator's Remote Web
+Inspector startup pause. It is not rendered by Twellie and is not controlled by
+`config.xml`; the emulator loads `about:blank` first so DevTools can attach before
+network requests start. Disable/avoid Fast RWI or launch the app normally instead
+of through the debugger to skip it. Clicking **OK** simply continues into
+`index.html`.
+
 **B. TizenBrew module (2017+, hls.js).**
 
 ```bash

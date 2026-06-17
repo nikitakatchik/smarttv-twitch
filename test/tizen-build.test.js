@@ -34,6 +34,16 @@ test('tizen config.xml declares the app id + AVPlay privilege', () => {
   });
 });
 
+test('tizen config.xml allows external Twitch/CDN network origins', () => {
+  withBuild((out) => {
+    const cfg = fs.readFileSync(path.join(out, 'config.xml'), 'utf8');
+    assert.ok(
+      cfg.includes('<access origin="*" subdomains="true"></access>'),
+      'no broad widget network access allowlist'
+    );
+  });
+});
+
 test('tizen index.html wires the native AVPlay player (not the web/hls path)', () => {
   withBuild((out) => {
     const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');

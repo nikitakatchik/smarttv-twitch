@@ -14,6 +14,11 @@
   <content src="index.html"/>
   <icon src="assets/icon/icon.png"/>
 
+  <!-- Widget Access Requests Policy: allow XHR, images, WebSockets and media
+       URLs to Twitch plus Twitch-selected CDN hosts. Dynamic playback and
+       thumbnail URLs make a broad allowlist the practical Tizen package rule. -->
+  <access origin="*" subdomains="true"></access>
+
   <feature name="http://tizen.org/feature/screen.size.all"/>
 
   <tizen:privilege name="http://tizen.org/privilege/internet"/>
