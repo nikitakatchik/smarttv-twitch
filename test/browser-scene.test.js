@@ -51,7 +51,7 @@ function setup(opts) {
     config: { columns: 4 },
     shortNumber: (n) => String(n),
     addCommas: (n) => String(n),
-    auth: { isLoggedIn: () => true, user: () => ({ display: 'Me' }) },
+    auth: { isLoggedIn: () => opts.loggedIn !== false, user: () => ({ display: 'Me' }) },
     api: {
       followedStreams: (cursor, ok) => ok({ items: (opts.live || []).slice(), cursor: null }),
       followedGames: (ok) => ok({ items: (opts.categories || []).slice(), cursor: false }),
@@ -93,6 +93,18 @@ test('zero follows shows the empty state and builds no rows', () => {
   assert.equal(scene.fRows.length, 0);
   assert.notEqual(els['tw-follow-empty'].style.display, 'none'); // shown
   assert.equal(els['tw-follow'].style.display, 'none');          // grid hidden
+});
+
+test('logged-out Following stays in the tab and suggests logging in', () => {
+  const { scene, calls, els, MODE } = setup({ loggedIn: false });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.mode, MODE.FOLLOWED);
+  assert.equal(calls.goToLogin, 0);
+  assert.equal(scene.fRows.length, 0);
+  assert.equal(scene.loading, false);
+  assert.equal(els['tw-follow-empty'].textContent, 'FOLLOW_LOGIN');
+  assert.notEqual(els['tw-follow-empty'].style.display, 'none');
+  assert.equal(els['tw-follow'].style.display, 'none');
 });
 
 test('live + offline render as two sections, with live channels excluded from offline', () => {

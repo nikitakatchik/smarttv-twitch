@@ -191,9 +191,10 @@
     dom.hide(dom.get('tw-follow-empty'));
   };
   // Following with zero follows: a centred message, no grid, no frame.
-  P.showFollowEmpty = function () {
+  P.showFollowEmpty = function (text) {
     this.hideFrame();
     dom.hide(dom.get('tw-b-loading'));
+    dom.text(dom.get('tw-follow-empty'), text || TW.i18n.t('FOLLOW_NONE'));
     dom.show(dom.get('tw-grid-wrap'));
     dom.hide(dom.get('tw-grid'));
     dom.hide(dom.get('tw-follow'));
@@ -520,6 +521,11 @@
   // reuses the shared selection frame + pinned-scroll machinery.
   P.enterFollowing = function () {
     this.cleanFollow();
+    if (!TW.auth.isLoggedIn()) {
+      this.loading = false;
+      this.showFollowEmpty(TW.i18n.t('FOLLOW_LOGIN'));
+      return;
+    }
     this.loading = true;          // block grid keys until the first render lands
     this.showLoading();
     this.loadFollowCategories();
@@ -826,8 +832,6 @@
   // --- modes --------------------------------------------------------------
   P.switchMode = function (mode, force) {
     if (mode === this.mode && !force) { return; }
-    // The Followed tab needs a logged-in user — divert to the login scene.
-    if (mode === MODE.FOLLOWED && !TW.auth.isLoggedIn()) { TW.app.goToLogin(); return; }
     this.mode = mode;
     this.clearNavFocus();
     if (mode !== MODE.GAMES_STREAMS) {

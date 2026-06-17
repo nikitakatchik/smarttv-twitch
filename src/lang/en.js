@@ -18,6 +18,7 @@ TW.i18n.register('en', {
   FOLLOW_LIVE: 'Live',
   FOLLOW_OFFLINE: 'Offline',
   FOLLOW_NONE: 'You are not following any channels',
+  FOLLOW_LOGIN: 'Log in to see channels you follow',
   FOLLOWERS: '{0} followers',
   LOGIN: 'Log in',
   ACCOUNT: 'Account',
