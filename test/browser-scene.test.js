@@ -474,19 +474,19 @@ test('tab cursor uses rendered vertical bounds without changing horizontal metri
   const tips = els['tw-tips'];
   const box = els['tw-tip-all'].firstChild;
   const cursor = els['tw-tip-cursor'];
-  tips.getBoundingClientRect = () => ({ top: 41.5, bottom: 79 });
-  box.getBoundingClientRect = () => ({ top: 44, bottom: 79, height: 35 });
+  tips.getBoundingClientRect = () => ({ top: 44.5, bottom: 79 });
+  box.getBoundingClientRect = () => ({ top: 50, bottom: 79, height: 29 });
   box.offsetLeft = 8;
-  box.offsetTop = 3;      // rounded browser offset; rendered top is 2.5px
+  box.offsetTop = 6;      // rounded browser offset; rendered top is 5.5px
   box.offsetWidth = 90;
-  box.offsetHeight = 35;
+  box.offsetHeight = 29;
 
   scene.moveTabCursor();
 
   assert.equal(cursor.style.left, '8px');
   assert.equal(cursor.style.width, '90px');
-  assert.equal(cursor.style.top, '2.5px');
-  assert.equal(cursor.style.height, '35px');
+  assert.equal(cursor.style.top, '5.5px');
+  assert.equal(cursor.style.height, '29px');
 });
 
 test('BACK on the tab row selects Channels', () => {

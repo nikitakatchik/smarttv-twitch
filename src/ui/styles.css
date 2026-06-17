@@ -36,7 +36,7 @@ html, body {
 /* Tabs sit just after the logo, shifted with the rest of the top row onto the
    43px margin; spacing is natural per label, like a tab strip rather than
    fixed-width buttons. */
-.tw-tips { position: absolute; left: 87px; top: 41.5px; }
+.tw-tips { position: absolute; left: 87px; top: 44.5px; }
 .tw-tip {
   display: inline-block; margin-left: 24px; vertical-align: middle; color: #a9a9b2;
   text-align: left; white-space: nowrap;
@@ -47,8 +47,9 @@ html, body {
   border-bottom: 3px solid transparent;
 }
 .tw-tip-label {
-  display: inline-block; height: 26px; line-height: 26px; vertical-align: middle;
-  font-size: 23px; font-weight: 300;
+  display: inline-block; position: relative; top: 1px;
+  height: 20px; line-height: 20px; vertical-align: middle;
+  font-size: 20px; font-weight: 300;
 }
 .tw-tip-active { color: #fff; }
 .tw-tip-active .tw-tip-box { border-bottom-color: rgba(244, 244, 247, 0.55); }
