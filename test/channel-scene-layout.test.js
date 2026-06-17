@@ -305,8 +305,8 @@ test('seekable VOD hides transport buttons but keeps player actions', () => {
   assert.match(els['tw-progress'].className, /tw-focused/);
 });
 
-test('VOD Left and Right seek directly and accelerate repeated keydown', () => {
-  const { scene, seekCalls, tick, TW } = setup({ vod: true, canSeek: true, position: 100, duration: 600 });
+test('VOD Left and Right preview seekbar changes and seek after input stops', () => {
+  const { scene, els, seekCalls, commitCalls, tick, runTimeout, TW } = setup({ vod: true, canSeek: true, position: 100, duration: 600 });
 
   scene.handleKeyDown(TW.KEY.RIGHT);
   tick(100);
@@ -318,7 +318,13 @@ test('VOD Left and Right seek directly and accelerate repeated keydown', () => {
   tick(700);
   scene.handleKeyDown(TW.KEY.LEFT);
 
-  assert.deepEqual(seekCalls, [110, 130, 160, 150, 140]);
+  assert.deepEqual(seekCalls, []);
+  assert.equal(els['tw-c-position'].textContent, '2:20');
+  assert.equal(els['tw-c-progress-fill'].style.width, '23.3%');
+
+  runTimeout(650);
+  assert.deepEqual(seekCalls, [140]);
+  assert.equal(commitCalls.length, 1);
 });
 
 test('seekable VOD switches focus between seekbar and action buttons', () => {
@@ -352,14 +358,15 @@ test('seekable VOD seekbar regains focus with Up and then Left and Right seek', 
   scene.handleKeyDown(TW.KEY.UP);
   assert.equal(scene.overlayFocus, 'seek');
   scene.handleKeyDown(TW.KEY.RIGHT);
-  assert.deepEqual(seekCalls, [110]);
+  assert.deepEqual(seekCalls, []);
   scene.handleKeyDown(TW.KEY.ENTER);
+  assert.deepEqual(seekCalls, [110]);
   assert.equal(commitCalls.length, 1);
   assert.equal(pauseCalls.length, 0);
 });
 
-test('hidden VOD Left and Right seek fixed 10s and only show a flash', () => {
-  const { scene, els, seekCalls, tick, runTimeout, TW } = setup({ vod: true, canSeek: true, position: 100, duration: 600 });
+test('hidden VOD Left and Right queue fixed 10s seeks and show a flash', () => {
+  const { scene, els, seekCalls, commitCalls, tick, runTimeout, TW } = setup({ vod: true, canSeek: true, position: 100, duration: 600 });
 
   runTimeout(3000);
   assert.equal(scene.overlayShown, false);
@@ -369,10 +376,14 @@ test('hidden VOD Left and Right seek fixed 10s and only show a flash', () => {
   scene.handleKeyDown(TW.KEY.RIGHT);
 
   assert.equal(scene.overlayShown, false);
-  assert.deepEqual(seekCalls, [110, 120]);
+  assert.deepEqual(seekCalls, []);
   assert.equal(els['tw-seek-flash'].style.display, 'block');
   assert.equal(els['tw-seek-flash'].textContent, '+10s');
   assert.match(els['tw-seek-flash'].className, /tw-seek-flash-right/);
+
+  runTimeout(650);
+  assert.deepEqual(seekCalls, [120]);
+  assert.equal(commitCalls.length, 1);
 
   runTimeout(650);
   assert.equal(els['tw-seek-flash'].style.display, 'none');

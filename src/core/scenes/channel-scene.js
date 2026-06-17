@@ -37,6 +37,7 @@
   var OVERLAY_HIDE_MS = 3000;
   var OVERLAY_BACK_GRACE_MS = 1000;
   var SEEK_ACCEL_WINDOW_MS = 650;
+  var SEEK_COMMIT_IDLE_MS = 650;
   var SEEK_STEPS = [10, 20, 30, 60, 120];
 
   function ChannelScene(adapter) {
@@ -58,6 +59,8 @@
     this.seekRepeat = 0;
     this.seekLastAt = 0;
     this.seekFlashTimer = null;
+    this.seekCommitTimer = null;
+    this.pendingSeekPosition = null;
     this.paused = false;
 
     this.contentKind = 'live'; // 'live' | 'vod' | 'clip'
@@ -216,6 +219,7 @@
     this.hidePauseIndicator();
     this.overlayFocus = 'buttons';
     this.stopProgressTimer();
+    this.clearPendingSeek();
     this.resetSeekAcceleration();
     this.liveOnline = true;
     this.setContentBadge('LIVE');
@@ -250,6 +254,7 @@
   // refresh the quality list. The player adapters detect HLS vs progressive.
   P.loadInto = function (url, meta) {
     var self = this;
+    this.clearPendingSeek();
     try { this.player.stop(); } catch (e) {}
     this.player.load(url, meta || null);
     this.player.getQualities(function (list) {
@@ -273,6 +278,7 @@
     this.setGame('');
     this.setViewers(TW.addCommas(item.viewers) + ' ' + TW.i18n.t('VIEWERS'));
     this.duration = item.duration || 0;
+    this.clearPendingSeek();
     this.resetSeekAcceleration();
     this.refreshControls();
     this.updateProgress();
@@ -400,6 +406,7 @@
     this.clearOverlayGrace();
     this.hideSeekFlash();
     this.hidePauseIndicator();
+    this.clearPendingSeek();
     this.closeChat();
     this.stopChatCapture();
     if (this.player) { try { this.player.stop(); this.player.destroy(); } catch (e) {} this.player = null; }
@@ -769,6 +776,7 @@
     if (this.player && this.player.getPosition) {
       try { pos = this.player.getPosition() || 0; } catch (e) { pos = 0; }
     }
+    if (this.pendingSeekPosition != null) { pos = this.pendingSeekPosition; }
     if (this.player && this.player.getDuration) {
       try { dur = this.player.getDuration() || dur; } catch (e2) {}
     }
@@ -782,20 +790,44 @@
     if (fill) { fill.style.width = dur > 0 ? (Math.round((pos / dur) * 1000) / 10) + '%' : '0%'; }
   };
 
+  P.clearPendingSeek = function () {
+    if (this.seekCommitTimer) { global.clearTimeout(this.seekCommitTimer); this.seekCommitTimer = null; }
+    this.pendingSeekPosition = null;
+  };
+
+  P.scheduleSeekCommit = function () {
+    var self = this;
+    if (this.seekCommitTimer) { global.clearTimeout(this.seekCommitTimer); }
+    this.seekCommitTimer = global.setTimeout(function () {
+      self.seekCommitTimer = null;
+      self.confirmSeek();
+    }, SEEK_COMMIT_IDLE_MS);
+  };
+
   P.seekBy = function (seconds) {
     if (!this.canSeek()) { return; }
     var pos = 0, dur = this.duration || 0;
-    try { if (this.player.getPosition) { pos = this.player.getPosition() || 0; } } catch (e) {}
+    if (this.pendingSeekPosition != null) {
+      pos = this.pendingSeekPosition;
+    } else {
+      try { if (this.player.getPosition) { pos = this.player.getPosition() || 0; } } catch (e) {}
+    }
     try { if (this.player.getDuration) { dur = this.player.getDuration() || dur; } } catch (e2) {}
     var next = Math.max(0, pos + seconds);
     if (dur > 0 && next > dur) { next = dur; }
-    try { this.player.seekTo(next); } catch (e3) {}
+    this.pendingSeekPosition = next;
+    this.scheduleSeekCommit();
     this.updateProgress();
   };
 
   P.confirmSeek = function () {
     if (!this.canSeek() || !this.player) { return; }
-    if (this.player.commitSeek) { try { this.player.commitSeek(); } catch (e) {} }
+    if (this.seekCommitTimer) { global.clearTimeout(this.seekCommitTimer); this.seekCommitTimer = null; }
+    var hasPending = this.pendingSeekPosition != null;
+    var next = this.pendingSeekPosition;
+    this.pendingSeekPosition = null;
+    if (hasPending) { try { this.player.seekTo(next); } catch (e) {} }
+    if (this.player.commitSeek) { try { this.player.commitSeek(); } catch (e2) {} }
     this.resetSeekAcceleration();
     this.updateProgress();
   };
