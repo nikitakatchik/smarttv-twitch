@@ -467,6 +467,28 @@ test('UP from the top grid row hands focus to the tab row', () => {
   assert.equal(scene.onTopNav, true);
 });
 
+test('tab cursor uses rendered vertical bounds without changing horizontal metrics', () => {
+  const { scene, els } = setup();
+  scene.focusTopNav();
+
+  const tips = els['tw-tips'];
+  const box = els['tw-tip-all'].firstChild;
+  const cursor = els['tw-tip-cursor'];
+  tips.getBoundingClientRect = () => ({ top: 41.5, bottom: 79 });
+  box.getBoundingClientRect = () => ({ top: 44, bottom: 79, height: 35 });
+  box.offsetLeft = 8;
+  box.offsetTop = 3;      // rounded browser offset; rendered top is 2.5px
+  box.offsetWidth = 90;
+  box.offsetHeight = 35;
+
+  scene.moveTabCursor();
+
+  assert.equal(cursor.style.left, '8px');
+  assert.equal(cursor.style.width, '90px');
+  assert.equal(cursor.style.top, '2.5px');
+  assert.equal(cursor.style.height, '35px');
+});
+
 test('BACK on the tab row selects Channels', () => {
   const { scene, els, MODE, KEY } = setup({ streams: [stream('a')], games: [game('Chess')] });
   scene.switchMode(MODE.GAMES, true);

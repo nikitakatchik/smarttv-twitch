@@ -36,7 +36,7 @@ html, body {
 /* Tabs sit just after the logo, shifted with the rest of the top row onto the
    43px margin; spacing is natural per label, like a tab strip rather than
    fixed-width buttons. */
-.tw-tips { position: absolute; left: 87px; top: 45px; }
+.tw-tips { position: absolute; left: 87px; top: 41.5px; }
 .tw-tip {
   display: inline-block; margin-left: 24px; vertical-align: middle; color: #a9a9b2;
   text-align: left; white-space: nowrap;

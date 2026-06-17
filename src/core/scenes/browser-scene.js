@@ -919,10 +919,19 @@
     // the chip; only tab-to-tab moves animate.
     var reappearing = (cursor.style.opacity !== '1');
     if (reappearing) { cursor.style.webkitTransition = cursor.style.transition = 'none'; }
+    var top = box.offsetTop;
+    var height = box.offsetHeight;
+    var tips = dom.get('tw-tips');
+    if (box.getBoundingClientRect && tips && tips.getBoundingClientRect) {
+      var boxRect = box.getBoundingClientRect();
+      var tipsRect = tips.getBoundingClientRect();
+      top = boxRect.top - tipsRect.top;
+      height = boxRect.height || (boxRect.bottom - boxRect.top);
+    }
     cursor.style.left = box.offsetLeft + 'px';
-    cursor.style.top = box.offsetTop + 'px';
+    cursor.style.top = top + 'px';
     cursor.style.width = box.offsetWidth + 'px';
-    cursor.style.height = box.offsetHeight + 'px';
+    cursor.style.height = height + 'px';
     if (reappearing) {
       cursor.offsetWidth;   // force reflow so the snap commits before transitions resume
       cursor.style.webkitTransition = cursor.style.transition = '';
