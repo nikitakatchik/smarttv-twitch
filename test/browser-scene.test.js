@@ -646,11 +646,37 @@ test('BACK on the tab row selects Channels', () => {
   scene.switchMode(MODE.GAMES, true);
   scene.focusTopNav();
   assert.equal(scene.navIndex, 1, 'Games tab focused');
-  scene.handleKeyDown(KEY.BACK);
+  assert.equal(scene.handleKeyDown(KEY.BACK), true);
   assert.equal(scene.mode, MODE.ALL);
   assert.equal(scene.onTopNav, true);
   assert.equal(scene.navIndex, 0);
   assert.match(els['tw-tip-all'].className, /tw-tip-active/);
+});
+
+test('BACK on the Channels tab row is unhandled', () => {
+  const { scene, MODE, KEY } = setup({ streams: [stream('a')] });
+  scene.switchMode(MODE.ALL, true);
+  scene.focusTopNav();
+  assert.equal(scene.navIndex, 0, 'Channels tab focused');
+
+  assert.equal(scene.handleKeyDown(KEY.BACK), false);
+  assert.equal(scene.mode, MODE.ALL);
+  assert.equal(scene.onTopNav, true);
+  assert.equal(scene.navIndex, 0);
+});
+
+test('BACK on a non-active tab row item returns focus to Channels', () => {
+  const { scene, MODE, KEY } = setup({ streams: [stream('a')], games: [game('Chess')] });
+  scene.switchMode(MODE.ALL, true);
+  scene.focusTopNav();
+  scene.handleTopNavKey(KEY.RIGHT);
+  assert.equal(scene.mode, MODE.ALL);
+  assert.equal(scene.navIndex, 1, 'Games tab focused');
+
+  assert.equal(scene.handleKeyDown(KEY.BACK), true);
+  assert.equal(scene.mode, MODE.ALL);
+  assert.equal(scene.onTopNav, true);
+  assert.equal(scene.navIndex, 0);
 });
 
 test('OK on the active tab row refreshes the current grid', () => {

@@ -110,7 +110,10 @@
       var key = adapter.keys.map(e);
       if (!key) { return; }
       if (e.preventDefault) { e.preventDefault(); }
-      TW.sceneManager.dispatchKey(key);
+      if (TW.sceneManager.dispatchKey(key) === false && key === TW.KEY.BACK &&
+          adapter.system && adapter.system.exit) {
+        adapter.system.exit();
+      }
     });
   }
 

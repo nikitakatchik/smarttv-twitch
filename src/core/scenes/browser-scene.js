@@ -870,8 +870,9 @@
   // --- keys ---------------------------------------------------------------
   P.handleKeyDown = function (key) {
     if (key === KEY.BACK) {
-      // On the tab row already -> jump to the first tab (Channels).
+      // On another tab -> jump to Channels; on Channels -> let app-level Back run.
       if (this.onTopNav) {
+        if (this.mode === MODE.ALL && this.navIndex === 0) { return false; }
         if (this.mode !== MODE.ALL) { this.switchMode(MODE.ALL, false); }
         this.focusTopNav();
         return true;
