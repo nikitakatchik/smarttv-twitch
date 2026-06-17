@@ -18,6 +18,17 @@
       color: #efeff1; font: 700 18px/22px "Helvetica Neue", Arial, sans-serif;
       text-align: center; letter-spacing: 0;
     }
+    .repo-button {
+      position: absolute; top: 10px; right: 10px; z-index: 4; display: -webkit-box; display: flex;
+      -webkit-box-align: center; align-items: center; width: 102px; height: 30px;
+      box-sizing: border-box; padding: 0 10px; color: #24292f; background: #f6f8fa;
+      border: 1px solid #d0d7de; border-radius: 7px; text-decoration: none;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.26);
+      font: 700 12px/30px "Helvetica Neue", Arial, sans-serif; letter-spacing: 0;
+    }
+    .repo-button:hover { background: #ffffff; border-color: #8c959f; }
+    .repo-logo { width: 16px; height: 16px; margin-right: 7px; fill: currentColor; }
+    .repo-arrow { margin-left: 6px; color: #57606a; font-weight: 700; }
     .tw-stage-wrap {
       height: 100%; box-sizing: border-box; overflow: hidden; padding: 16px;
       display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center;
@@ -74,7 +85,14 @@
   </style>
 </head>
 <body>
-  <div class="page-title" id="tw-page-title">Twellie Web Preview</div>
+  <div class="page-title" id="tw-page-title">📺 Twellie Web Preview</div>
+  <a class="repo-button" id="tw-repo-button" href="https://github.com/nikitakatchik/smarttv-twitch" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="Open Twellie repository on GitHub">
+    <svg class="repo-logo" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+    </svg>
+    <span>GitHub</span>
+    <span class="repo-arrow">↗</span>
+  </a>
 
   <div class="tw-stage-wrap" id="tw-stage-wrap">
     <div class="tv-frame" id="tw-frame">
@@ -137,6 +155,7 @@
         var frame = global.document.getElementById('tw-frame');
         var remote = global.document.getElementById('tw-remote');
         var title = global.document.getElementById('tw-page-title');
+        var repo = global.document.getElementById('tw-repo-button');
         var video = global.document.getElementById('tw-video');
         var embed = global.document.getElementById('tw-embed');
         var app = global.document.getElementById('app');
@@ -149,8 +168,10 @@
         var viewportHeight = Math.max(global.innerHeight || 720, minPageHeight);
         var remoteWidth = remote.offsetWidth;
         var titleHeight = title ? title.offsetHeight : 0;
-        var titleGap = title ? 8 : 0;
-        var titleBand = title ? titleHeight + (titleGap * 2) : minSpace;
+        var repoHeight = repo ? repo.offsetHeight : 0;
+        var hasTitleRow = title || repo;
+        var titleGap = hasTitleRow ? 8 : 0;
+        var titleBand = hasTitleRow ? Math.max(titleHeight, repoHeight) + (titleGap * 2) : minSpace;
         var widthScale = (viewportWidth - remoteWidth - (minSpace * 3)) / 1280;
         var heightScale = (viewportHeight - (titleBand * 2)) / 720;
         var scale = Math.min(1, widthScale, heightScale);
@@ -171,9 +192,20 @@
         setScale(embed, scale);
         setScale(app, scale);
 
-        if (title) {
+        if (hasTitleRow) {
           var frameRect = frame.getBoundingClientRect();
-          title.style.top = Math.max(0, (frameRect.top - title.offsetHeight) / 2) + 'px';
+          if (title) {
+            title.style.top = Math.max(0, (frameRect.top - title.offsetHeight) / 2) + 'px';
+          }
+          if (repo) {
+            var titleTop = title ? parseFloat(title.style.top) : NaN;
+            if (isNaN(titleTop)) { titleTop = title ? title.getBoundingClientRect().top : minSpace; }
+            var repoTop = title ? titleTop + ((title.offsetHeight - repo.offsetHeight) / 2) : minSpace;
+            if (repoTop < 0) { repoTop = 0; }
+            repo.style.top = repoTop + 'px';
+            repo.style.right = repoTop + 'px';
+            repo.style.left = '';
+          }
         }
       }
 
