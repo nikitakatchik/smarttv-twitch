@@ -283,6 +283,7 @@
   P.updateFrame = function () {
     var frame = dom.get('tw-grid-frame');
     if (!frame) { return; }
+    dom.removeClass(frame, 'tw-grid-frame-round');
     var c = this.focusedCell();
     if (!c) { frame.style.opacity = '0'; return; }
     var inner = c.firstChild;                       // .tw-cell-inner
@@ -671,7 +672,7 @@
     var sec = dom.create('div', 'tw-sec');
     var head = dom.create('div', 'tw-sec-head'); dom.text(head, title); sec.appendChild(head);
     var table = dom.create('table', offline ? 'tw-grid tw-grid-6' : 'tw-grid');
-    for (var i = 0; i < items.length;) {
+    for (var i = 0, sectionRow = 0; i < items.length; sectionRow++) {
       var tr = dom.create('tr'), cells = [], rowItems = [];
       for (var c = 0; c < cols; c++) {
         if (i < items.length) {
@@ -684,15 +685,14 @@
         }
       }
       table.appendChild(tr);
-      this.fRows.push({ el: tr, cells: cells, items: rowItems });
+      this.fRows.push({ el: tr, cells: cells, items: rowItems, sectionFirst: sectionRow === 0 });
     }
     sec.appendChild(table);
     parent.appendChild(sec);
   };
 
   // Offline channel tile: just a circular avatar + name (no live thumbnail, no
-  // card). Focus shows a ring on the avatar (see followAddFocus + styles.css),
-  // not the rectangular grid frame.
+  // card). Focus uses the shared grid frame, made round in followFrame.
   P.createChannelCell = function (item) {
     var td = dom.create('td', 'tw-cell tw-cell-channel');
     var name = dom.escape(item.display || item.login || '');
@@ -726,22 +726,18 @@
     if (!c) { return; }
     dom.addClass(c.firstChild, 'tw-focused');
     this.followScrollTo();
-    // Offline avatar tiles indicate focus with a ring on the avatar (via the
-    // .tw-focused class), which suits their round shape; live/category tiles
-    // use the shared rectangular frame outside the scrolling content.
-    var item = this.fRows[this.fr].items[this.fc];
-    if (item && item.kind === 'channel') { this.hideFrame(); }
-    else { this.followFrame(); }
+    this.followFrame();
     // Prefetch the next page of offline channels as focus nears the bottom.
     if (this.fr >= this.fRows.length - 2 && this.fOffCursor && !this.fOffLoading) { this.loadFollowOffline(); }
   };
 
-  // Pin the focused row near the top, but keep a heading's worth of lead space
-  // above it so the section title stays visible when you're on its first row.
+  // Pin the focused row near the top. Keep a heading's worth of lead space only
+  // on a section's first row; later compact avatar rows should not leave the
+  // previous row's names peeking above the selected tile.
   P.followScrollTo = function () {
     var row = this.fRows[this.fr];
     if (!row) { return; }
-    var lead = 46;   // ~ section heading height + gap
+    var lead = row.sectionFirst ? 46 : 0;   // ~ section heading height + gap
     var off = this.followRowTop(row) - lead;
     if (off < 0) { off = 0; }
     this.fScroll = off;
@@ -776,8 +772,12 @@
     var c = this.followCell();
     if (!c) { frame.style.opacity = '0'; return; }
     var inner = c.firstChild;
+    var item = this.fRows[this.fr].items[this.fc];
+    var round = item && item.kind === 'channel';
+    if (round) { dom.addClass(frame, 'tw-grid-frame-round'); }
+    else { dom.removeClass(frame, 'tw-grid-frame-round'); }
     var img = inner.getElementsByTagName('img')[0];
-    var target = img || inner;
+    var target = round ? (inner.firstChild || inner) : (img || inner);
     var box = this.frameTargetBox(inner, target, this.followInnerTop(inner) - this.fScroll);
     var reappearing = (frame.style.opacity !== '1');
     if (reappearing) { frame.style.webkitTransition = frame.style.transition = 'none'; }

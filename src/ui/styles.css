@@ -201,7 +201,8 @@ html, body {
 .tw-cell-channel .tw-cell-inner { text-align: center; padding: 10px 6px 14px; }
 .tw-chan-avatar {
   width: 96px; height: 96px; border-radius: 50%; background: #18181b;
-  display: inline-block;
+  display: inline-block; border: 3px solid transparent; box-sizing: border-box;
+  -webkit-background-clip: padding-box; background-clip: padding-box;
 }
 .tw-chan-avatar-ph { background: #3a3a42; }
 .tw-chan-name {
@@ -209,8 +210,9 @@ html, body {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Focus: a ring around the avatar (matches its round shape) + a brighter name.
-   The rectangular grid frame is suppressed for these tiles (see followAddFocus). */
-.tw-cell-channel .tw-cell-inner.tw-focused .tw-chan-avatar {
+   The shared grid frame is made round for these tiles (see followFrame). */
+.tw-grid-frame-round {
+  outline: 0; border-radius: 50%;
   -webkit-box-shadow: 0 0 0 4px #f4f4f7; box-shadow: 0 0 0 4px #f4f4f7;
 }
 .tw-cell-channel .tw-cell-inner.tw-focused .tw-chan-name { color: #fff; }

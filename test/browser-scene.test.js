@@ -208,6 +208,12 @@ test('offline channel avatars keep their placeholder on load failure', () => {
   assert.match(cell.innerHTML, /onerror="this\.removeAttribute\('src'\)"/);
 });
 
+test('offline channel avatar frame keeps a thumbnail-style gap', () => {
+  const css = fs.readFileSync(path.resolve(__dirname, '..', 'src/ui/styles.css'), 'utf8');
+  assert.match(css, /\.tw-chan-avatar\s*\{[^}]*border: 3px solid transparent;[^}]*box-sizing: border-box;[^}]*background-clip: padding-box;/s);
+  assert.match(css, /\.tw-grid-frame-round\s*\{[^}]*border-radius: 50%;[^}]*box-shadow: 0 0 0 4px #f4f4f7;/s);
+});
+
 test('flat grid selection frame surrounds the thumbnail, not the caption', () => {
   const { scene, els, MODE } = setup({ streams: [stream('solo')] });
   scene.switchMode(MODE.ALL, true);
@@ -365,7 +371,7 @@ test('Following live selection frame subtracts the row-local table offset', () =
   assert.equal(els['tw-grid-frame'].style.top, '67px');
 });
 
-test('Following offline channel focus hides the floating frame', () => {
+test('Following offline channel focus uses the animated round frame', () => {
   const { scene, els, MODE, KEY } = setup({
     categories: [Object.assign(game('Chess'), { viewers: 10 })],
     live: [],
@@ -375,7 +381,8 @@ test('Following offline channel focus hides the floating frame', () => {
   assert.equal(els['tw-grid-frame'].style.opacity, '1');
   scene.handleFollowKey(KEY.DOWN);
   assert.match(scene.followCell().firstChild.className, /tw-focused/);
-  assert.equal(els['tw-grid-frame'].style.opacity, '0');
+  assert.equal(els['tw-grid-frame'].style.opacity, '1');
+  assert.match(els['tw-grid-frame'].className, /tw-grid-frame-round/);
 });
 
 test('top-level games use the tighter wrapper inset for cover padding', () => {
@@ -478,7 +485,7 @@ test('the offline section lays out at 6 columns', () => {
   assert.equal(scene.fRows[1].el.childNodes.length, 6); // 1 real + 5 pads
 });
 
-test('Following pins a sparse bottom row instead of clamping it to the viewport bottom', () => {
+test('Following pins later rows at the top so prior row names stay hidden', () => {
   const { scene, els, MODE } = setup({
     live: [],
     follows: [channel('a'), channel('b'), channel('c'), channel('d'), channel('e'), channel('f'), channel('g')],
@@ -489,8 +496,8 @@ test('Following pins a sparse bottom row instead of clamping it to the viewport 
   scene.fRows[1].el.offsetTop = 900;
   scene.fr = 1;
   scene.followScrollTo();
-  assert.equal(scene.fScroll, 854);
-  assert.equal(els['tw-grid-scroll'].style.transform, 'translate3d(0,-854px,0)');
+  assert.equal(scene.fScroll, 900);
+  assert.equal(els['tw-grid-scroll'].style.transform, 'translate3d(0,-900px,0)');
 });
 
 test('Following scroll uses each row position in the full sectioned view', () => {
