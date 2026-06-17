@@ -53,12 +53,17 @@ function setup(opts) {
     get,
     text(e, v) { if (e) { e.textContent = v; } },
     html(e, v) { if (e) { e.innerHTML = v; e.children = []; } },
-    attr() {},
     addClass(e, c) { if (e && e.className.indexOf(c) < 0) { e.className = (e.className ? e.className + ' ' : '') + c; } },
     removeClass(e, c) { if (e) { e.className = e.className.replace(c, '').replace(/\s+/g, ' ').trim(); } },
     show(e, d) { if (e) { e.style.display = d || 'block'; } },
     hide(e) { if (e) { e.style.display = 'none'; } },
     escape: (s) => String(s == null ? '' : s),
+    attr(e, name, value) {
+      if (!e) { return value === undefined ? null : undefined; }
+      e.attrs = e.attrs || {};
+      if (value === undefined) { return e.attrs[name] || null; }
+      e.attrs[name] = value;
+    },
     on() {},
   };
 
@@ -73,7 +78,7 @@ function setup(opts) {
       playbackUrl: (login, ok) => ok('http://example/live.m3u8'),
       vodPlaybackUrl: (id, ok) => ok(`http://example/${id}.m3u8`),
       clipPlayback: (slug, ok) => ok({ url: `http://example/${slug}.mp4` }),
-      streamInfo: (login, ok) => ok(opts.streamInfo || { display: login, title: 'title', online: true, viewers: 10, logo: '', game: 'Game' }),
+      streamInfo: (login, ok) => ok(opts.streamInfo || { display: login, title: 'title', online: true, viewers: 10, logo: 'avatar.png', game: 'Game' }),
     },
     twitch: {
       chat: {
@@ -130,6 +135,11 @@ test('chat rail opens on the right and shrinks the player to a 16:9 surface', ()
   const { scene, els, displayRects } = setup();
 
   assert.deepEqual(displayRects[displayRects.length - 1], [0, 0, 1280, 720]);
+  assert.equal(els['tw-chat-name'].textContent, 'someguy');
+  assert.equal(els['tw-chat-avatar'].attrs.src, 'avatar.png');
+  assert.equal(els['tw-chat-live-badge'].textContent, 'LIVE');
+  assert.equal(els['tw-chat-viewer-number'].textContent, '10');
+  assert.equal(els['tw-chat-viewer-label'].textContent, ' VIEWERS');
 
   scene.openChat();
   assert.deepEqual(displayRects[displayRects.length - 1], [0, 101, 920, 518]);
@@ -142,6 +152,20 @@ test('chat rail opens on the right and shrinks the player to a 16:9 surface', ()
 
   scene.closeChat();
   assert.deepEqual(displayRects[displayRects.length - 1], [0, 0, 1280, 720]);
+});
+
+test('chat header mirrors refreshed live viewer count', () => {
+  const { scene, els } = setup({
+    stream: { display: 'Seed Name', title: 'seed title', viewers: 42, game: 'Seed Game' },
+    streamInfo: { display: 'Some Guy', title: 'live title', online: true, viewers: 1234, logo: 'some-guy.png', game: 'Live Game' },
+  });
+
+  assert.equal(els['tw-c-viewers'].textContent, '1234 VIEWERS');
+  assert.equal(els['tw-chat-name'].textContent, 'Some Guy');
+  assert.equal(els['tw-chat-avatar'].attrs.src, 'some-guy.png');
+  assert.equal(els['tw-chat-viewer-number'].textContent, '1234');
+  assert.equal(els['tw-chat-viewer-label'].textContent, ' VIEWERS');
+  assert.equal(scene.chatViewerText, '1234 VIEWERS');
 });
 
 test('player adapter receives source metadata for web playback fallbacks', () => {

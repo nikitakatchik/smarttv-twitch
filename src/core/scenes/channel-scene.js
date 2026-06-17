@@ -68,6 +68,7 @@
     this.chatClient = null;
     this.chatCount = 0;
     this.chatMessages = [];
+    this.chatViewerText = '';
 
     this.controlIndex = 0;
     this.progressTimer = null;
@@ -138,6 +139,19 @@
         '</div></div>' +
       '</div>' +
       '<div class="tw-chat" id="tw-chat">' +
+        '<div class="tw-chat-head" id="tw-chat-head">' +
+          '<div class="tw-chat-avatar-wrap">' +
+            '<img class="tw-chat-avatar" id="tw-chat-avatar" src="assets/icon/icon_85_70.png" alt="">' +
+            '<span class="tw-chat-live-badge" id="tw-chat-live-badge"></span>' +
+          '</div>' +
+          '<div class="tw-chat-copy">' +
+            '<div class="tw-chat-name" id="tw-chat-name"></div>' +
+            '<div class="tw-chat-viewers" id="tw-chat-viewers">' +
+              '<span class="tw-chat-viewer-number" id="tw-chat-viewer-number"></span>' +
+              '<span class="tw-chat-viewer-label" id="tw-chat-viewer-label"></span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
         '<div class="tw-chat-list" id="tw-chat-list"></div>' +
       '</div>';
     (dom.get('app') || global.document.body).appendChild(root);
@@ -148,8 +162,11 @@
     dom.text(dom.get('tw-ctl-channel'), TW.i18n.t('CHANNEL'));
     dom.text(dom.get('tw-ctl-chat'), TW.i18n.t('CHAT'));
     dom.text(dom.get('tw-ctl-quality'), TW.i18n.t('QUALITY'));
+    dom.text(dom.get('tw-chat-live-badge'), TW.i18n.t('LIVE'));
     dom.text(dom.get('tw-c-position'), '0:00');
     dom.text(dom.get('tw-c-duration'), '0:00');
+    this.setChatChannel('', '');
+    this.setChatViewers(null);
     this.applyPlayerLayout();
     this.refreshControls();
   };
@@ -200,11 +217,15 @@
     this.stopProgressTimer();
     this.resetSeekAcceleration();
     this.setContentBadge('LIVE');
-    dom.text(dom.get('tw-c-name'), (this.liveItem && this.liveItem.display) || this.login || '');
+    var displayName = (this.liveItem && this.liveItem.display) || this.login || '';
+    dom.text(dom.get('tw-c-name'), displayName);
     dom.text(dom.get('tw-c-title'), (this.liveItem && this.liveItem.title) || '');
     this.setGame((this.liveItem && this.liveItem.game) || '');
-    this.setViewers((this.liveItem && this.liveItem.viewers) ?
-      (TW.addCommas(this.liveItem.viewers) + ' ' + TW.i18n.t('VIEWERS')) : '');
+    var viewerCount = (this.liveItem && this.liveItem.viewers != null) ? this.liveItem.viewers : null;
+    var viewerText = viewerCount != null ? this.formatViewerCount(viewerCount) : '';
+    this.setViewers(viewerText);
+    this.setChatChannel(displayName, '');
+    this.setChatViewers(viewerCount);
     dom.attr(dom.get('tw-c-icon'), 'src', 'assets/icon/icon_85_70.png');
     this.refreshControls();
     this.resetChat();
@@ -270,6 +291,27 @@
     if (!this.root) { return; }
     if (text) { dom.addClass(this.root, 'tw-has-viewers'); }
     else { dom.removeClass(this.root, 'tw-has-viewers'); }
+  };
+
+  P.formatViewerCount = function (count) {
+    return TW.addCommas(count || 0) + ' ' + TW.i18n.t('VIEWERS');
+  };
+
+  P.setChatChannel = function (name, logo) {
+    dom.text(dom.get('tw-chat-name'), name || this.login || '');
+    dom.attr(dom.get('tw-chat-avatar'), 'src', logo || 'assets/icon/icon_85_70.png');
+  };
+
+  P.setChatViewers = function (count) {
+    var hasCount = count != null;
+    var numberText = hasCount ? TW.addCommas(count) : '';
+    var labelText = hasCount ? TW.i18n.t('VIEWERS') : '';
+    this.chatViewerText = hasCount ? (numberText + ' ' + labelText) : '';
+    dom.text(dom.get('tw-chat-viewer-number'), numberText);
+    dom.text(dom.get('tw-chat-viewer-label'), hasCount ? (' ' + labelText) : '');
+    if (!this.root) { return; }
+    if (this.chatViewerText) { dom.addClass(this.root, 'tw-chat-has-viewers'); }
+    else { dom.removeClass(this.root, 'tw-chat-has-viewers'); }
   };
 
   P.setGame = function (text) {
@@ -400,7 +442,11 @@
       dom.text(dom.get('tw-c-name'), info.display);
       dom.text(dom.get('tw-c-title'), info.title);
       self.setGame(info.game || '');
-      self.setViewers(info.online ? (TW.addCommas(info.viewers) + ' ' + TW.i18n.t('VIEWERS')) : '');
+      var viewerCount = info.online ? info.viewers : null;
+      var viewerText = viewerCount != null ? self.formatViewerCount(viewerCount) : '';
+      self.setViewers(viewerText);
+      self.setChatChannel(info.display, info.logo);
+      self.setChatViewers(viewerCount);
       if (info.logo) { dom.attr(dom.get('tw-c-icon'), 'src', info.logo); }
     }, TW.noop);
   };

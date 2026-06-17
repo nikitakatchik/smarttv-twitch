@@ -387,20 +387,64 @@ html, body {
 /* --- chat rail (read-only) ---------------------------------------------- */
 .tw-chat {
   display: none; position: absolute; left: 0; top: 0; width: 360px; height: 720px;
-  background: rgba(13, 15, 20, 0.96); border-left: 1px solid rgba(255, 255, 255, 0.14);
+  background: #08080a; border-left: 0;
   box-sizing: border-box; z-index: 5; overflow: hidden;
 }
+.tw-chat-head {
+  position: absolute; left: 12px; right: 12px; top: 12px; height: 92px;
+  background: #303038;
+  box-sizing: border-box; padding: 14px; text-align: left;
+}
+.tw-chat-avatar-wrap {
+  position: absolute; left: 14px; top: 14px; width: 64px; height: 64px;
+  border-radius: 50%; box-sizing: border-box;
+  background: #e91916; box-shadow: 0 0 0 2px rgba(233, 25, 22, 0.22);
+}
+.tw-chat-avatar {
+  position: absolute; left: 3px; top: 3px; width: 58px; height: 58px;
+  background: #1f1f24; border: 0; border-radius: 50%; box-sizing: border-box;
+  object-fit: cover;
+}
+.tw-chat-live-badge {
+  position: absolute; left: 50%; bottom: -3px; height: 14px; padding: 0 3px;
+  -webkit-transform: translateX(-50%); transform: translateX(-50%);
+  line-height: 14px; text-align: center; background: #e91916; color: #fff;
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0;
+}
+.tw-chat-copy {
+  margin-left: 78px; padding-top: 2px; min-width: 0;
+}
+.tw-chat-name {
+  height: 25px; line-height: 25px; font-size: 21px; color: #fff;
+  font-weight: 400; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.tw-chat-viewers {
+  margin-top: 4px; height: 30px; line-height: 30px; color: #fff;
+  white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.tw-chat-viewer-number { font-size: 26px; font-weight: 300; color: #fff; }
+.tw-chat-viewer-label {
+  font-size: 21px; font-weight: 300; color: rgba(255, 255, 255, 0.52);
+  text-transform: lowercase; vertical-align: 1px;
+}
 .tw-chat-list {
-  position: absolute; left: 0; right: 0; top: 0; bottom: 0; overflow: hidden;
-  padding: 14px 18px 18px; box-sizing: border-box; text-align: left;
+  position: absolute; left: 0; right: 0; top: 116px; bottom: 0; overflow: hidden;
+  padding: 0 12px 12px; box-sizing: border-box; text-align: left;
 }
 .tw-chat-row {
-  font-size: 17px; line-height: 1.32; margin: 0 0 8px; word-wrap: break-word;
-  color: #e6e8ee;
+  position: relative; font-size: 16px; line-height: 20px; margin: 0 0 8px;
+  padding: 9px 10px 10px; word-wrap: break-word; color: #e6e8ee;
+  background: #1f1f24; box-sizing: border-box;
 }
-.tw-chat-nick { font-weight: 700; }
-.tw-chat-sep { color: #a4a9b7; }
-.tw-chat-msg { color: #e6e8ee; }
+.tw-chat-row:last-child { margin-bottom: 0; }
+.tw-chat-nick {
+  display: block; font-size: 15px; line-height: 18px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tw-chat-sep { display: none; }
+.tw-chat-msg { display: block; margin-top: 2px; color: #e6e8ee; }
 
 /* --- account chip (browser top bar) ------------------------------------- */
 /* Chip sits at the far right (43px edge), matching the logo's height and edge. */
