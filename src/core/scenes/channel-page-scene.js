@@ -37,6 +37,11 @@
     return h > 0 ? (h + ':' + pad2(m) + ':' + pad2(s)) : (m + ':' + pad2(s));
   }
 
+  function unscaleMetric(value, scale) {
+    if (!scale) { return value; }
+    return Math.round((value / scale) * 1000) / 1000;
+  }
+
   var P = ChannelPageScene.prototype;
 
   P.initialize = function () {
@@ -226,15 +231,17 @@
       width: target.offsetWidth,
       height: target.offsetHeight
     };
-    if (target.getBoundingClientRect) {
+    if (target.getBoundingClientRect && inner.getBoundingClientRect) {
       var tr = target.getBoundingClientRect();
-      box.width = tr.right - tr.left;
-      box.height = tr.bottom - tr.top;
-      if (inner.getBoundingClientRect) {
-        var ir = inner.getBoundingClientRect();
-        box.left = inner.offsetLeft + (tr.left - ir.left);
-        box.top = topBase + (tr.top - ir.top);
-      }
+      var ir = inner.getBoundingClientRect();
+      var iw = ir.right - ir.left;
+      var ih = ir.bottom - ir.top;
+      var sx = inner.offsetWidth ? iw / inner.offsetWidth : 1;
+      var sy = inner.offsetHeight ? ih / inner.offsetHeight : 1;
+      box.width = unscaleMetric(tr.right - tr.left, sx);
+      box.height = unscaleMetric(tr.bottom - tr.top, sy);
+      box.left = inner.offsetLeft + unscaleMetric(tr.left - ir.left, sx);
+      box.top = topBase + unscaleMetric(tr.top - ir.top, sy);
     }
     return box;
   };

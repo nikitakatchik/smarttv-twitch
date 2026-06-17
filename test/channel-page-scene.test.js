@@ -115,6 +115,31 @@ test('VOD selection frame surrounds the thumbnail, not the caption', () => {
   assert.equal(els['tw-cp-frame'].style.height, '60.25px');
 });
 
+test('VOD selection frame converts scaled rects back to stage coordinates', () => {
+  const { scene, els } = setup({ vods: [vod('v1')] });
+  scene.handleFocus();
+  const inner = scene.focusedCell().firstChild;
+  inner.offsetLeft = 5;
+  inner.offsetTop = 14;
+  inner.offsetWidth = 100;
+  inner.offsetHeight = 84;
+  inner.getBoundingClientRect = () => ({ left: 10, top: 20, right: 60, bottom: 62 });
+  inner.getElementsByTagName = () => [{
+    offsetLeft: 0,
+    offsetTop: 0,
+    offsetWidth: 100,
+    offsetHeight: 60,
+    complete: true,
+    getBoundingClientRect: () => ({ left: 10, top: 20, right: 60.25, bottom: 50.125 }),
+  }];
+  scene.rowEls[0].offsetTop = 4;
+  scene.updateFrame();
+  assert.equal(els['tw-cp-frame'].style.left, '5px');
+  assert.equal(els['tw-cp-frame'].style.top, '10px');
+  assert.equal(els['tw-cp-frame'].style.width, '100.5px');
+  assert.equal(els['tw-cp-frame'].style.height, '60.25px');
+});
+
 test('a channel with no VODs shows the empty message', () => {
   const { scene, els } = setup({ vods: [] });
   scene.handleFocus();

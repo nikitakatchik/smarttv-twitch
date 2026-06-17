@@ -53,6 +53,16 @@
     return top;
   }
 
+  function unscaleMetric(value, scale) {
+    if (!scale) { return value; }
+    return Math.round((value / scale) * 1000) / 1000;
+  }
+
+  function scaleYFor(el, rect) {
+    var height = rect.bottom - rect.top;
+    return el && el.offsetHeight ? height / el.offsetHeight : 1;
+  }
+
   function BrowserScene(adapter) {
     this.adapter = adapter;
     this.mode = -1;
@@ -250,15 +260,17 @@
       width: target.offsetWidth,
       height: target.offsetHeight
     };
-    if (target.getBoundingClientRect) {
+    if (target.getBoundingClientRect && inner.getBoundingClientRect) {
       var tr = target.getBoundingClientRect();
-      box.width = tr.right - tr.left;
-      box.height = tr.bottom - tr.top;
-      if (inner.getBoundingClientRect) {
-        var ir = inner.getBoundingClientRect();
-        box.left = inner.offsetLeft + (tr.left - ir.left);
-        box.top = topBase + (tr.top - ir.top);
-      }
+      var ir = inner.getBoundingClientRect();
+      var iw = ir.right - ir.left;
+      var ih = ir.bottom - ir.top;
+      var sx = inner.offsetWidth ? iw / inner.offsetWidth : 1;
+      var sy = inner.offsetHeight ? ih / inner.offsetHeight : 1;
+      box.width = unscaleMetric(tr.right - tr.left, sx);
+      box.height = unscaleMetric(tr.bottom - tr.top, sy);
+      box.left = inner.offsetLeft + unscaleMetric(tr.left - ir.left, sx);
+      box.top = topBase + unscaleMetric(tr.top - ir.top, sy);
     }
     return box;
   };
@@ -742,7 +754,7 @@
     if (row.el.getBoundingClientRect && follow.getBoundingClientRect) {
       var rr = row.el.getBoundingClientRect();
       var fr = follow.getBoundingClientRect();
-      return rr.top - fr.top;
+      return unscaleMetric(rr.top - fr.top, scaleYFor(row.el, rr));
     }
     return offsetTopWithin(row.el, follow);
   };
@@ -753,7 +765,7 @@
     if (inner.getBoundingClientRect && follow.getBoundingClientRect) {
       var ir = inner.getBoundingClientRect();
       var fr = follow.getBoundingClientRect();
-      return ir.top - fr.top;
+      return unscaleMetric(ir.top - fr.top, scaleYFor(inner, ir));
     }
     return inner.offsetTop || 0;
   };
@@ -938,8 +950,10 @@
     if (box.getBoundingClientRect && tips && tips.getBoundingClientRect) {
       var boxRect = box.getBoundingClientRect();
       var tipsRect = tips.getBoundingClientRect();
-      top = boxRect.top - tipsRect.top;
-      height = boxRect.height || (boxRect.bottom - boxRect.top);
+      var rectHeight = boxRect.height || (boxRect.bottom - boxRect.top);
+      var scaleY = box.offsetHeight ? rectHeight / box.offsetHeight : 1;
+      top = unscaleMetric(boxRect.top - tipsRect.top, scaleY);
+      height = unscaleMetric(rectHeight, scaleY);
     }
     cursor.style.left = box.offsetLeft + 'px';
     cursor.style.top = top + 'px';

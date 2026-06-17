@@ -231,6 +231,30 @@ test('flat grid selection frame surrounds the thumbnail, not the caption', () =>
   assert.equal(els['tw-grid-frame'].style.height, '60.25px');
 });
 
+test('flat grid selection frame converts scaled rects back to stage coordinates', () => {
+  const { scene, els, MODE } = setup({ streams: [stream('solo')] });
+  scene.switchMode(MODE.ALL, true);
+  const inner = scene.focusedCell().firstChild;
+  inner.offsetLeft = 5;
+  inner.offsetTop = 9;
+  inner.offsetWidth = 100;
+  inner.offsetHeight = 84;
+  inner.getBoundingClientRect = () => ({ left: 10, top: 20, right: 60, bottom: 62 });
+  inner.getElementsByTagName = () => [{
+    offsetLeft: 0,
+    offsetTop: 0,
+    offsetWidth: 100,
+    offsetHeight: 60,
+    complete: true,
+    getBoundingClientRect: () => ({ left: 10, top: 20, right: 60.25, bottom: 50.125 }),
+  }];
+  scene.updateFrame();
+  assert.equal(els['tw-grid-frame'].style.left, '5px');
+  assert.equal(els['tw-grid-frame'].style.top, '9px');
+  assert.equal(els['tw-grid-frame'].style.width, '100.5px');
+  assert.equal(els['tw-grid-frame'].style.height, '60.25px');
+});
+
 test('Following live selection frame preserves fractional thumbnail bounds', () => {
   const { scene, els, MODE } = setup({ live: [stream('solo')], follows: [] });
   scene.switchMode(MODE.FOLLOWED, true);
@@ -252,6 +276,62 @@ test('Following live selection frame preserves fractional thumbnail bounds', () 
   scene.followFrame();
   assert.equal(els['tw-grid-frame'].style.left, '5px');
   assert.equal(els['tw-grid-frame'].style.top, '17px');
+  assert.equal(els['tw-grid-frame'].style.width, '100.5px');
+  assert.equal(els['tw-grid-frame'].style.height, '60.25px');
+});
+
+test('Following live selection frame converts scaled rects back to stage coordinates', () => {
+  const { scene, els, MODE } = setup({ live: [stream('solo')], follows: [] });
+  scene.switchMode(MODE.FOLLOWED, true);
+  const inner = scene.followCell().firstChild;
+  inner.offsetLeft = 5;
+  inner.offsetTop = 21;
+  inner.offsetWidth = 100;
+  inner.offsetHeight = 84;
+  inner.getBoundingClientRect = () => ({ left: 10, top: 20, right: 60, bottom: 62 });
+  inner.getElementsByTagName = () => [{
+    offsetLeft: 0,
+    offsetTop: 0,
+    offsetWidth: 100,
+    offsetHeight: 60,
+    complete: true,
+    getBoundingClientRect: () => ({ left: 10, top: 20, right: 60.25, bottom: 50.125 }),
+  }];
+  scene.fScroll = 4;
+  scene.followFrame();
+  assert.equal(els['tw-grid-frame'].style.left, '5px');
+  assert.equal(els['tw-grid-frame'].style.top, '17px');
+  assert.equal(els['tw-grid-frame'].style.width, '100.5px');
+  assert.equal(els['tw-grid-frame'].style.height, '60.25px');
+});
+
+test('Following section frame converts scaled section top back to stage coordinates', () => {
+  const { scene, els, MODE } = setup({
+    categories: [Object.assign(game('Chess'), { viewers: 10 })],
+    live: [stream('solo')],
+    follows: [],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  scene.fr = 1;
+  scene.fc = 0;
+  scene.fScroll = 462;
+  els['tw-follow'].getBoundingClientRect = () => ({ top: 100, left: 0, right: 100, bottom: 600 });
+  const inner = scene.followCell().firstChild;
+  inner.offsetLeft = 5;
+  inner.offsetWidth = 100;
+  inner.offsetHeight = 84;
+  inner.getBoundingClientRect = () => ({ left: 10, top: 360.5, right: 60, bottom: 402.5 });
+  inner.getElementsByTagName = () => [{
+    offsetLeft: 0,
+    offsetTop: 0,
+    offsetWidth: 100,
+    offsetHeight: 60,
+    complete: true,
+    getBoundingClientRect: () => ({ left: 10, top: 360.5, right: 60.25, bottom: 390.625 }),
+  }];
+  scene.followFrame();
+  assert.equal(els['tw-grid-frame'].style.left, '5px');
+  assert.equal(els['tw-grid-frame'].style.top, '59px');
   assert.equal(els['tw-grid-frame'].style.width, '100.5px');
   assert.equal(els['tw-grid-frame'].style.height, '60.25px');
 });
@@ -455,6 +535,23 @@ test('Following row positioning uses same-space rects to avoid double-counting s
   assert.equal(els['tw-grid-scroll'].style.transform, 'translate3d(0,-462px,0)');
 });
 
+test('Following row positioning converts scaled section rects back to stage coordinates', () => {
+  const { scene, els, MODE } = setup({
+    categories: [Object.assign(game('Chess'), { viewers: 10 })],
+    live: [],
+    follows: [channel('a')],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  scene.fRows[1].el.offsetHeight = 60;
+  scene.fRows[1].el.getBoundingClientRect = () => ({ top: 354, left: 0, right: 100, bottom: 384 });
+  els['tw-follow'].getBoundingClientRect = () => ({ top: 100, left: 0, right: 100, bottom: 500 });
+
+  scene.fr = 1;
+  scene.followScrollTo();
+  assert.equal(scene.fScroll, 462);
+  assert.equal(els['tw-grid-scroll'].style.transform, 'translate3d(0,-462px,0)');
+});
+
 test('selecting a live tile opens the player; an offline tile opens the channel page', () => {
   const { scene, calls, MODE } = setup({ live: [stream('liveguy')], follows: [channel('offguy')] });
   scene.switchMode(MODE.FOLLOWED, true);
@@ -503,6 +600,28 @@ test('tab cursor uses rendered vertical bounds without changing horizontal metri
   box.getBoundingClientRect = () => ({ top: 50, bottom: 79, height: 29 });
   box.offsetLeft = 8;
   box.offsetTop = 6;      // rounded browser offset; rendered top is 5.5px
+  box.offsetWidth = 90;
+  box.offsetHeight = 29;
+
+  scene.moveTabCursor();
+
+  assert.equal(cursor.style.left, '8px');
+  assert.equal(cursor.style.width, '90px');
+  assert.equal(cursor.style.top, '5.5px');
+  assert.equal(cursor.style.height, '29px');
+});
+
+test('tab cursor converts scaled vertical bounds back to stage coordinates', () => {
+  const { scene, els } = setup();
+  scene.focusTopNav();
+
+  const tips = els['tw-tips'];
+  const box = els['tw-tip-all'].firstChild;
+  const cursor = els['tw-tip-cursor'];
+  tips.getBoundingClientRect = () => ({ top: 100, bottom: 117.25 });
+  box.getBoundingClientRect = () => ({ top: 102.75, bottom: 117.25, height: 14.5 });
+  box.offsetLeft = 8;
+  box.offsetTop = 6;
   box.offsetWidth = 90;
   box.offsetHeight = 29;
 
