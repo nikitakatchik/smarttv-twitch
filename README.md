@@ -11,10 +11,16 @@
 
 <p align="center">
   <a href="https://github.com/nikitakatchik/smarttv-twitch/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nikitakatchik/smarttv-twitch/ci.yml?branch=master&style=flat-square&label=ci" alt="ci"></a>
+  <a href="https://nikitakatchik.github.io/smarttv-twitch/"><img src="https://img.shields.io/badge/demo-GitHub%20Pages-2ea44f.svg?style=flat-square" alt="Live demo"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square" alt="License: GPL v3"></a>
   <img src="https://img.shields.io/badge/platform-Samsung%20Orsay%20%2B%20Tizen-23d3a3.svg?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/Made%20with-JavaScript%20(ES5)-F7DF1E.svg?style=flat-square&logo=javascript&logoColor=black" alt="Made with JavaScript">
 </p>
+
+## Web Demo
+
+Try the browser preview at [nikitakatchik.github.io/smarttv-twitch](https://nikitakatchik.github.io/smarttv-twitch/).
+It is built by GitHub Actions from `npm run build:web` and published to GitHub Pages on every push to `master`.
 
 ## Features
 
