@@ -10,31 +10,24 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nkatchik/smarttv-twitch/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nkatchik/smarttv-twitch/ci.yml?branch=master&style=flat-square&label=ci" alt="ci"></a>
-  <a href="https://nkatchik.github.io/twellie/"><img src="https://img.shields.io/badge/demo-GitHub%20Pages-2ea44f.svg?style=flat-square" alt="Live demo"></a>
+  <a href="/nkatchik/smarttv-twitch/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nkatchik/smarttv-twitch/ci.yml?branch=master&style=flat-square&label=ci" alt="ci"></a>
+  <a href="https://nkatchik.github.io/smarttv-twitch/"><img src="https://img.shields.io/badge/demo-GitHub%20Pages-2ea44f.svg?style=flat-square" alt="Live demo"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square" alt="License: GPL v3"></a>
   <img src="https://img.shields.io/badge/platform-Samsung%20Orsay%20%2B%20Tizen-23d3a3.svg?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/Made%20with-JavaScript%20(ES5)-F7DF1E.svg?style=flat-square&logo=javascript&logoColor=black" alt="Made with JavaScript">
 </p>
 
-## Web Demo
-
-Try the browser preview at [nkatchik.github.io/twellie](https://nkatchik.github.io/twellie/).
-It is built by GitHub Actions from `npm run build:web` and published to GitHub Pages on every push to `master`.
-The hosted preview is static, so live streams and VODs use Twitch's official embedded player; `npm start` still uses the local HLS proxy for development.
-
 ## Features
 
-- Live Twitch browsing: top streams, categories, category stream pages, and direct channel playback.
-- Following: device-code sign-in for followed channels, live categories, live streams, and offline channel pages on Tizen and browser builds.
-- Live chat overlay: anonymous IRC-over-WebSocket chat over the video, no login required.
-- VODs and clips: each channel's past broadcasts and top clips, with playback.
-- Quality switching: Auto down to 160p, selected from the real Twitch renditions.
-- Remote-first navigation: D-pad grids and color-button shortcuts, with no mouse required.
-- Eight languages: English, Deutsch, Русский, Español, Português, Українська, Français, Svenska.
-- One ES5 core for Orsay, Tizen, TizenBrew, and the browser harness.
-- No backend for browse/playback; TV builds use public Twitch endpoints directly, and the hosted web preview uses Twitch's official embed where browsers require it.
-- Browser harness for development: `npm start` runs the app with real Twitch playback.
+- 📺 **Browse Twitch** - live streams, categories, channel pages, and direct playback.
+- 👥 **Following** - device-code sign-in, live follows, live categories, and offline pages.
+- 💬 **Live chat** - anonymous IRC-over-WebSocket chat over the video.
+- 🎞️ **VODs and clips** - past broadcasts and top clips from each channel.
+- 🎚️ **Quality control** - real Twitch renditions from Auto down to 160p.
+- 🎮 **Remote first** - D-pad grids and color-button shortcuts, no mouse required.
+- 🧩 **Wide TV support** - one ES5 core for Orsay, Tizen, TizenBrew, and browser.
+- 🔌 **No backend required** - TV builds talk to public Twitch endpoints directly.
+- 🌍 **8 languages** - localized UI for the supported app builds.
 
 ## Supported TVs
 
