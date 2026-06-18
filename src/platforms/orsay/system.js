@@ -1,10 +1,9 @@
 /*!
  * platforms/orsay/system.js — legacy system services via the Common API.
  *
- * Uses the lightweight legacy "Common API" (Widget.js / Plugin.js, loaded from
- * $MANAGER_WIDGET in index.html) for screensaver control and returning to Smart
- * Hub — NOT the heavyweight AppsFramework the original app depended on. Every
- * call is guarded so the adapter still loads if a plugin is unavailable.
+ * Uses the lightweight legacy Widget API for returning to Smart Hub. We do not
+ * call Common.API.Plugin here: legacy emulators log "Plugin is not embeded yet"
+ * unless the vendor plugin object is also present in index.html.
  */
 (function (global) {
   'use strict';
@@ -13,15 +12,31 @@
   TW.platform = TW.platform || {};
 
   var widget = (global.Common && Common.API && Common.API.Widget) ? new Common.API.Widget() : null;
-  var plugin = (global.Common && Common.API && Common.API.Plugin) ? new Common.API.Plugin() : null;
+  var readySent = !!global.twOrsayWidgetReadySent;
+
+  function focusKeyTarget() {
+    var doc = global.document;
+    if (!doc) { return; }
+    var target = doc.getElementById ? doc.getElementById('tw-orsay-focus') : null;
+    try {
+      if (target && target.focus) { target.focus(); return; }
+      if (doc.body && doc.body.focus) { doc.body.focus(); }
+    } catch (e) {}
+  }
 
   TW.platform.system = {
-    setScreensaver: function (on) {
+    ready: function () {
+      global.twOrsayAppReady = true;
+      focusKeyTarget();
       try {
-        if (!plugin) { return; }
-        if (on) { plugin.setOffScreenSaver(); } else { plugin.setOnScreenSaver(); }
+        if (widget && widget.sendReadyEvent && !readySent) {
+          widget.sendReadyEvent();
+          readySent = true;
+          global.twOrsayWidgetReadySent = true;
+        }
       } catch (e) {}
     },
+    setScreensaver: function () {},
     setVolumeControl: function () { /* handled natively by the TV */ },
     exit: function () {
       try { if (widget) { widget.sendReturnEvent(); return; } } catch (e) {}

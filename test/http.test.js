@@ -57,3 +57,27 @@ test('http.request retries 429 (rate limited) and a network error (status 0)', (
     assert.ok(failed);
   }
 });
+
+test('http.request has a JS watchdog for engines without reliable xhr.timeout', () => {
+  const timers = [];
+  let aborted = 0;
+  function XHR() { this._headers = {}; }
+  XHR.prototype.open = function () {};
+  XHR.prototype.setRequestHeader = function () {};
+  XHR.prototype.abort = function () { aborted++; };
+  XHR.prototype.send = function () {};
+  const g = loadCore(['core/polyfill.js', 'core/util.js', 'core/http.js'], {
+    XMLHttpRequest: XHR,
+    setTimeout(fn, ms) { timers.push({ fn, ms, cleared: false }); return timers.length - 1; },
+    clearTimeout(id) { if (timers[id]) { timers[id].cleared = true; } },
+  });
+  let failed = false;
+
+  g.TW.http.request({ url: 'https://example/hang', timeout: 123, retries: 0 }, () => {}, () => { failed = true; });
+
+  assert.equal(timers[0].ms, 123);
+  assert.equal(failed, false);
+  timers[0].fn();
+  assert.equal(aborted, 1);
+  assert.equal(failed, true);
+});

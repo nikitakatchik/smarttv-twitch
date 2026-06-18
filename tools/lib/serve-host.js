@@ -4,9 +4,7 @@
  *   - tools/host-bundle.js  the host.js shipped in the desktop installer package
  *
  * Serves the develop-account App-Sync endpoints (widgetlist.xml + the zip) on
- * the LAN so a 2013–2014 Orsay TV can install Twellie over Wi-Fi. This is a
- * ONE-TIME step: once the app is on the TV you can quit it — the TV streams
- * Twitch directly.
+ * the LAN so a 2013–2014 Orsay TV can install Twellie over Wi-Fi.
  */
 'use strict';
 
@@ -48,8 +46,7 @@ function banner(IP, PORT, BASE) {
   out.push('     2. Set the App-Sync server IP to:  ' + IP + (PORT === 80 ? '' : '  (port ' + PORT + ')'));
   out.push('     3. Run "Start App Sync" — Twellie installs.');
   out.push('');
-  out.push('  Once Twellie is on the TV you can CLOSE this window — the TV');
-  out.push('  streams Twitch directly.');
+  out.push('  Once Twellie is on the TV you can close this window.');
   out.push('  Press Ctrl+C to stop.');
   out.push('');
   return out.join('\n');

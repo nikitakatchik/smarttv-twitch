@@ -6,6 +6,8 @@ clips, and chat are all anonymous. Logging in adds:
 - **Followed channels** — a *Followed* tab showing the channels you follow that
   are live right now.
 
+Login is not shown on Orsay builds; those 2013–2014 engines stay anonymous-only.
+
 (Sub-only playback is **not** available from a third-party client — see the
 caveat at the bottom.)
 

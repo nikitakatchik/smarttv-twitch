@@ -84,7 +84,7 @@ function winReadme() {
     'SmartScreen ever appears, click "More info" then "Run anyway".)\r\n\r\n' +
     'It prints your computer\'s IP. On the TV, sign in as "develop", set that as\r\n' +
     'the App-Sync server IP, and run Start App Sync to install Twellie.\r\n\r\n' +
-    'Then you can CLOSE this window — the TV streams Twitch directly.\r\n\r\n' +
+    'Then you can close this window — the TV streams Twitch directly.\r\n\r\n' +
     'Full guide: https://github.com/nkatchik/smarttv-twitch/tree/master/docs/install\r\n';
 }
 function unixReadme() {
@@ -101,7 +101,7 @@ function unixReadme() {
     'TV requires), and binding it needs that one-time permission.\n\n' +
     'It prints your computer\'s IP. On the TV, sign in as "develop", set that as\n' +
     'the App-Sync server IP, and run Start App Sync to install Twellie.\n\n' +
-    'Then you can CLOSE this window — the TV streams Twitch directly.\n\n' +
+    'Then you can close this window — the TV streams Twitch directly.\n\n' +
     'Full guide: https://github.com/nkatchik/smarttv-twitch/tree/master/docs/install\n';
 }
 

@@ -19,6 +19,8 @@ TW.i18n.register('en', {
   FOLLOW_OFFLINE: 'Offline',
   FOLLOW_NONE: 'You are not following any channels',
   FOLLOW_LOGIN: 'Log in to see channels you follow',
+  FOLLOW_LOAD_ERR: 'Unable to load followed channels.',
+  FOLLOW_SCOPE_ERR: 'Log out and log in again to allow following access.',
   FOLLOWERS: '{0} followers',
   LOGIN: 'Log in',
   ACCOUNT: 'Account',

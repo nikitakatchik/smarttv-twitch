@@ -10,6 +10,10 @@
 
   var TW = global.TW;
 
+  function rewrite(url) {
+    return TW.http && TW.http.rewrite ? TW.http.rewrite(url) : url;
+  }
+
   function backoffFor(attempt) {
     if (attempt < 10) { return 500 + attempt * 100; }
     switch (attempt) {
@@ -33,8 +37,16 @@
 
     function attemptOnce() {
       var xhr = new global.XMLHttpRequest();
+      var finished = false;
+      var timer = null;
+      function finish(fn) {
+        if (finished) { return; }
+        finished = true;
+        if (timer != null && global.clearTimeout) { try { global.clearTimeout(timer); } catch (e0) {} }
+        fn();
+      }
       try {
-        xhr.open(method, opts.url, true);
+        xhr.open(method, rewrite(opts.url), true);
         if (opts.headers) {
           for (var h in opts.headers) {
             if (opts.headers.hasOwnProperty(h)) {
@@ -43,25 +55,31 @@
           }
         }
         xhr.timeout = opts.timeout || (backoffFor(attempt) + 5000);
-        xhr.ontimeout = function () { retry(); };
+        timer = global.setTimeout(function () {
+          try { if (xhr.abort) { xhr.abort(); } } catch (e1) {}
+          finish(function () { retry(); });
+        }, xhr.timeout);
+        xhr.ontimeout = function () { finish(function () { retry(); }); };
         xhr.onreadystatechange = function () {
           if (xhr.readyState !== 4) { return; }
-          var status = xhr.status;
-          if (status >= 200 && status < 300) { onOk(xhr.responseText, xhr); return; }
-          // A 4xx (auth, bad request, not found) will never succeed on retry, so
-          // fail fast instead of stalling for ~12 min behind the backoff curve —
-          // that's what turned a logged-in 401 into an "infinite" spinner. Retry
-          // only genuinely transient failures: network errors (status 0),
-          // timeouts (ontimeout), 5xx, and 429 (rate limited).
-          if (status >= 400 && status < 500 && status !== 429) {
-            if (onFail) { onFail(status, xhr); }
-            return;
-          }
-          retry();
+          finish(function () {
+            var status = xhr.status;
+            if (status >= 200 && status < 300) { onOk(xhr.responseText, xhr); return; }
+            // A 4xx (auth, bad request, not found) will never succeed on retry, so
+            // fail fast instead of stalling for ~12 min behind the backoff curve —
+            // that's what turned a logged-in 401 into an "infinite" spinner. Retry
+            // only genuinely transient failures: network errors (status 0),
+            // timeouts (ontimeout), 5xx, and 429 (rate limited).
+            if (status >= 400 && status < 500 && status !== 429) {
+              if (onFail) { onFail(status, xhr); }
+              return;
+            }
+            retry();
+          });
         };
         xhr.send(opts.body == null ? null : opts.body);
       } catch (err) {
-        retry();
+        finish(function () { retry(); });
       }
     }
 
@@ -99,5 +117,5 @@
     }, onFail);
   }
 
-  TW.http = { request: request, getJson: getJson, postJson: postJson, backoffFor: backoffFor };
+  TW.http = { rewrite: function (url) { return url; }, request: request, getJson: getJson, postJson: postJson, backoffFor: backoffFor };
 })(this);

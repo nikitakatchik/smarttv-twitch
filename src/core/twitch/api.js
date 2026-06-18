@@ -19,6 +19,13 @@
     if (!TW.auth.isLoggedIn()) { if (onFail) { onFail(-1); } return; }
     var u = TW.auth.user();
     if (u && u.login) { run(u.login); return; }
+    if (TW.auth.resolveIdentity) {
+      TW.auth.resolveIdentity(function (me) {
+        if (me && me.login) { run(me.login); }
+        else if (onFail) { onFail(-1); }
+      }, onFail);
+      return;
+    }
     TW.twitch.helix.me(function (me) {
       if (me && me.login) { TW.auth.setIdentity(me); run(me.login); }
       else if (onFail) { onFail(-1); }

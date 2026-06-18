@@ -17,6 +17,7 @@ function netMock(routes) {
       let r;
       if (u.indexOf('/channels/followed') >= 0) { r = pick(routes.channels, opts); }
       else if (u.indexOf('/streams/followed') >= 0) { r = pick(routes.streams, opts); }
+      else if (u.indexOf('/validate') >= 0) { r = pick(routes.validate, opts); }
       else if (u.indexOf('/users') >= 0) { r = pick(routes.users, opts); }
       else { r = { status: 404, json: {} }; }
       onDone(r.status, JSON.stringify(r.json));
@@ -35,6 +36,7 @@ function loadHelix(net) {
   // Stand in for a logged-in user so helix skips the /users identity lookup.
   g.TW.storage.set('auth.access', 'AT');
   g.TW.storage.set('auth.uid', '42');
+  g.TW.storage.set('auth.scopes', 'user:read:follows');
   g.TW.config.api.userClientId = 'CID';
   return g.TW;
 }
@@ -99,4 +101,64 @@ test('followedChannels passes the user_id and pagination cursor through', () => 
   const req = net.sent.find((s) => s.url.indexOf('/channels/followed') >= 0);
   assert.match(req.url, /user_id=42/);
   assert.match(req.url, /after=CURSOR123/);
+});
+
+test('followedStreams resolves a missing user id through token validation', () => {
+  const net = netMock({
+    users: { status: 500, json: {} },
+    validate: { status: 200, json: { user_id: '99', login: 'validated_user' } },
+    streams: { status: 200, json: { data: [], pagination: {} } },
+  });
+  const TW = loadHelix(net);
+  TW.storage.remove('auth.uid');
+  TW.storage.remove('auth.login');
+
+  TW.twitch.helix.followedStreams(null, () => {}, () => {});
+
+  const req = net.sent.find((s) => s.url.indexOf('/streams/followed') >= 0);
+  assert.match(req.url, /user_id=99/);
+  assert.equal(TW.auth.user().login, 'validated_user');
+});
+
+test('followedChannels validates stored tokens that do not yet have scope metadata', () => {
+  const net = netMock({
+    validate: { status: 200, json: { user_id: '42', login: 'me', scopes: ['user:read:follows'] } },
+    channels: { status: 200, json: { data: [], pagination: {} } },
+    users: { status: 200, json: { data: [] } },
+  });
+  const TW = loadHelix(net);
+  TW.storage.remove('auth.scopes');
+
+  TW.twitch.helix.followedChannels(null, () => {}, () => {});
+
+  assert.ok(net.sent.find((s) => s.url.indexOf('/validate') >= 0));
+  assert.ok(net.sent.find((s) => s.url.indexOf('/channels/followed') >= 0));
+});
+
+test('followedChannels fails with scope when the token lacks user:read:follows', () => {
+  const net = netMock({
+    validate: { status: 200, json: { user_id: '42', login: 'me', scopes: [] } },
+  });
+  const TW = loadHelix(net);
+  TW.storage.remove('auth.scopes');
+  let err = null;
+
+  TW.twitch.helix.followedChannels(null, () => {}, (reason) => { err = reason; });
+
+  assert.equal(err, 'scope');
+  assert.equal(TW.auth.isLoggedIn(), false);
+  assert.equal(net.sent.find((s) => s.url.indexOf('/channels/followed') >= 0), undefined);
+});
+
+test('followedChannels clears the session when Helix reports a missing scope', () => {
+  const net = netMock({
+    channels: { status: 401, json: { message: 'missing user:read:follows scope' } },
+  });
+  const TW = loadHelix(net);
+  let err = null;
+
+  TW.twitch.helix.followedChannels(null, () => {}, (reason) => { err = reason; });
+
+  assert.equal(err, 'scope');
+  assert.equal(TW.auth.isLoggedIn(), false);
 });

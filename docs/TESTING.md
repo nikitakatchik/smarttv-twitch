@@ -106,10 +106,17 @@ npm run build:tizenbrew      # -> dist/tizenbrew/{package.json, app/}
 
 ## 4. Orsay TVs (2013–2014) 🕹️
 
-No reliable emulator on a modern Mac. On a real F/H panel (2011–2012 D/E are not
-supported). Orsay has **no `12345` toggle** — you sign Smart Hub into the built-in
-**`develop`** account and sync from a LAN web server. Full steps, with the F-vs-H
-menu differences: [docs/install/orsay-2013-2014.md](install/orsay-2013-2014.md).
+The old Samsung Orsay emulators install from a shared folder, not App-Sync. Build
+the standalone Orsay tree and point the emulator shared folder at `dist/orsay`:
+
+```sh
+npm run build:orsay
+```
+
+On a real F/H panel (2011–2012 D/E are not supported), Orsay has **no `12345`
+toggle** — you sign Smart Hub into the built-in **`develop`** account and sync
+from a LAN web server. Full steps, with the F-vs-H menu differences:
+[docs/install/orsay-2013-2014.md](install/orsay-2013-2014.md).
 
 1. **Run the App-Sync server on port 80.** `npm run host:bin` builds the
    self-contained installer; `npm run host -- 80` runs it from source. It **must**
@@ -118,7 +125,7 @@ menu differences: [docs/install/orsay-2013-2014.md](install/orsay-2013-2014.md).
 2. **Sync from the TV** as user `develop`:
    - **F (2013):** More Apps → Options → *IP Setting* → host IP → Options → *Start App Sync*.
    - **H (2014):** hold OK ~5 s on any app → *IP Setting* → host IP → hold OK → *Start User App Sync*.
-3. **Watch.** The app connects to Twitch **directly**; most F/H sets reach it
+3. **Watch.** The app connects to Twitch directly; most F/H sets reach it
    fine. A panel whose firmware can't negotiate modern TLS isn't supported.
 
 ## 5. Which buttons to check on-device
@@ -126,8 +133,8 @@ menu differences: [docs/install/orsay-2013-2014.md](install/orsay-2013-2014.md).
 | Generation | Verify | Most likely to need tweaks |
 | --- | --- | --- |
 | Tizen 2015+ | AVPlay starts, quality switch, color buttons (needs `registerKey`), Back exits | quality track labels, `ADAPTIVE_INFO` syntax per year |
-| Orsay 2014 (H) | INFOLINK plays `|COMPONENT=HLS`, color buttons, Twitch reachable | screensaver via Common API |
-| Orsay 2013 (F) | basic nav, INFOLINK playback, modern-TLS reach | CSS quirks |
+| Orsay 2014 (H) | anonymous browse, Login/Following hidden, INFOLINK plays `|COMPONENT=HLS`, color buttons, Twitch reachable | screensaver via Common API |
+| Orsay 2013 (F) | anonymous browse, Login/Following hidden, basic nav, INFOLINK playback, modern-TLS reach | CSS quirks |
 
 ## 6. No TV at all? 💸
 

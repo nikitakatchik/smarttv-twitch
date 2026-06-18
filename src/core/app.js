@@ -12,6 +12,7 @@
  *   adapter.system.setScreensaver(on,ms)
  *   adapter.system.setVolumeControl(on)
  *   adapter.system.exit()
+ *   adapter.auth.enabled                optional; false hides login/following
  *   adapter.log(msg)                   optional log sink
  */
 (function (global) {
@@ -43,6 +44,9 @@
 
       TW.sceneManager.show('browser');
       TW.sceneManager.focus('browser');
+      if (adapter.system && adapter.system.ready) {
+        try { adapter.system.ready(); } catch (e) { TW.log.warn('platform ready failed: ' + e); }
+      }
     },
 
     // opts (optional): { stream: <liveTile>, vod: <vodItem>, from: 'channelPage' }.
@@ -106,15 +110,26 @@
   }
 
   function wireKeys(adapter) {
-    TW.dom.on(global.document, 'keydown', function (e) {
+    function handleNativeKey(e) {
+      e = e || global.event || {};
       var key = adapter.keys.map(e);
-      if (!key) { return; }
+      if (!key) { return true; }
       if (e.preventDefault) { e.preventDefault(); }
+      if (e.stopPropagation) { e.stopPropagation(); }
+      e.cancelBubble = true;
+      e.returnValue = false;
       if (TW.sceneManager.dispatchKey(key) === false && key === TW.KEY.BACK &&
           adapter.system && adapter.system.exit) {
         adapter.system.exit();
       }
-    });
+      return false;
+    }
+
+    TW.dom.on(global.document, 'keydown', handleNativeKey);
+    if (adapter.keys && adapter.keys.target) {
+      var target = adapter.keys.target();
+      if (target && target !== global.document) { target.onkeydown = handleNativeKey; }
+    }
   }
 
   TW.app = app;

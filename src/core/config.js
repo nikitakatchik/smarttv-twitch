@@ -2,8 +2,8 @@
  * core/config.js — runtime configuration.
  *
  * Talks to Twitch's public GraphQL directly (the Streamlink/yt-dlp approach):
- * no secrets, no backend, no server. Every supported target — Tizen and
- * 2013–2014 Orsay — reaches Twitch directly.
+ * no secrets, no backend, no server. Every supported TV target reaches Twitch
+ * directly.
  *
  * A platform boot file may override any of these before TW.app.start().
  */

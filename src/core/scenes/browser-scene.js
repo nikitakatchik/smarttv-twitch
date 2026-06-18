@@ -19,17 +19,6 @@
   // sync with the .tw-grid-6 column width in styles.css.
   var OFFLINE_COLUMNS = 6;
 
-  // The top row as a left-to-right d-pad path: the colour-button tabs,
-  // then the account chip at the far right. Lets remotes without colour
-  // buttons reach every tab. (Order matches the on-screen layout so LEFT/RIGHT
-  // move the way they look.)
-  var NAV = [
-    { id: 'tw-tip-all',      mode: MODE.ALL },
-    { id: 'tw-tip-games',    mode: MODE.GAMES },
-    { id: 'tw-tip-followed', mode: MODE.FOLLOWED },
-    { id: 'tw-account',      mode: null }          // chip -> login (far right)
-  ];
-
   function viewerCount(item) {
     return (item && item.viewers) || 0;
   }
@@ -78,8 +67,10 @@
     this.categoryInfoToken = 0;
     this.built = false;
     this.onTopNav = false;     // top row (chip + tabs) holds d-pad focus
-    this.navIndex = 0;         // which NAV item is focused while onTopNav
+    this.navIndex = 0;         // which top-nav item is focused while onTopNav
     this.pendingMode = null;   // mode to enter on next focus (e.g. after login)
+    this.initialLoadDeferred = false;
+    this.authEnabled = !(adapter && adapter.auth && adapter.auth.enabled === false);
 
     // --- Following view (live categories + live + offline channels) ---------
     this.fCategories = [];      // followed categories that currently have viewers
@@ -134,6 +125,7 @@
     this.root = root;
     this.built = true;
     this.initLabels();
+    this.syncAuthChrome();
   };
 
   P.initLabels = function () {
@@ -143,11 +135,37 @@
     dom.text(dom.get('tw-follow-empty'), TW.i18n.t('FOLLOW_NONE'));
   };
 
+  P.navItems = function () {
+    var out = [
+      { id: 'tw-tip-all', mode: MODE.ALL },
+      { id: 'tw-tip-games', mode: MODE.GAMES }
+    ];
+    if (this.authEnabled) {
+      out.push({ id: 'tw-tip-followed', mode: MODE.FOLLOWED });
+      out.push({ id: 'tw-account', mode: null });
+    }
+    return out;
+  };
+
+  P.syncAuthChrome = function () {
+    if (this.authEnabled) {
+      dom.show(dom.get('tw-account'));
+      dom.show(dom.get('tw-tip-followed'), 'inline-block');
+    } else {
+      dom.hide(dom.get('tw-account'));
+      dom.hide(dom.get('tw-tip-followed'));
+    }
+  };
+
   P.updateAccount = function () {
+    if (!this.authEnabled) {
+      dom.text(dom.get('tw-acct-label'), '');
+      return;
+    }
     var label;
     if (TW.auth.isLoggedIn()) {
       var u = TW.auth.user();
-      label = (u && u.display) || TW.i18n.t('ACCOUNT');
+      label = (u && (u.display || u.login)) || TW.i18n.t('ACCOUNT');
     } else {
       label = TW.i18n.t('LOGIN');
     }
@@ -158,10 +176,22 @@
   P.handleShow = function () { dom.show(this.root); };
   P.handleHide = function () { dom.hide(this.root); };
   P.handleFocus = function () {
+    this.syncAuthChrome();
     this.updateAccount();
     var m = (this.pendingMode == null) ? (this.mode < 0 ? MODE.ALL : this.mode) : this.pendingMode;
+    if (!this.authEnabled && m === MODE.FOLLOWED) { m = MODE.ALL; }
     var force = this.pendingMode != null || this.mode < 0;
+    var firstLoad = this.mode < 0;
     this.pendingMode = null;
+    if (force && firstLoad && this.adapter && this.adapter.browse && this.adapter.browse.deferInitialLoadMs &&
+        !this.initialLoadDeferred) {
+      this.initialLoadDeferred = true;
+      this.applyModeChrome(m);
+      this.loading = true;
+      this.showLoading();
+      this.deferInitialLoad(m, this.adapter.browse.deferInitialLoadMs);
+      return;
+    }
     if (force) {
       this.clearNavFocus();
       this.switchMode(m, true);
@@ -170,6 +200,15 @@
     }
   };
   P.handleBlur = function () {};
+
+  P.deferInitialLoad = function (mode, ms) {
+    var self = this;
+    TW.delay(ms, function () {
+      if (self.mode !== mode || self.items.length || self.fRows.length) { return; }
+      self.loading = false;
+      self.switchMode(mode, true);
+    });
+  };
 
   // --- data ---------------------------------------------------------------
   // Indeterminate loading: the modern ring spinner alone, no text.
@@ -600,7 +639,21 @@
           self.fLiveLogins[res.items[i].login] = true;
         }
         if (res.cursor) { page(res.cursor); } else { sortByViewersDesc(self.fLive); self.loadFollowOffline(); }
-      }, function () { self.loadFollowOffline(); });   // proceed with what we have
+      }, function (status) {
+        if (status === 'scope') {
+          self.loading = false;
+          self.updateAccount();
+          self.showFollowEmpty(TW.i18n.t('FOLLOW_SCOPE_ERR'));
+          return;
+        }
+        if (status === -1) {
+          self.loading = false;
+          self.updateAccount();
+          self.showFollowEmpty(TW.i18n.t('FOLLOW_LOGIN'));
+          return;
+        }
+        self.loadFollowOffline();
+      });   // proceed with what we have
     }
     page(null);
   };
@@ -620,15 +673,27 @@
       // A page that was entirely live yields no offline tiles; keep paging so the
       // section isn't left spuriously empty while more follows remain.
       if (self.fOffCursor && self.fOffline.length === 0) { self.loadFollowOffline(); }
-    }, function () {
+    }, function (status) {
       self.fOffLoading = false;
       self.fOffCursor = false;
-      if (self.fLive.length === 0 && self.fOffline.length === 0) {
+      if (status === 'scope') {
         self.loading = false;
-        self.showDialog(TW.i18n.t('ERROR_LOAD'));
+        self.updateAccount();
+        self.showFollowEmpty(TW.i18n.t('FOLLOW_SCOPE_ERR'));
         return;
       }
-      self.onFollowLoaded();
+      if (status === -1) {
+        self.loading = false;
+        self.updateAccount();
+        self.showFollowEmpty(TW.i18n.t('FOLLOW_LOGIN'));
+        return;
+      }
+      if (self.fCategories.length || self.fLive.length || self.fOffline.length) {
+        self.onFollowLoaded();
+        return;
+      }
+      self.loading = false;
+      self.showFollowEmpty(TW.i18n.t('FOLLOW_LOAD_ERR'));
     });
   };
 
@@ -800,7 +865,8 @@
 
   // Landing column when dropping from the tab row into the Following grid.
   P.followEntryColumn = function () {
-    var item = NAV[this.navIndex];
+    var nav = this.navItems();
+    var item = nav[this.navIndex];
     var col = (item && item.mode === null) ? 3 : (this.navIndex <= 1 ? 0 : 1);
     var n = this.fRows.length ? this.fRows[0].cells.length : 0;
     if (col > n - 1) { col = n - 1; }
@@ -843,7 +909,17 @@
 
   // --- modes --------------------------------------------------------------
   P.switchMode = function (mode, force) {
+    if (!this.authEnabled && mode === MODE.FOLLOWED) { mode = MODE.ALL; }
     if (mode === this.mode && !force) { return; }
+    this.applyModeChrome(mode);
+    if (mode === MODE.FOLLOWED) {
+      this.enterFollowing();
+    } else {
+      this.refresh();
+    }
+  };
+
+  P.applyModeChrome = function (mode) {
     this.mode = mode;
     this.clearNavFocus();
     if (mode !== MODE.GAMES_STREAMS) {
@@ -859,17 +935,12 @@
       : 'tw-tip-all';
     dom.addClass(dom.get(activeId), 'tw-tip-active');
     this.syncGridInset();
-
-    if (mode === MODE.FOLLOWED) {
-      this.enterFollowing();
-    } else {
-      this.refresh();
-    }
   };
 
   // --- keys ---------------------------------------------------------------
   P.handleKeyDown = function (key) {
     if (key === KEY.BACK) {
+      if (this.loading) { return false; }
       // On another tab -> jump to Channels; on Channels -> let app-level Back run.
       if (this.onTopNav) {
         if (this.mode === MODE.ALL && this.navIndex === 0) { return false; }
@@ -886,7 +957,10 @@
     // Colour buttons switch tabs; pressing the active tab again force-refreshes.
     if (key === KEY.RED) { this.switchMode(MODE.ALL, this.mode === MODE.ALL); return true; }
     if (key === KEY.GREEN) { this.switchMode(MODE.GAMES, this.mode === MODE.GAMES); return true; }
-    if (key === KEY.YELLOW) { this.switchMode(MODE.FOLLOWED, this.mode === MODE.FOLLOWED); return true; }
+    if (key === KEY.YELLOW) {
+      if (this.authEnabled) { this.switchMode(MODE.FOLLOWED, this.mode === MODE.FOLLOWED); }
+      return true;
+    }
 
     if (this.onTopNav) { return this.handleTopNavKey(key); }
     if (this.loading) { return true; }
@@ -903,8 +977,9 @@
     // Find the tab matching the current mode (order-independent). GAMES_STREAMS
     // shares the Games tab.
     var m = (this.mode === MODE.GAMES_STREAMS) ? MODE.GAMES : this.mode;
-    for (var i = 0; i < NAV.length; i++) {
-      if (NAV[i].mode === m) { return i; }
+    var nav = this.navItems();
+    for (var i = 0; i < nav.length; i++) {
+      if (nav[i].mode === m) { return i; }
     }
     return 0;
   };
@@ -924,7 +999,8 @@
   P.highlightNav = function () {
     // The account chip (mode null) keeps its own focus ring; the tabs share
     // a single cursor that slides between them.
-    var item = NAV[this.navIndex];
+    var nav = this.navItems();
+    var item = nav[this.navIndex];
     if (item && item.mode === null) {
       dom.removeClass(dom.get('tw-tips'), 'tw-tabs-focused');
       dom.addClass(dom.get('tw-account'), 'tw-focused');
@@ -938,7 +1014,8 @@
   P.moveTabCursor = function () {
     var cursor = dom.get('tw-tip-cursor');
     if (!cursor) { return; }
-    var item = NAV[this.navIndex];
+    var nav = this.navItems();
+    var item = nav[this.navIndex];
     var box = (item && item.mode !== null) ? dom.get(item.id).firstChild : null;  // .tw-tip-box
     if (!box) { cursor.style.opacity = '0'; return; }   // chip / none focused
     // Snap (no slide) when (re)appearing — entering the tab row or coming from
@@ -978,7 +1055,12 @@
 
   P.handleTopNavKey = function (key) {
     if (key === KEY.LEFT) { this.navIndex = Math.max(0, this.navIndex - 1); this.highlightNav(); return true; }
-    if (key === KEY.RIGHT) { this.navIndex = Math.min(NAV.length - 1, this.navIndex + 1); this.highlightNav(); return true; }
+    if (key === KEY.RIGHT) {
+      var nav = this.navItems();
+      this.navIndex = Math.min(nav.length - 1, this.navIndex + 1);
+      this.highlightNav();
+      return true;
+    }
     if (key === KEY.DOWN) { this.leaveTopNav(); return true; }
     if (key === KEY.ENTER) { this.activateNav(); return true; }
     return true;
@@ -986,12 +1068,11 @@
 
   // Landing column when dropping into the grid from the top row (DOWN, or ENTER
   // on the active tab). Rather than restoring the last-used column, pick the one
-  // sitting spatially under the focused top-row item: Channels/Games -> column 1,
-  // Following -> column 2, Login chip -> column 4.
-  // Relies on NAV being in left-to-right screen order; clamped to the cells
-  // actually present in the first row (small result sets).
+  // sitting spatially under the focused top-row item. The dynamic nav list is
+  // left-to-right screen order and clamped to the first row's actual cells.
   P.gridEntryColumn = function () {
-    var item = NAV[this.navIndex];
+    var nav = this.navItems();
+    var item = nav[this.navIndex];
     var col = (item && item.mode === null) ? 3 : (this.navIndex <= 1 ? 0 : 1);
     var inRow0 = Math.min(TW.config.columns, this.items.length);
     if (col > inRow0 - 1) { col = inRow0 - 1; }
@@ -1009,7 +1090,8 @@
   };
 
   P.activateNav = function () {
-    var item = NAV[this.navIndex];
+    var nav = this.navItems();
+    var item = nav[this.navIndex];
     if (!item) { return; }
     this.clearNavFocus();
     if (item.mode === null) { TW.app.goToLogin(); return; }

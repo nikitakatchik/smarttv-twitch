@@ -26,7 +26,7 @@ The hosted preview is static, so live streams and VODs use Twitch's official emb
 ## Features
 
 - Live Twitch browsing: top streams, categories, category stream pages, and direct channel playback.
-- Following: device-code sign-in for followed channels, live categories, live streams, and offline channel pages.
+- Following: device-code sign-in for followed channels, live categories, live streams, and offline channel pages on Tizen and browser builds.
 - Live chat overlay: anonymous IRC-over-WebSocket chat over the video, no login required.
 - VODs and clips: each channel's past broadcasts and top clips, with playback.
 - Quality switching: Auto down to 160p, selected from the real Twitch renditions.
@@ -40,8 +40,8 @@ The hosted preview is static, so live streams and VODs use Twitch's official emb
 
 | Year | Series | Platform | Player | Status |
 | ---- | ------ | -------- | ------ | ------ |
-| 2013–2014 | F / H | Orsay | `INFOLINK` | Direct |
-| 2015–2024+ | J / K / M / N / R / T / U … | Tizen | `AVPlay` | Supported |
+| 2013–2014 | F / H | Orsay | `INFOLINK` | 🟡 Limited |
+| 2015–2024+ | J / K / M / N / R / T / U … | Tizen | `AVPlay` | 🟢 Supported |
 | any | — | Browser (dev) | hls.js | Development |
 
 Full matrix, engines, and caveats: [docs/PLATFORMS.md](docs/PLATFORMS.md).
@@ -66,7 +66,7 @@ Orsay TVs (2013–2014) sideload apps over your Wi-Fi from a computer, so you ru
 small **installer** once. It's a self-contained app that bundles a **signed,
 unmodified copy of Node** — nothing to install, and no security warning to click
 through. It detects your computer's IP and pushes Twellie onto the TV; once it's
-installed you **close the installer** and the TV streams Twitch directly.
+installed you close the installer and the TV streams Twitch directly.
 (Tizen TVs use [Apps2Samsung](docs/install/apps2samsung.md) or
 [TizenBrew](docs/install/tizenbrew.md) instead and need none of this.)
 

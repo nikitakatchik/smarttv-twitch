@@ -8,8 +8,8 @@ changed the player, the key codes, the packaging and the JS engine all at once.
 
 | Year | Series | Platform | Player | Engine | Reaches Twitch via | Status |
 | ---- | ------ | -------- | ------ | ------ | ------------------ | ------ |
-| 2013 | F | Orsay | `INFOLINK` / SEF | WebKit ~535 | direct | ✅ best-effort |
-| 2014 | H | Orsay | `INFOLINK` | WebKit 537 | direct | ✅ best-effort |
+| 2013 | F | Orsay | `INFOLINK` / SEF | WebKit ~535 | direct | ✅ best-effort, anonymous-only |
+| 2014 | H | Orsay | `INFOLINK` | WebKit 537 | direct | ✅ best-effort, anonymous-only |
 | 2015–16 | J/K | Tizen 2.3–2.4 | AVPlay (`.wgt`) | Chromium WebView | Apps2Samsung | ✅ (TizenBrew shaky: draft MSE) |
 | 2017 | M | Tizen 3.0 | AVPlay (`.wgt`) · hls.js | Chromium M47 | Apps2Samsung · TizenBrew | ✅ |
 | 2018 | N | Tizen 4.0 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung · TizenBrew | ✅ |
@@ -25,9 +25,10 @@ changed the player, the key codes, the packaging and the JS engine all at once.
 
 Modern Twitch is HTTPS-only with current TLS 1.2 ciphers. A 2013–2014 Orsay
 panel's TLS is borderline — **most firmware reaches `gql.twitch.tv` /
-`usher.ttvnw.net` directly, but the oldest may not** (we can't verify every
-build without the hardware). The app connects **directly**; a set whose TLS
-can't isn't supported.
+`usher.ttvnw.net` directly, but the oldest may not**. The app connects directly;
+a set whose TLS can't isn't supported. Orsay also disables login/following; those
+authenticated `id.twitch.tv` and Helix paths are too fragile on the old WebKit
+runtime.
 
 On Tizen there are two install paths:
 

@@ -21,13 +21,14 @@ function runBoot(url) {
     decodeURIComponent,
     RegExp,
     console: { log() {} },
-    TW: {
+      TW: {
       platform: {
         keys: {},
         system: {},
         createPlayer() {},
       },
       net: {},
+      http: {},
       dom: { on() {} },
       app: {
         start(opts) { starts.push(opts); },
@@ -50,6 +51,10 @@ test('web boot defaults to the dev proxy on localhost', () => {
   assert.equal(
     TW.net.rewrite('https://api.twitch.tv/helix/users'),
     'http://localhost:8080/proxy?url=https%3A%2F%2Fapi.twitch.tv%2Fhelix%2Fusers'
+  );
+  assert.equal(
+    TW.http.rewrite('https://gql.twitch.tv/gql'),
+    'http://localhost:8080/proxy?url=https%3A%2F%2Fgql.twitch.tv%2Fgql'
   );
 });
 

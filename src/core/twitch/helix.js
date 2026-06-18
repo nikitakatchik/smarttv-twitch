@@ -26,8 +26,17 @@
     TW.net.send({ method: 'GET', url: BASE + path, headers: headers() }, function (status, text) {
       if (status === 401 && !retried && TW.auth.refresh) {
         TW.auth.refresh(function (ok) {
-          if (ok) { get(path, onOk, onFail, true); } else if (onFail) { onFail(401); }
+          if (ok) { get(path, onOk, onFail, true); }
+          else if (/scope/i.test(text || '')) {
+            if (TW.auth.clear) { TW.auth.clear(); }
+            if (onFail) { onFail('scope'); }
+          } else if (onFail) { onFail(401); }
         });
+        return;
+      }
+      if (status === 401 && /scope/i.test(text || '')) {
+        if (TW.auth.clear) { TW.auth.clear(); }
+        if (onFail) { onFail('scope'); }
         return;
       }
       if (status < 200 || status >= 300) { if (onFail) { onFail(status); } return; }
@@ -76,7 +85,7 @@
         (cursor ? ('&after=' + encodeURIComponent(cursor)) : '');
       get(path, function (j) { onOk(mapStreams(j)); }, onFail);
     }
-    withUserId(run, onFail);
+    withFollowScope(function () { withUserId(run, onFail); }, onFail);
   }
 
   // Batch-resolve user profiles (up to 100 ids per call) into a login->avatar
@@ -118,13 +127,25 @@
         });
       }, onFail);
     }
-    withUserId(run, onFail);
+    withFollowScope(function () { withUserId(run, onFail); }, onFail);
+  }
+
+  function withFollowScope(run, onFail) {
+    if (TW.auth.ensureScopes) {
+      TW.auth.ensureScopes(['user:read:follows'], run, onFail);
+      return;
+    }
+    run();
   }
 
   // Resolve our own user id (cached on the identity), then call run(uid).
   function withUserId(run, onFail) {
     var u = TW.auth.user();
     if (u && u.id) { run(u.id); return; }
+    if (TW.auth.resolveIdentity) {
+      TW.auth.resolveIdentity(function (m) { run(m.id || m.user_id); }, onFail);
+      return;
+    }
     me(function (m) {
       if (m && m.id) { TW.auth.setIdentity(m); run(m.id); } else if (onFail) { onFail(-1); }
     }, onFail);

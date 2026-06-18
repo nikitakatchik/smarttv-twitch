@@ -116,7 +116,10 @@ function setup(opts) {
   vm.createContext(g);
   const code = fs.readFileSync(path.resolve(__dirname, '..', 'src/core/scenes/channel-scene.js'), 'utf8');
   vm.runInContext(code, g, { filename: 'channel-scene.js' });
-  const scene = new TW.ChannelScene({ createPlayer: () => player, system: {} });
+  const adapter = opts.adapter || { createPlayer: () => player, system: {} };
+  if (!adapter.createPlayer) { adapter.createPlayer = () => player; }
+  if (!adapter.system) { adapter.system = {}; }
+  const scene = new TW.ChannelScene(adapter);
   scene.initialize();
   scene.handleShow(opts.showData || (opts.vod
     ? { login: 'someguy', vod: { kind: 'vod', id: 'v1', title: 'vod title', duration: player.duration, viewers: 7 } }
@@ -248,6 +251,16 @@ test('hidden chat keeps only a small recent buffer and renders it on open', () =
   assert.equal(scene.chatMessages.length, 40);
   assert.equal(scene.chatMessages[39].text, 'm45');
   assert.equal(els['tw-chat-list'].children.length, 0);
+});
+
+test('chat disabled adapters do not start WebSocket capture or show chat control', () => {
+  const { scene, els, chat } = setup({ adapter: { createPlayer: null, system: {}, chat: { enabled: false } } });
+
+  assert.equal(chat.connections.length, 0);
+  assert.equal(els['tw-ctl-chat'].style.display, 'none');
+  scene.openChat();
+  assert.equal(scene.chatOn, false);
+  assert.equal(chat.connections.length, 0);
 });
 
 test('quality panel is anchored to the quality control', () => {

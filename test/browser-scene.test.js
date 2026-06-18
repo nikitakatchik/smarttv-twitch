@@ -30,6 +30,7 @@ function setup(opts) {
   const get = (id) => (els[id] || (els[id] = mk()));
   const calls = { goToChannel: [], goToChannelPage: [], goToLogin: 0 };
   const apiCalls = { followedStreams: 0, followedGames: 0, followedChannels: 0, topStreams: 0, topGames: 0, streamsByGame: 0 };
+  const delayed = [];
 
   const dom = {
     create: (t, c, h) => { const e = mk(); if (c) { e.className = c; } if (h != null) { e.innerHTML = h; } return e; },
@@ -50,13 +51,26 @@ function setup(opts) {
     KEY: { BACK: 'back', ENTER: 'enter', UP: 'up', DOWN: 'down', LEFT: 'left', RIGHT: 'right', RED: 'red', GREEN: 'green', YELLOW: 'yellow' },
     i18n: { t: (k, ...args) => args.length ? `${k}:${args.join(',')}` : k },
     config: { columns: 4 },
+    delay: (ms, fn) => { delayed.push({ ms, fn }); },
     shortNumber: (n) => String(n),
     addCommas: (n) => String(n),
     auth: { isLoggedIn: () => opts.loggedIn !== false, user: () => ({ display: 'Me' }) },
     api: {
-      followedStreams: (cursor, ok) => { apiCalls.followedStreams++; ok({ items: (opts.live || []).slice(), cursor: null }); },
-      followedGames: (ok) => { apiCalls.followedGames++; ok({ items: (opts.categories || []).slice(), cursor: false }); },
-      followedChannels: (cursor, ok) => { apiCalls.followedChannels++; ok({ items: (opts.follows || []).slice(), cursor: null }); },
+      followedStreams: (cursor, ok, fail) => {
+        apiCalls.followedStreams++;
+        if (opts.followedStreamsFail) { fail(opts.followedStreamsStatus || 0); return; }
+        ok({ items: (opts.live || []).slice(), cursor: null });
+      },
+      followedGames: (ok, fail) => {
+        apiCalls.followedGames++;
+        if (opts.followedGamesFail) { fail(opts.followedGamesStatus || 0); return; }
+        ok({ items: (opts.categories || []).slice(), cursor: false });
+      },
+      followedChannels: (cursor, ok, fail) => {
+        apiCalls.followedChannels++;
+        if (opts.followedChannelsFail) { fail(opts.followedChannelsStatus || 0); return; }
+        ok({ items: (opts.follows || []).slice(), cursor: null });
+      },
       topStreams: (cursor, ok) => { apiCalls.topStreams++; ok({ items: (opts.streams || []).slice(), cursor: null }); },
       topGames: (cursor, ok) => { apiCalls.topGames++; ok({ items: (opts.games || []).slice(), cursor: null }); },
       streamsByGame: (game, cursor, ok) => { apiCalls.streamsByGame++; ok({ items: (opts.gameStreams || []).slice(), cursor: null }); },
@@ -76,9 +90,9 @@ function setup(opts) {
   vm.createContext(g);
   const code = fs.readFileSync(path.resolve(__dirname, '..', 'src/core/scenes/browser-scene.js'), 'utf8');
   vm.runInContext(code, g, { filename: 'browser-scene.js' });
-  const scene = new TW.BrowserScene({});
+  const scene = new TW.BrowserScene(opts.adapter || {});
   scene.initialize();
-  return { scene, calls, els, apiCalls, MODE: TW.BrowserScene.MODE, KEY: TW.KEY };
+  return { scene, calls, els, apiCalls, delayed, MODE: TW.BrowserScene.MODE, KEY: TW.KEY };
 }
 
 const stream = (login, display, extra) => Object.assign(
@@ -106,6 +120,33 @@ test('logged-out Following stays in the tab and suggests logging in', () => {
   assert.equal(els['tw-follow-empty'].textContent, 'FOLLOW_LOGIN');
   assert.notEqual(els['tw-follow-empty'].style.display, 'none');
   assert.equal(els['tw-follow'].style.display, 'none');
+});
+
+test('auth-disabled adapters hide Login and Following navigation', () => {
+  const { scene, calls, els, apiCalls, MODE, KEY } = setup({
+    adapter: { auth: { enabled: false } },
+    streams: [stream('a')],
+    games: [game('Chess')],
+  });
+
+  assert.equal(els['tw-account'].style.display, 'none');
+  assert.equal(els['tw-tip-followed'].style.display, 'none');
+
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.mode, MODE.ALL);
+  assert.equal(apiCalls.followedStreams, 0);
+  assert.equal(apiCalls.followedChannels, 0);
+
+  scene.handleKeyDown(KEY.YELLOW);
+  assert.equal(scene.mode, MODE.ALL);
+
+  scene.focusTopNav();
+  scene.handleTopNavKey(KEY.RIGHT);
+  scene.handleTopNavKey(KEY.RIGHT);
+  assert.equal(scene.navIndex, 1, 'only Channels and Categories remain in top nav');
+  scene.handleTopNavKey(KEY.ENTER);
+  assert.equal(calls.goToLogin, 0);
+  assert.equal(scene.mode, MODE.GAMES);
 });
 
 test('live + offline render as two sections, with live channels excluded from offline', () => {
@@ -174,6 +215,77 @@ test('Following shows followed live categories even when matching followed chann
   assert.equal(scene.fRows[0].items[0].name, 'Chess');
 });
 
+test('Following preserves live categories when channel follow loading fails', () => {
+  const { scene, els, MODE } = setup({
+    categories: [
+      Object.assign(game('Chess'), { viewers: 5, followers: 20, box: 'http://img/chess.jpg' }),
+    ],
+    live: [],
+    followedChannelsFail: true,
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.fRows.length, 1);
+  assert.equal(scene.fRows[0].items[0].name, 'Chess');
+  assert.equal(els['tw-follow-empty'].style.display, 'none');
+  assert.notEqual(els['tw-follow'].style.display, 'none');
+});
+
+test('Following shows a scoped re-login state when the token lacks follow access', () => {
+  const { scene, els, MODE } = setup({
+    live: [],
+    follows: [],
+    followedChannelsFail: true,
+    followedChannelsStatus: 'scope',
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.loading, false);
+  assert.equal(scene.fRows.length, 0);
+  assert.equal(els['tw-follow-empty'].textContent, 'FOLLOW_SCOPE_ERR');
+  assert.notEqual(els['tw-follow-empty'].style.display, 'none');
+});
+
+test('Following shows the scoped re-login state immediately when live follows fail on scope', () => {
+  const { scene, els, MODE } = setup({
+    live: [],
+    follows: [channel('a')],
+    followedStreamsFail: true,
+    followedStreamsStatus: 'scope',
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.loading, false);
+  assert.equal(scene.fRows.length, 0);
+  assert.equal(els['tw-follow-empty'].textContent, 'FOLLOW_SCOPE_ERR');
+  assert.equal(els['tw-follow'].style.display, 'none');
+});
+
+test('Following returns to the login prompt when a cleared session reaches channel loading', () => {
+  const { scene, els, MODE } = setup({
+    live: [],
+    follows: [],
+    followedChannelsFail: true,
+    followedChannelsStatus: -1,
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.loading, false);
+  assert.equal(scene.fRows.length, 0);
+  assert.equal(els['tw-follow-empty'].textContent, 'FOLLOW_LOGIN');
+  assert.equal(els['tw-follow'].style.display, 'none');
+});
+
+test('Following uses a followed-channel-specific empty error instead of the generic stream error', () => {
+  const { scene, els, MODE } = setup({
+    live: [],
+    follows: [],
+    followedChannelsFail: true,
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+  assert.equal(scene.loading, false);
+  assert.equal(scene.fRows.length, 0);
+  assert.equal(els['tw-follow-empty'].textContent, 'FOLLOW_LOAD_ERR');
+  assert.notEqual(els['tw-follow-empty'].style.display, 'none');
+  assert.notEqual(els['tw-b-loading'].style.display, 'block');
+});
+
 test('a lone tile is padded to full columns so it keeps standard size', () => {
   const { scene, MODE } = setup({ live: [stream('solo')], follows: [] });
   scene.switchMode(MODE.FOLLOWED, true);
@@ -190,6 +302,36 @@ test('a lone top-level channel tile is padded to full columns', () => {
   assert.equal(els['tw-grid'].style.display, 'table');
   assert.equal(scene.cells.length, 1, 'one focusable channel tile');
   assert.equal(scene.rowEls[0].childNodes.length, 4, '1 real tile + 3 pads');
+});
+
+test('adapter can defer the initial browse network request until after first paint', () => {
+  const { scene, els, apiCalls, delayed, MODE } = setup({
+    adapter: { browse: { deferInitialLoadMs: 900 } },
+    streams: [stream('solo')],
+  });
+
+  scene.handleFocus();
+
+  assert.equal(scene.mode, MODE.ALL);
+  assert.equal(scene.loading, true);
+  assert.equal(apiCalls.topStreams, 0);
+  assert.equal(delayed.length, 1);
+  assert.equal(delayed[0].ms, 900);
+  assert.match(els['tw-tip-all'].className, /tw-tip-active/);
+
+  delayed[0].fn();
+
+  assert.equal(apiCalls.topStreams, 1);
+  assert.equal(scene.loading, false);
+  assert.equal(scene.items.length, 1);
+});
+
+test('Back while the browser is loading falls through to the platform exit fallback', () => {
+  const { scene, MODE, KEY } = setup({ streams: [stream('solo')] });
+  scene.mode = MODE.ALL;
+  scene.loading = true;
+
+  assert.equal(scene.handleKeyDown(KEY.BACK), false);
 });
 
 test('browse grid thumbnails carry dimensions and placeholder fallback', () => {

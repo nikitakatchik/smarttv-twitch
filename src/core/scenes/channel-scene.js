@@ -40,6 +40,17 @@
   var SEEK_COMMIT_IDLE_MS = 650;
   var SEEK_STEPS = [10, 20, 30, 60, 120];
 
+  function trace(msg) {
+    if (TW.log && TW.log.info) { TW.log.info('playback: ' + msg); }
+  }
+
+  function shortUrl(url) {
+    var s = String(url || '');
+    var q = s.indexOf('?');
+    if (q >= 0) { s = s.substring(0, q); }
+    return s.length > 120 ? (s.substring(0, 117) + '...') : s;
+  }
+
   function ChannelScene(adapter) {
     this.adapter = adapter;
     this.player = null;
@@ -239,9 +250,12 @@
     this.startChatCapture();
     this.showLoading();
 
+    trace('live token request channel=' + this.login);
     TW.api.playbackUrl(this.login, function (masterUrl) {
+      trace('live master ready ' + shortUrl(masterUrl));
       self.loadInto(masterUrl, { kind: 'live', login: self.login });
-    }, function () {
+    }, function (status) {
+      trace('live token failed status=' + status);
       self.showError(TW.i18n.t('ERROR_TOKEN'));
     });
 
@@ -254,6 +268,8 @@
   // refresh the quality list. The player adapters detect HLS vs progressive.
   P.loadInto = function (url, meta) {
     var self = this;
+    trace('load player kind=' + ((meta && meta.kind) || this.contentKind || '') +
+      ' url=' + shortUrl(url));
     this.clearPendingSeek();
     try { this.player.stop(); } catch (e) {}
     this.player.load(url, meta || null);
@@ -373,9 +389,14 @@
     this.showContentInfo(item);
     this.startProgressTimer();
     this.showLoading();
+    trace('vod token request id=' + item.id);
     TW.api.vodPlaybackUrl(item.id, function (url) {
+      trace('vod master ready ' + shortUrl(url));
       self.loadInto(url, item);
-    }, function () { self.showError(TW.i18n.t('ERROR_TOKEN')); });
+    }, function (status) {
+      trace('vod token failed status=' + status);
+      self.showError(TW.i18n.t('ERROR_TOKEN'));
+    });
   };
 
   P.playClip = function (item) {
@@ -388,9 +409,14 @@
     this.showContentInfo(item);
     this.startProgressTimer();
     this.showLoading();
+    trace('clip playback request slug=' + item.slug);
     TW.api.clipPlayback(item.slug, function (info) {
+      trace('clip playback ready ' + shortUrl(info && info.url));
       self.loadInto(info.url, item);
-    }, function () { self.showError(TW.i18n.t('ERROR_RENDER')); });
+    }, function (status) {
+      trace('clip playback failed status=' + status);
+      self.showError(TW.i18n.t('ERROR_RENDER'));
+    });
   };
 
   P.handleBlur = function () {
@@ -418,10 +444,19 @@
     return {
       onBufferingStart: function () { self.showBuffering(TW.i18n.t('BUFFERING')); },
       onBufferingProgress: function (pct) { self.showBuffering(TW.i18n.t('BUFFERING') + ': ' + pct + '%'); },
-      onBufferingComplete: function () { self.hideDialog(); },
-      onPlaying: function () { self.paused = false; self.hidePauseIndicator(); self.hideDialog(); self.updateProgress(); },
-      onEnded: function () { self.onContentEnded(); },
-      onError: function (msg) { self.showError(msg || TW.i18n.t('ERROR_RENDER')); }
+      onBufferingComplete: function () { trace('buffering complete'); self.hideDialog(); },
+      onPlaying: function () {
+        trace('playing callback');
+        self.paused = false;
+        self.hidePauseIndicator();
+        self.hideDialog();
+        self.updateProgress();
+      },
+      onEnded: function () { trace('ended callback'); self.onContentEnded(); },
+      onError: function (msg) {
+        trace('player error ' + (msg || ''));
+        self.showError(msg || TW.i18n.t('ERROR_RENDER'));
+      }
     };
   };
 
@@ -645,6 +680,10 @@
   };
 
   // --- chat rail (read-only, live only) -----------------------------------
+  P.chatEnabled = function () {
+    return !(this.adapter.chat && this.adapter.chat.enabled === false);
+  };
+
   P.playerRect = function () {
     var sw = TW.config.screen.width, sh = TW.config.screen.height;
     if (!this.chatOn) { return { x: 0, y: 0, w: sw, h: sh }; }
@@ -690,7 +729,7 @@
   };
 
   P.openChat = function () {
-    if (this.chatOn || !this.login || this.liveOnline === false) { return; }
+    if (!this.chatEnabled() || this.chatOn || !this.login || this.liveOnline === false) { return; }
     this.chatOn = true;
     dom.addClass(this.root, 'tw-chat-open');
     dom.show(dom.get('tw-chat'));
@@ -715,7 +754,7 @@
   };
 
   P.startChatCapture = function () {
-    if (this.chatClient || !this.login || this.contentKind !== 'live') { return; }
+    if (!this.chatEnabled() || this.chatClient || !this.login || this.contentKind !== 'live') { return; }
     var self = this;
     this.chatClient = TW.twitch.chat.connect(this.login, {
       onMessage: function (m) { self.addChatMessage(m); },
@@ -887,7 +926,7 @@
   P.visibleControls = function () {
     var ids = [];
     ids.push('tw-ctl-channel');
-    if (this.contentKind === 'live' && this.liveOnline !== false) { ids.push('tw-ctl-chat'); }
+    if (this.chatEnabled() && this.contentKind === 'live' && this.liveOnline !== false) { ids.push('tw-ctl-chat'); }
     ids.push('tw-ctl-quality');
     return ids;
   };

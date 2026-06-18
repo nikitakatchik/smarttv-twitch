@@ -45,13 +45,15 @@
     // Dev-only: route the authenticated APIs (id/api.twitch.tv) through the same
     // CORS proxy. Static Pages builds and real TVs leave TW.net.rewrite as the
     // identity and go direct.
-    TW.net.rewrite = function (url) {
+    function rewrite(url) {
       var base = TW.platform.proxyBase;
       if (base && (/^https:\/\//).test(url)) {
         return base.replace(/\/$/, '') + '/proxy?url=' + encodeURIComponent(url);
       }
       return url;
-    };
+    }
+    TW.net.rewrite = rewrite;
+    TW.http.rewrite = rewrite;
 
     TW.app.start({
       name: 'web',

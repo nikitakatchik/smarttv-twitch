@@ -5,17 +5,79 @@
   <title>Twitch</title>
   <link rel="stylesheet" href="ui/styles.css">
 
-  <!-- Legacy "Common API" (lightweight; NOT the heavy AppsFramework).
-       $MANAGER_WIDGET is substituted by the TV at install time. -->
+  <!-- Legacy Widget API only. Plugin.js is optional for screensaver control, but
+       the 2013 emulator can stall before app code when it is loaded up front. -->
   <script type="text/javascript" src="$MANAGER_WIDGET/Common/API/Widget.js"></script>
-  <script type="text/javascript" src="$MANAGER_WIDGET/Common/API/Plugin.js"></script>
 </head>
 <body>
   <!-- INFOLINK player renders behind the DOM/UI layer. -->
   <object id="tw-orsay-player" border="0" classid="clsid:SAMSUNG-INFOLINK-PLAYER"
           style="position:absolute;left:0;top:0;width:0;height:0;z-index:0;"></object>
 
+  <a id="tw-orsay-focus" href="javascript:void(0)"
+     style="position:absolute;left:-1000px;top:-1000px;width:1px;height:1px;"></a>
   <div id="app"></div>
+
+  <script type="text/javascript">
+    (function (global) {
+      var doc = global.document;
+      global.twOrsayAppReady = false;
+
+      function widget() {
+        try {
+          return (global.Common && Common.API && Common.API.Widget) ? new Common.API.Widget() : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function focusKeyTarget() {
+        var target = doc && doc.getElementById ? doc.getElementById('tw-orsay-focus') : null;
+        try {
+          if (target && target.focus) { target.focus(); return; }
+          if (doc && doc.body && doc.body.focus) { doc.body.focus(); }
+        } catch (e) {}
+      }
+
+      function sendReady() {
+        var w;
+        focusKeyTarget();
+        if (global.twOrsayWidgetReadySent) { return; }
+        w = widget();
+        try {
+          if (w && w.sendReadyEvent) {
+            w.sendReadyEvent();
+            global.twOrsayWidgetReadySent = true;
+          }
+        } catch (e) {}
+      }
+
+      function isExitKey(code) {
+        return code === 45 || code === 10182;
+      }
+
+      function isBackKey(code) {
+        return code === 88 || code === 10009 || code === 461;
+      }
+
+      if (doc) {
+        doc.onkeydown = function (e) {
+          var w;
+          e = e || global.event || {};
+          if (!isExitKey(e.keyCode) && (global.twOrsayAppReady || !isBackKey(e.keyCode))) { return true; }
+          w = widget();
+          try { if (w && w.sendReturnEvent) { w.sendReturnEvent(); } } catch (ex) {}
+          if (e.preventDefault) { e.preventDefault(); }
+          e.cancelBubble = true;
+          e.returnValue = false;
+          return false;
+        };
+      }
+
+      if (global.setTimeout) { global.setTimeout(sendReady, 0); }
+      else { sendReady(); }
+    })(this);
+  </script>
 
   <!-- core (ordered; no bundler / ES modules on this engine) -->
   <script src="core/polyfill.js"></script>
