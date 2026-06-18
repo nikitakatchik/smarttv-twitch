@@ -16,9 +16,9 @@
  *     prints the one-liner for you to run.
  *   - a couple of tiny dotfiles the official installer/sdb drop in $HOME
  *     (~/.package-manager logs, ~/.sdb device keys).
- * No Samsung account or DUID is needed here: `npm run release` signs the .wgt
- * with a throwaway GENERIC cert, and Apps2Samsung re-signs it per-TV at install
- * time (see docs/install/apps2samsung.md).
+ * No Samsung account or DUID is needed here: `npm run release` builds/signs the
+ * .wgt with a throwaway GENERIC cert, and Apps2Samsung re-signs it per-TV at
+ * install time (see docs/install/apps2samsung.md).
  *
  * Verified 2026-06: web-cli_Tizen_SDK_10.0_macos-64.bin -> HTTP 200, 326,076,958 bytes
  * (download.tizen.org). Flags/footprint per Samsung/tizen-docs + samsungtizenos.com.
@@ -159,6 +159,7 @@ function download(url, dest) {
   console.log('  1. npm run release        # builds + signs dist/release/Twellie.wgt (generic cert)');
   console.log('  2. Install with Apps2Samsung — it re-signs the .wgt for your TV automatically:');
   console.log('     https://github.com/Apps2Samsung/Apps2Samsung  → pick "Custom WGT" → Twellie.wgt');
-  console.log('  No Samsung account or DUID needed here. (TizenBrew is an alternative, SDK-free');
-  console.log('  path: npm run build:tizenbrew.) See docs/install/apps2samsung.md.');
+  console.log('  No Samsung account or DUID is needed to build Twellie.wgt.');
+  console.log('  TizenBrew dev build: npm run build:tizenbrew emits the unpacked module tree.');
+  console.log('  See docs/install/tizenbrew.md for that guide.');
 })().catch(function (e) { die(e && e.message ? e.message : String(e)); });

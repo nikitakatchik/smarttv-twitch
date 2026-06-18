@@ -1,53 +1,119 @@
 name: release
 
-# Tag a commit `vX.Y.Z` and push the tag to cut a release with one package
-# per generation attached:  git tag v4.0.0 && git push origin v4.0.0
 on:
-  push:
-    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag to create, for example 4.0.0
+        required: true
+        type: string
+      commit_sha:
+        description: Full 40-character commit SHA to release
+        required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.release_tag }}
+  cancel-in-progress: false
 
 jobs:
-  # The Orsay host bundles the signed Node runtime, so it's packaged per target
-  # OS/arch. setup-node provides the official signed/notarized Node builds, which
-  # we ship unmodified so they keep their signature (no Gatekeeper/SmartScreen).
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      commit_sha: ${{ steps.resolve.outputs.commit_sha }}
+      release_tag: ${{ steps.resolve.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: resolve
+        name: Validate release inputs
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git check-ref-format "refs/tags/$RELEASE_TAG"; then
+            echo "::error::release_tag must be a valid Git tag name"
+            exit 1
+          fi
+          if [[ ! "$COMMIT_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::commit_sha must be a full 40-character commit SHA"
+            exit 1
+          fi
+
+          resolved="$(git rev-parse "${COMMIT_SHA}^{commit}")"
+          echo "commit_sha=$resolved" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+            tagged="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [ "$tagged" != "$resolved" ]; then
+              echo "::error::Tag $RELEASE_TAG already points at $tagged, not $resolved"
+              exit 1
+            fi
+            echo "::notice::Tag $RELEASE_TAG already points at $resolved; release publishing will reuse it."
+          fi
+
+  ci:
+    needs: preflight
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+    with:
+      ref: ${{ needs.preflight.outputs.commit_sha }}
+
+  # The Orsay host bundles a pinned official Node runtime, so it's packaged per
+  # target OS/arch and kept independent from the Node version running the build.
   host-binaries:
+    needs: [preflight, ci]
     name: host (${{ matrix.label }})
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { os: macos-latest, label: macOS arm64 }   # Apple Silicon
-          - { os: macos-13,     label: macOS x64 }      # Intel
-          - { os: windows-latest, label: Windows x64 }
+          - { os: macos-latest, label: macOS arm64, target: macos-arm64, asset: twellie-orsay-host-macos-arm64.zip }
+          - { os: macos-15-intel, label: macOS x64, target: macos-x64, asset: twellie-orsay-host-macos-x64.zip }
+          - { os: windows-latest, label: Windows x64, target: windows-x64, asset: twellie-orsay-host-windows-x64.zip }
+          - { os: windows-latest, label: Windows x86, target: windows-x86, asset: twellie-orsay-host-windows-x86.zip }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preflight.outputs.commit_sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Build native host binary
-        run: npm run host:bin
+      - name: Build native host installer
+        timeout-minutes: 20
+        run: npm run host:package -- ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
-          name: host-${{ matrix.os }}
-          path: dist/release/twellie-orsay-host-*.zip
+          name: host-${{ matrix.target }}
+          path: dist/release/${{ matrix.asset }}
           if-no-files-found: error
 
   release:
-    needs: host-binaries
+    needs: [preflight, host-binaries]
+    permissions:
+      actions: read
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preflight.outputs.commit_sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Verify
-        run: npm run lint && npm test
       # The host installers come from the per-OS matrix above; drop them where
-      # `publish` looks so it reuses them instead of cross-building.
+      # `release:publish` looks so it reuses them instead of cross-building.
       - name: Download host binaries
         uses: actions/download-artifact@v4
         with:
@@ -56,16 +122,17 @@ jobs:
           merge-multiple: true
       - name: Gather host installers
         run: mkdir -p dist/release && cp dist/host-bins/*.zip dist/release/
-      # Fetch the CLI-only Tizen SDK so `publish` can build + sign Twellie.wgt
+      # Fetch the CLI-only Tizen SDK so `release:publish` can build + sign Twellie.wgt
       # (generic cert; Apps2Samsung re-signs per-TV). Best-effort: if it fails,
       # publish still ships the other assets and just omits the .wgt.
       - name: Set up Tizen CLI (for the .wgt)
         continue-on-error: true
         run: npm run tizen:setup
-      # Build the remaining assets + publish the labeled GitHub Release. publish
-      # reuses the host installers gathered above and pins the tag to the one pushed.
+      # Build the remaining assets + publish the labeled GitHub Release. release:publish
+      # reuses the host installers above and creates the tag at the requested SHA.
       - name: Publish labeled GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: npm run publish -- --live
+          RELEASE_TAG: ${{ needs.preflight.outputs.release_tag }}
+          GH_TARGET: ${{ needs.preflight.outputs.commit_sha }}
+        run: npm run release:publish -- --live

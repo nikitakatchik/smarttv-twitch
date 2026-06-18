@@ -3,13 +3,15 @@
  * tools/publish.js — cut (or update) a GitHub Release with the install artifacts,
  * each attached under a human-friendly LABEL (gh's `<file>#<label>` syntax).
  *
- *   npm run publish               build assets + create a DRAFT release (review on GitHub)
- *   npm run publish -- --live     create/promote a PUBLISHED release
- *   npm run publish -- --dry-run  show the asset/label map + the gh plan; build/publish nothing
+ *   npm run release                    build all release assets, publish nothing
+ *   npm run release:publish            build assets + create a DRAFT release (review on GitHub)
+ *   npm run release:publish -- --live  create/promote a PUBLISHED release
+ *   npm run release:publish -- --dry-run
+ *                                      show the asset/label map + the gh plan; build/publish nothing
  *
  * PUSH THE TAG FIRST. The release attaches to tag v<version> (override RELEASE_TAG),
  * and we pass gh --verify-tag so it never silently auto-tags the wrong commit:
- *     git tag v4.0.0 && git push origin v4.0.0        # then: npm run publish
+ *     git tag v4.0.0 && git push origin v4.0.0        # then: npm run release:publish
  * (or set GH_TARGET=<sha> to let gh create the tag at that commit.)
  *
  * IDEMPOTENT: if a release for the tag already exists, publish UPDATES it
@@ -19,7 +21,7 @@
  * Publishing is outward-facing and hard to undo, so it DEFAULTS TO A DRAFT.
  * Requires the `gh` CLI, authenticated (`gh auth login`, or GH_TOKEN in CI).
  *
- * Assets (Tizen .wgt needs the Tizen CLI — release.js auto-fetches it; the three
+ * Assets (Tizen .wgt needs the Tizen CLI — release.js auto-fetches it; the four
  * Orsay host installers are cross-built by bin.js, or reused from a CI matrix):
  */
 'use strict';
@@ -36,20 +38,24 @@ const OUT = path.join(ROOT, 'dist', 'release');
 const TAG = process.env.RELEASE_TAG || ('v' + pkg.version);
 const DRY = process.argv.includes('--dry-run');
 const LIVE = process.argv.includes('--live');
+const BUILD_ONLY = process.argv.includes('--build-only');
+const MODE = BUILD_ONLY ? 'release' : 'publish';
 
 // [ filename, release label ] — the published set, in display order.
 const ASSETS = [
-  ['twellie-orsay.zip', 'Orsay — app widget (2013–2014, F·H)'],
   ['twellie-orsay-host-windows-x64.zip', 'Orsay — Windows installer (64-bit)'],
+  ['twellie-orsay-host-windows-x86.zip', 'Orsay — Windows installer (32-bit)'],
   ['twellie-orsay-host-macos-x64.zip', 'Orsay — macOS installer (Intel)'],
   ['twellie-orsay-host-macos-arm64.zip', 'Orsay — macOS installer (Apple Silicon)'],
-  ['Twellie.wgt', 'Tizen — Apps2Samsung package (.wgt, 2015+)'],
-  ['twellie-tizenbrew.zip', 'Tizen — TizenBrew module (2017+)'],
+  ['Twellie.wgt', 'Tizen — Apps2Samsung package (.wgt)'],
+  ['twellie-tizenbrew.zip', 'TizenBrew — module archive'],
+  ['twellie-orsay.zip', 'Orsay — raw App-Sync widget (advanced, not installer)'],
 ];
 const HOST_ZIPS = ASSETS.map(function (a) { return a[0]; }).filter(function (n) { return n.indexOf('-host-') !== -1; });
 
-function die(m) { console.error('\npublish: ' + m + '\n'); process.exit(1); }
+function die(m) { console.error('\n' + MODE + ': ' + m + '\n'); process.exit(1); }
 function exists(name) { return fs.existsSync(path.join(OUT, name)); }
+function removeAsset(name) { fs.rmSync(path.join(OUT, name), { force: true }); }
 function run(cmd, args) { execFileSync(cmd, args, { stdio: 'inherit' }); }
 // Run a build step but never let one failure abort the whole release.
 function step(label, fn) {
@@ -59,12 +65,12 @@ function assetArg(asset) { return path.join(OUT, asset[0]) + '#' + asset[1]; }
 
 function notes() {
   return [
-    'Pick the asset for your TV generation:',
+    'Pick the guide for your TV and computer:',
     '',
-    '- **Orsay (2013–2014, F·H):** run the installer for your computer (Windows / macOS Intel /',
-    '  macOS Apple Silicon), then App-Sync. The raw *app widget* zip is for self-hosting.',
-    '- **Tizen (2015+):** install `Twellie.wgt` with [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung)',
-    '  — it signs it for your TV automatically. Or load the **TizenBrew module** (2017+).',
+    '- Pick the exact TV/computer guide from the install table:',
+    '  https://github.com/nkatchik/smarttv-twitch#install-on-your-tv',
+    '',
+    'TizenBrew setup is documented as its own guide in the install table.',
     '',
     'Full guides are in the repository README.',
   ].join('\n');
@@ -72,10 +78,15 @@ function notes() {
 
 function buildAssets() {
   console.log('building release artifacts…');
+  const reuseHost = process.env.CI && HOST_ZIPS.every(exists);
+  ASSETS.forEach(function (a) {
+    if (reuseHost && HOST_ZIPS.indexOf(a[0]) !== -1) { return; }
+    removeAsset(a[0]);
+  });
   step('Orsay/web zips + Twellie.wgt', function () { run('node', [path.join(__dirname, 'release.js')]); });
   // Reuse host installers ONLY when a CI matrix just gathered fresh ones; locally
   // always rebuild, since stale zips from a previous run would otherwise ship.
-  if (process.env.CI && HOST_ZIPS.every(exists)) {
+  if (reuseHost) {
     console.log('  (reusing host installers gathered by the CI matrix)');
   } else {
     step('Orsay host installers', function () { run('node', [path.join(__dirname, 'bin.js'), '--all']); });
@@ -148,6 +159,14 @@ if (missing.length) {
   if (missing.some(function (m) { return m[0] === 'Twellie.wgt'; })) {
     console.log('  Twellie.wgt needs the Tizen CLI — run `npm run tizen:setup` (Rosetta 2 on Apple Silicon).');
   }
+}
+
+if (BUILD_ONLY) {
+  if (missing.length) {
+    die('missing asset(s) after build: ' + missing.map(function (m) { return m[0]; }).join(', '));
+  }
+  console.log('\nrelease: built all release assets in ' + path.relative(ROOT, OUT) + '.');
+  process.exit(0);
 }
 
 try { execFileSync('gh', ['--version'], { stdio: 'ignore' }); }

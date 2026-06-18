@@ -10,7 +10,7 @@ for each generation — including the macOS-on-Apple-Silicon gotchas.
 | All app logic + UI + **live playback** | `npm start` → browser harness | ❌ |
 | Core logic (parser, API, i18n) | `npm test` | ❌ |
 | ES5 / old-engine safety | `npm run lint` | ❌ |
-| Final Tizen validation | real TV — Apps2Samsung (`.wgt`) or TizenBrew (module) | ✅ |
+| Final Tizen validation | real TV — Apps2Samsung (`.wgt`) or a hosted TizenBrew module | ✅ |
 | Final Orsay validation | real TV (`develop` account + App-Sync) | ✅ |
 
 > **Apple Silicon reality:** the Samsung **Tizen TV Emulator does not run on
@@ -65,12 +65,14 @@ sandbox — covering the m3u8 parser, the GraphQL client (shape mapping, the
 
 ## 3. Tizen TVs (2015+) 📦
 
-Two install paths, neither needing manual cert handling:
+The end-user install path is Apps2Samsung with `Twellie.wgt`. The TizenBrew
+target is a hosted module build path for real-TV validation once published.
 
 **A. Native `.wgt` via [Apps2Samsung](install/apps2samsung.md) (2015+, AVPlay).**
 
 ```bash
-npm run release         # -> dist/release/Twellie.wgt (generic-signed; Apps2Samsung re-signs per-TV)
+npm run release         # -> full dist/release/ asset set, including Twellie.wgt
+                        #    Twellie.wgt is generic-signed; Apps2Samsung re-signs per-TV
                         #    auto-fetches the Tizen CLI into dist/.tizen-sdk/ on first run
                         #    (Rosetta 2 on Apple Silicon; pre-fetch with `npm run tizen:setup`)
 ```
@@ -87,14 +89,15 @@ network requests start. Disable/avoid Fast RWI or launch the app normally instea
 of through the debugger to skip it. Clicking **OK** simply continues into
 `index.html`.
 
-**B. TizenBrew module (2017+, hls.js).**
+**B. Hosted TizenBrew module (2017+, hls.js).**
 
 ```bash
 npm run build:tizenbrew      # -> dist/tizenbrew/{package.json, app/}
+npm run release              # -> dist/release/twellie-tizenbrew.zip and dist/tizenbrew/
 ```
 
-- **Real panel:** publish `dist/tizenbrew/` (npm or a tagged GitHub repo) and add it
-  in TizenBrew by name. hls.js + MSE: reliable 2017+ / solid 2019+.
+- **Real panel:** install TizenBrew and import the local
+  `twellie-tizenbrew.zip` package. hls.js + MSE: reliable 2017+ / solid 2019+.
 - **Boot check on a laptop (no TV):** statically serve `dist/tizenbrew/app/` and open
   `index.html` — it boots the `tizenbrew` adapter and renders the live browse grid via
   GraphQL (console logs `starting on platform "tizenbrew"`, no errors). Remote nav uses
@@ -115,10 +118,10 @@ npm run build:orsay
 
 On a real F/H panel (2011–2012 D/E are not supported), Orsay has **no `12345`
 toggle** — you sign Smart Hub into the built-in **`develop`** account and sync
-from a LAN web server. Full steps, with the F-vs-H menu differences:
-[docs/install/orsay-2013-2014.md](install/orsay-2013-2014.md).
+from a LAN web server. The user-facing table is in the main README:
+[README.md](../README.md#install-on-your-tv).
 
-1. **Run the App-Sync server on port 80.** `npm run host:bin` builds the
+1. **Run the App-Sync server on port 80.** `npm run host:package` builds the
    self-contained installer; `npm run host -- 80` runs it from source. It **must**
    listen on **80** — the Orsay IP field has no port box, so the TV always fetches
    on port 80 (the default 8080 silently fails).

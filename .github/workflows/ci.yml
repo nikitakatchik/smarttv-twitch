@@ -5,12 +5,18 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit SHA or ref to validate.
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ inputs.ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -19,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -42,6 +50,8 @@ jobs:
         node: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
@@ -52,13 +62,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Build all platforms + package releases
+      - name: Build all platforms + base release zips
         run: |
           npm run build
-          npm run release
+          node tools/release.js
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
@@ -66,20 +78,27 @@ jobs:
           path: dist/release/*.zip
           if-no-files-found: error
 
-  # The desktop host bundles the signed Node runtime per OS/arch, so prove it
-  # packages on the OSes we ship it for. (Intel macOS is built only at release.)
+  # The desktop host bundles a pinned signed Node runtime per OS/arch, so prove
+  # both platform families package the targets we ship.
   host-binary:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        include:
+          - { os: macos-latest, targets: "macos-arm64 macos-x64", expected: 2 }
+          - { os: windows-latest, targets: "windows-x64 windows-x86", expected: 2 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Build native host binary
-        run: npm run host:bin
+      - name: Build native host installer
+        timeout-minutes: 20
+        run: npm run host:package -- ${{ matrix.targets }}
       - name: Assert a host package was produced
-        run: node -e "const f=require('fs').readdirSync('dist/release').filter(n=>n.startsWith('twellie-orsay-host-')); if(!f.length){console.error('no host binary built');process.exit(1)} console.log('built',f)"
+        run: node -e "const f=require('fs').readdirSync('dist/release').filter(n=>n.startsWith('twellie-orsay-host-')); if(f.length!==Number(process.env.EXPECTED)){console.error('expected '+process.env.EXPECTED+' host packages, built '+f.length);process.exit(1)} console.log('built',f)"
+        env:
+          EXPECTED: ${{ matrix.expected }}

@@ -1,19 +1,21 @@
 # 📺 Supported generations
 
 One ES5 core, four runtime adapters, spanning **Samsung Smart TVs from 2013 on**
-— Orsay (2013–14) installs directly, Tizen (2015+) installs via Apps2Samsung (a
-native `.wgt`) or TizenBrew (a web module). The split is dictated by Samsung's own
-platform history: the 2015 switch from the in-house *Orsay/Maple* stack to *Tizen*
-changed the player, the key codes, the packaging and the JS engine all at once.
+— Orsay (2013–14) installs directly, and Tizen (2015+) installs for users via
+Apps2Samsung as a native `.wgt`. A TizenBrew module archive is also built for
+the TizenBrew guide. The split is dictated by Samsung's own platform history:
+the 2015 switch from the in-house *Orsay/Maple* stack to *Tizen* changed the
+player, the key codes, the packaging and the JS engine all at once.
 
 | Year | Series | Platform | Player | Engine | Reaches Twitch via | Status |
 | ---- | ------ | -------- | ------ | ------ | ------------------ | ------ |
 | 2013 | F | Orsay | `INFOLINK` / SEF | WebKit ~535 | direct | ✅ best-effort, anonymous-only |
 | 2014 | H | Orsay | `INFOLINK` | WebKit 537 | direct | ✅ best-effort, anonymous-only |
 | 2015–16 | J/K | Tizen 2.3–2.4 | AVPlay (`.wgt`) | Chromium WebView | Apps2Samsung | ✅ (TizenBrew shaky: draft MSE) |
-| 2017 | M | Tizen 3.0 | AVPlay (`.wgt`) · hls.js | Chromium M47 | Apps2Samsung · TizenBrew | ✅ |
-| 2018 | N | Tizen 4.0 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung · TizenBrew | ✅ |
-| 2019+ | R/T/U/… | Tizen 5–9 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung · TizenBrew | ✅ |
+| 2017 | M | Tizen 3.0 | AVPlay (`.wgt`) · hls.js | Chromium M47 | Apps2Samsung; TizenBrew when hosted | ✅ |
+| 2018 | N | Tizen 4.0 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung; TizenBrew when hosted | ✅ |
+| 2019–2022 | R/T/A/B | Tizen 5–6.5 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung; TizenBrew when hosted | ✅ |
+| 2023+ | C/D/F/H/… | Tizen 7–10 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung; TizenBrew when hosted | ✅ |
 | any | — | **Hosted web preview** | Twitch embed · `<video>` | Chrome/FF/Safari | Twitch embed | 🧪 demo |
 | any | — | **Browser harness** | hls.js | Chrome/FF/Safari | dev CORS proxy | 🧪 dev/test |
 
@@ -30,7 +32,7 @@ a set whose TLS can't isn't supported. Orsay also disables login/following; thos
 authenticated `id.twitch.tv` and Helix paths are too fragile on the old WebKit
 runtime.
 
-On Tizen there are two install paths:
+On Tizen there is one end-user install path today:
 
 - **Apps2Samsung** (2015+, recommended) installs a native `.wgt` that plays via the
   privileged **AVPlay** — no browser `Origin`, modern TLS, reaches Twitch directly.
@@ -39,18 +41,24 @@ On Tizen there are two install paths:
   `config.xml` for Twitch and dynamically selected CDN hosts.
   Apps2Samsung mints a per-TV Samsung cert and re-signs the package for you (see
   [install/apps2samsung.md](install/apps2samsung.md)); AVPlay needs no MSE, so it
-  works on older sets too.
-- **TizenBrew** (2017+) loads a web module that plays via **hls.js**. No `.wgt`,
-  but hls.js needs MSE (reliable 2017+; 2015–16 draft MSE is best-effort), and it
-  fetches Twitch under TizenBrew's `<access origin="*">` privilege.
+  works on older sets too. 2023+ Tizen 7 and newer sets can require Samsung
+  account authorization inside Apps2Samsung while it creates the install
+  certificate.
+
+The TizenBrew build target is separate. TizenBrew (2017+) loads a hosted web
+module that plays via **hls.js**. No `.wgt`, but hls.js needs MSE (reliable
+2017+; 2015–16 draft MSE is best-effort), and it fetches Twitch under
+TizenBrew's `<access origin="*">` privilege. The end-user guide installs the
+local `twellie-tizenbrew.zip` module package attached to GitHub Releases.
 
 Only the **browser harness** is hard CORS-bound: desktop browsers enforce CORS
 that the TV WebViews relax, and Twitch's usher/playlist hosts send no
 `Access-Control-Allow-Origin`, so `npm start` routes HLS playback through a small
 **dev-only CORS proxy** in the dev server (`tools/lib/dev-proxy.js`). GitHub
 Pages cannot host that endpoint, so the hosted preview uses Twitch's official
-embed for live/VOD playback and direct `<video>` for signed clip MP4s. Orsay
-plays direct and Tizen plays through the TizenBrew WebView.
+embed for live/VOD playback and direct `<video>` for signed clip MP4s. Orsay and
+native Tizen play direct; the TizenBrew module plays through the TizenBrew
+WebView.
 
 ## Engine constraints (why everything is hand-written ES5)
 

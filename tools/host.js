@@ -7,7 +7,7 @@
  * Developer convenience: builds the Orsay widget from src/ and serves the
  * App-Sync install endpoints. End users don't need Node or this script — they
  * download the self-contained installer (built by tools/bin.js, `npm run
- * host:bin`). Both share tools/lib/serve-host.
+ * host:package`). Both share tools/lib/serve-host.
  */
 'use strict';
 

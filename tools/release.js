@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 /*
- * tools/release.js — package the shippable artifacts.
+ * tools/release.js — package the base release artifacts.
  *
  *   node tools/release.js
  *     -> dist/release/twellie-orsay.zip   raw 2013-2014 Orsay widget (App-Sync)
  *     -> dist/release/twellie-web.zip      browser build (static hosting / demo)
  *     -> dist/release/Twellie.wgt          Tizen native package for Apps2Samsung
+ *
+ * This is the internal base packager used by `npm run release`. The public npm
+ * target also builds the host installers and TizenBrew module archive.
  *
  * The .wgt is signed with a throwaway, self-made GENERIC author profile (no
  * Samsung account, no DUID) — just enough to be a valid Tizen package. It is NOT
@@ -20,7 +23,7 @@
  * release.yml fetches it explicitly there. If the CLI is still missing — or the
  * package step fails (e.g. Rosetta 2 not installed on Apple Silicon) — the zips
  * are still produced and the .wgt is skipped with a note, so this never blocks a
- * release. (TizenBrew is a separate path: `npm run build:tizenbrew`.)
+ * release. (`npm run build:tizenbrew` only emits the unpacked module tree.)
  */
 'use strict';
 

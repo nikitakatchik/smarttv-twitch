@@ -36,10 +36,10 @@
     "build:web": "node tools/build.js web",
     "build:tizenbrew": "node tools/build.js tizenbrew",
     "host": "node tools/host.js",
-    "host:bin": "node tools/bin.js",
+    "host:package": "node tools/bin.js",
     "tizen:setup": "node tools/tizen-setup.js",
-    "release": "node tools/release.js",
-    "publish": "node tools/publish.js"
+    "release": "node tools/publish.js --build-only",
+    "release:publish": "node tools/publish.js"
   },
   "devDependencies": {}
 }

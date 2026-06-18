@@ -1,7 +1,7 @@
 /*
  * tools/host-bundle.js — the host entry that gets inlined into the single
- * `host.js` shipped in the desktop installer package (see tools/bin.js), run by
- * the bundled, already-signed Node runtime as `./node host.js`.
+ * `data/host.js` shipped in the desktop installer package (see tools/bin.js),
+ * run by the bundled, already-signed Node runtime as `./data/node data/host.js`.
  *
  * The Orsay widget is embedded at build time as the global __TWELLIE_WIDGET__
  * (an array of { name, b64 }), so the package needs nothing else on disk.

@@ -16,6 +16,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const pkg = require('../package.json');
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
@@ -28,8 +29,11 @@ const PLATFORM_FILES = new Set(['index.html', 'config.xml', 'widget.info']);
 // packageType 'app', the entry html, and the remote keys to registerKey for us.
 const MODULE_PKG = {
   name: 'twellie-tizenbrew',
-  version: '4.0.0',
+  version: pkg.version,
   description: 'Twellie — an unofficial Twitch viewer for Samsung TVs, as a TizenBrew app module (HTML5 video + hls.js).',
+  license: pkg.license,
+  homepage: pkg.homepage,
+  repository: pkg.repository,
   packageType: 'app',
   appName: 'Twellie',
   appPath: 'app/index.html',

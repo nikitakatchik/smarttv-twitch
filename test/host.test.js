@@ -11,6 +11,7 @@ const { bundle } = require('../tools/lib/bundle');
 const { zip, collect } = require('../tools/lib/zip');
 const { startHost } = require('../tools/lib/serve-host');
 const { build } = require('../tools/build');
+const { HOST_NODE_VERSION, HOST_TARGETS, packageFiles, parseTargets } = require('../tools/bin');
 
 const HOST_ENTRY = path.resolve(__dirname, '..', 'tools', 'host-bundle.js');
 
@@ -58,6 +59,41 @@ test('zip deflate compresses and round-trips', () => {
   const nameLen = buf.readUInt16LE(26);
   const body = buf.subarray(30 + nameLen, 30 + nameLen + comp);
   assert.deepEqual(zlib.inflateRawSync(body), data);
+});
+
+test('host installer package exposes only the launcher at the archive root', () => {
+  const winFiles = packageFiles({ name: 'node.exe', data: Buffer.from('node') }, 'host source', true);
+  const winNames = winFiles.map((f) => f.name).sort();
+  assert.deepEqual(winNames, [
+    'Install-Twellie.bat',
+    'data/host.js',
+    'data/node.exe',
+  ]);
+  assert.deepEqual(winNames.filter((name) => !name.includes('/')), ['Install-Twellie.bat']);
+  assert.ok(winFiles.find((f) => f.name === 'Install-Twellie.bat').data.includes('data\\node.exe'));
+  assert.ok(winFiles.find((f) => f.name === 'Install-Twellie.bat').data.includes('data\\host.js'));
+
+  const macFiles = packageFiles({ name: 'node', data: Buffer.from('node') }, 'host source', false);
+  const macNames = macFiles.map((f) => f.name).sort();
+  assert.deepEqual(macNames, [
+    'Install-Twellie.command',
+    'data/host.js',
+    'data/node',
+  ]);
+  assert.deepEqual(macNames.filter((name) => !name.includes('/')), ['Install-Twellie.command']);
+  assert.ok(macFiles.find((f) => f.name === 'Install-Twellie.command').data.includes('./data/node'));
+  assert.ok(macFiles.find((f) => f.name === 'Install-Twellie.command').data.includes('./data/host.js'));
+});
+
+test('host installer release targets use a pinned bundled Node runtime', () => {
+  assert.equal(HOST_NODE_VERSION, '22.21.1');
+  assert.deepEqual(parseTargets(['node', 'tools/bin.js', '--all']), HOST_TARGETS);
+  assert.deepEqual(HOST_TARGETS, [
+    'macos-arm64',
+    'macos-x64',
+    'windows-x64',
+    'windows-x86',
+  ]);
 });
 
 test('host serves the widget zip and a develop-account widgetlist', async () => {

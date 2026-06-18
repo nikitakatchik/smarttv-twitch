@@ -5,7 +5,7 @@
 <h1 align="center">Twellie</h1>
 
 <p align="center">
-  <b>An unofficial viewer for Twitch on any Samsung Smart TV — from a 2013 Orsay set to a 2024 Tizen panel.</b> <br />
+  <b>An unofficial viewer for Twitch on any Samsung Smart TV — from a 2013 Orsay set to a modern Tizen panel.</b> <br />
   Not affiliated with Twitch, Samsung, or Tizen.
 </p>
 
@@ -33,46 +33,24 @@
 
 | Year | Series | Platform | Player | Status |
 | ---- | ------ | -------- | ------ | ------ |
+| 2015+ | J and newer Tizen model years | Tizen | `AVPlay` | 🟢 Supported |
 | 2013–2014 | F / H | Orsay | `INFOLINK` | 🟡 Limited |
-| 2015–2024+ | J / K / M / N / R / T / U … | Tizen | `AVPlay` | 🟢 Supported |
-| any | — | Browser (dev) | hls.js | Development |
 
 Full matrix, engines, and caveats: [docs/PLATFORMS.md](docs/PLATFORMS.md).
 
 ## Install on Your TV
 
-Download the package for your TV from the
-[**latest release**](https://github.com/nkatchik/smarttv-twitch/releases/latest),
-then follow the guide for your model year.
+Pick the one guide that matches your TV and computer. Each guide is written
+end-to-end with one Twellie package.
 
-| Your TV | Install | Guide |
-| ------- | ------- | ----- |
-| **2015 and newer** — Tizen (J · K · M · N · R · T · U …) | [Twellie.wgt](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/Twellie.wgt) with **Apps2Samsung** (signs and installs), or **TizenBrew** | [Apps2Samsung](docs/install/apps2samsung.md) · [TizenBrew](docs/install/tizenbrew.md) |
-| **2013–2014** — Orsay (F · H) | [Orsay installer](#orsay-installer) | [F / H guide](docs/install/orsay-2013-2014.md) |
+| | | |
+| - | - | - |
+| **2013 F-series** | Orsay | [📦 macOS](docs/install/orsay-f-2013-macos.md) · [📦 Windows](docs/install/orsay-f-2013-windows.md) |
+| **2014 H-series** | Orsay | [📦 macOS](docs/install/orsay-h-2014-macos.md) · [📦 Windows](docs/install/orsay-h-2014-windows.md) |
+| **2015+** | Tizen | [📦 Apps2Samsung](docs/install/apps2samsung.md) |
+| **2017+** | Tizen | [📦 TizenBrew](docs/install/tizenbrew.md) |
 
-> Older **2011–2012** (D / E) Orsay sets aren't supported — their MAPLE engine and
-> aged TLS make them the weakest, least reliable targets.
-
-### Orsay Installer
-
-Orsay TVs (2013–2014) sideload apps over your Wi-Fi from a computer, so you run a
-small **installer** once. It's a self-contained app that bundles a **signed,
-unmodified copy of Node** — nothing to install, and no security warning to click
-through. It detects your computer's IP and pushes Twellie onto the TV; once it's
-installed you close the installer and the TV streams Twitch directly.
-(Tizen TVs use [Apps2Samsung](docs/install/apps2samsung.md) or
-[TizenBrew](docs/install/tizenbrew.md) instead and need none of this.)
-
-> Most F/H sets reach Twitch directly. Very old firmware whose TLS can't is not
-> supported. See the [guide](docs/install/orsay-2013-2014.md).
-
-Grab the one for your computer — each always points at the newest release:
-
-| Your computer | Download |
-| ------------- | -------- |
-| **macOS** (Apple Silicon · M1–M4) | [twellie-orsay-host-macos-arm64.zip](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-macos-arm64.zip) |
-| **macOS** (Intel) | [twellie-orsay-host-macos-x64.zip](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-macos-x64.zip) |
-| **Windows** (64-bit) | [twellie-orsay-host-windows-x64.zip](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/twellie-orsay-host-windows-x64.zip) |
+Older **2011-2012** **D**/**E** Orsay sets are not supported.
 
 ## Credits and Heritage
 

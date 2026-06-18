@@ -73,11 +73,12 @@ function sha256(file) {
 /*
  * Fetch the official Node binary for { version, os, arch }.
  *   os:   'darwin' | 'win' | 'linux'   (nodejs.org naming)
- *   arch: 'arm64' | 'x64'
+ *   arch: 'arm64' | 'x64' | 'x86'
  * Returns { data: Buffer, name: 'node'|'node.exe', path: <cached binary> }.
  */
 async function fetchNodeBinary(opts) {
   const { version, os, arch } = opts;
+  const refresh = !!opts.refresh;
   const tag = 'node-v' + version + '-' + os + '-' + arch;
   const ext = os === 'win' ? '.zip' : '.tar.gz';
   const member = os === 'win' ? tag + '/node.exe' : tag + '/bin/node';
@@ -85,6 +86,10 @@ async function fetchNodeBinary(opts) {
 
   fs.mkdirSync(CACHE, { recursive: true });
   const cached = path.join(CACHE, name === 'node.exe' ? tag + '.exe' : tag);
+  if (refresh) {
+    fs.rmSync(cached, { force: true });
+    fs.rmSync(path.join(CACHE, tag + ext), { force: true });
+  }
   if (fs.existsSync(cached)) {
     return { data: fs.readFileSync(cached), name: name, path: cached };
   }
