@@ -27,7 +27,7 @@
 - 🎮 **Remote first** - D-pad grids and color-button shortcuts, no mouse required.
 - 🧩 **Wide TV support** - one ES5 core for Orsay, Tizen, TizenBrew, and browser.
 - 🔌 **No backend required** - TV builds talk to public Twitch endpoints directly.
-- 🌍 **8 languages** - localized UI for the supported app builds.
+- 🌍 **12 languages** - localized UI for the supported app builds.
 
 ## Supported TVs
 
