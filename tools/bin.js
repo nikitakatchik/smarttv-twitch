@@ -55,9 +55,9 @@ function winLauncher() {
 function unixLauncher() {
   // The official Node binary is Developer-ID-signed but NOT notarized, so a
   // copy that came through a browser carries com.apple.quarantine and Gatekeeper
-  // SIGKILLs it on launch. Once the user has approved THIS script (right-click →
-  // Open), it runs with their permissions and can clear the flag from the whole
-  // folder — then node starts with no further prompt.
+  // SIGKILLs it on launch. Once the user has approved THIS script in macOS
+  // Privacy & Security, it runs with their permissions and can clear the flag
+  // from the whole folder — then node starts with no further prompt.
   // The host serves on port 80 (Orsay's App-Sync field is IP-only, no port box),
   // and binding a port < 1024 needs root on macOS — so re-exec under sudo (one
   // Terminal password prompt) unless we're already root or a high port was passed.
