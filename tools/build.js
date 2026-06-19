@@ -23,6 +23,7 @@ const SRC = path.join(ROOT, 'src');
 const DIST = path.join(ROOT, 'dist');
 const ALL = ['orsay', 'tizen', 'web', 'tizenbrew'];
 const PLATFORM_FILES = new Set(['index.html', 'config.xml', 'widget.info']);
+const RUNTIME_VERSION_ASSIGNMENT = "TW.version = global.TW_VERSION || '';";
 
 // The TizenBrew module manifest (emitted at dist/tizenbrew/package.json). This
 // is NOT the repo's package.json — it tells TizenBrew how to load the module:
@@ -55,6 +56,21 @@ function copyDir(src, dst) {
   }
 }
 
+function injectRuntimeVersion(source, version) {
+  if (source.indexOf(RUNTIME_VERSION_ASSIGNMENT) === -1) {
+    throw new Error('core/util.js version assignment not found');
+  }
+  return source.replace(
+    RUNTIME_VERSION_ASSIGNMENT,
+    'TW.version = ' + JSON.stringify(String(version)) + ';'
+  );
+}
+
+function stampRuntimeVersion(out) {
+  const file = path.join(out, 'core', 'util.js');
+  fs.writeFileSync(file, injectRuntimeVersion(fs.readFileSync(file, 'utf8'), pkg.version));
+}
+
 // Assemble one platform into outDir (default dist/<platform>) and return it.
 function build(platform, outDir) {
   const pdir = path.join(SRC, 'platforms', platform);
@@ -73,6 +89,7 @@ function build(platform, outDir) {
   if (platform === 'web') {
     fs.copyFileSync(path.join(SRC, 'assets', 'icon', 'favicon.ico'), path.join(out, 'favicon.ico'));
   }
+  stampRuntimeVersion(out);
   return out;
 }
 
@@ -94,7 +111,7 @@ function buildAll(target) {
   });
 }
 
-module.exports = { build, buildTizenbrew, buildAll, ALL, MODULE_PKG, ROOT, SRC, DIST };
+module.exports = { build, buildTizenbrew, buildAll, injectRuntimeVersion, ALL, MODULE_PKG, ROOT, SRC, DIST };
 
 if (require.main === module) {
   try {

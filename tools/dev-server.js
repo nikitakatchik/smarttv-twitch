@@ -16,6 +16,8 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const pkg = require('../package.json');
+const { injectRuntimeVersion } = require('./build');
 const { proxyHttp, CORS } = require('./lib/dev-proxy');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -52,6 +54,13 @@ function send(res, status, body, headers) {
 function serveFile(res, file) {
   fs.readFile(file, (err, data) => {
     if (err) { return send(res, 404, 'Not found'); }
+    if (file === path.join(SRC, 'core', 'util.js')) {
+      try {
+        data = Buffer.from(injectRuntimeVersion(data.toString('utf8'), pkg.version), 'utf8');
+      } catch (e) {
+        return send(res, 500, 'version injection failed: ' + e.message);
+      }
+    }
     send(res, 200, data, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
   });
 }

@@ -3,10 +3,6 @@ name: release
 on:
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: Release tag to create, for example 4.0.0
-        required: true
-        type: string
       commit_sha:
         description: Full 40-character commit SHA to release
         required: true
@@ -16,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ inputs.release_tag }}
+  group: release-${{ inputs.commit_sha }}
   cancel-in-progress: false
 
 jobs:
@@ -25,38 +21,57 @@ jobs:
     outputs:
       commit_sha: ${{ steps.resolve.outputs.commit_sha }}
       release_tag: ${{ steps.resolve.outputs.release_tag }}
+      version: ${{ steps.resolve.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - id: resolve
-        name: Validate release inputs
+        name: Resolve release version
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
           COMMIT_SHA: ${{ inputs.commit_sha }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          if ! git check-ref-format "refs/tags/$RELEASE_TAG"; then
-            echo "::error::release_tag must be a valid Git tag name"
-            exit 1
-          fi
           if [[ ! "$COMMIT_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
             echo "::error::commit_sha must be a full 40-character commit SHA"
             exit 1
           fi
 
-          resolved="$(git rev-parse "${COMMIT_SHA}^{commit}")"
-          echo "commit_sha=$resolved" >> "$GITHUB_OUTPUT"
-          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          if ! resolved="$(git rev-parse "${COMMIT_SHA}^{commit}" 2>/dev/null)"; then
+            echo "::error::commit_sha does not resolve to a commit"
+            exit 1
+          fi
+          git checkout --detach "$resolved"
 
-          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
-            tagged="$(git rev-list -n 1 "$RELEASE_TAG")"
+          version="$(node tools/version.js --print)"
+          node tools/version.js --check
+          release_tag="$version"
+          if ! git check-ref-format "refs/tags/$release_tag"; then
+            echo "::error::package version $version does not produce a valid Git tag name"
+            exit 1
+          fi
+
+          if gh release view "$release_tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release $release_tag already exists"
+            exit 1
+          fi
+
+          echo "commit_sha=$resolved" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
+            tagged="$(git rev-list -n 1 "$release_tag")"
             if [ "$tagged" != "$resolved" ]; then
-              echo "::error::Tag $RELEASE_TAG already points at $tagged, not $resolved"
+              echo "::error::Tag $release_tag already points at $tagged, not $resolved"
               exit 1
             fi
-            echo "::notice::Tag $RELEASE_TAG already points at $resolved; release publishing will reuse it."
+            echo "::notice::Tag $release_tag already points at $resolved; release publishing will reuse it."
           fi
 
   ci:
@@ -129,10 +144,11 @@ jobs:
         continue-on-error: true
         run: npm run tizen:setup
       # Build the remaining assets + publish the labeled GitHub Release. release:publish
-      # reuses the host installers above and creates the tag at the requested SHA.
+      # reuses the host installers above and creates the version tag at the requested SHA.
       - name: Publish labeled GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.preflight.outputs.release_tag }}
+          RELEASE_ABORT_IF_EXISTS: "1"
           GH_TARGET: ${{ needs.preflight.outputs.commit_sha }}
         run: npm run release:publish -- --live

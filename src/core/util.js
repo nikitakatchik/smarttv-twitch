@@ -10,7 +10,7 @@
   var TW = global.TW || {};
   global.TW = TW;
 
-  TW.version = '4.0.0';
+  TW.version = global.TW_VERSION || '';
 
   /** No-op. */
   TW.noop = function () {};

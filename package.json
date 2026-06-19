@@ -28,8 +28,10 @@
   "scripts": {
     "start": "node tools/dev-server.js",
     "dev": "node tools/dev-server.js",
-    "test": "node --test test/*.test.js",
+    "test": "node tools/version.js --check && node --test test/*.test.js",
     "lint": "node tools/lint-es5.js",
+    "version:check": "node tools/version.js --check",
+    "version:set": "node tools/version.js",
     "build": "node tools/build.js",
     "build:orsay": "node tools/build.js orsay",
     "build:tizen": "node tools/build.js tizen",

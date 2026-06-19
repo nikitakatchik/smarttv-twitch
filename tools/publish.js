@@ -9,14 +9,15 @@
  *   npm run release:publish -- --dry-run
  *                                      show the asset/label map + the gh plan; build/publish nothing
  *
- * PUSH THE TAG FIRST. The release attaches to tag v<version> (override RELEASE_TAG),
+ * PUSH THE TAG FIRST. The release attaches to tag <version> (override RELEASE_TAG),
  * and we pass gh --verify-tag so it never silently auto-tags the wrong commit:
- *     git tag v4.0.0 && git push origin v4.0.0        # then: npm run release:publish
+ *     git tag 4.0.0 && git push origin 4.0.0        # then: npm run release:publish
  * (or set GH_TARGET=<sha> to let gh create the tag at that commit.)
  *
- * IDEMPOTENT: if a release for the tag already exists, publish UPDATES it
+ * IDEMPOTENT by default: if a release for the tag already exists, publish UPDATES it
  * (edit notes/title + re-upload assets with --clobber) instead of failing — so the
  * documented draft → `--live` promotion works, and CI job re-runs are safe.
+ * Set RELEASE_ABORT_IF_EXISTS=1 to fail instead; release.yml uses this.
  *
  * Publishing is outward-facing and hard to undo, so it DEFAULTS TO A DRAFT.
  * Requires the `gh` CLI, authenticated (`gh auth login`, or GH_TOKEN in CI).
@@ -34,12 +35,13 @@ const { buildTizenbrew, ROOT } = require('./build');
 const { zipDir } = require('./lib/zip');
 
 const OUT = path.join(ROOT, 'dist', 'release');
-// Tag: v<version> by default; RELEASE_TAG lets CI pin it to the pushed tag.
-const TAG = process.env.RELEASE_TAG || ('v' + pkg.version);
+// Tag: <version> by default; RELEASE_TAG lets CI pin it to the deduced tag.
+const TAG = process.env.RELEASE_TAG || pkg.version;
 const DRY = process.argv.includes('--dry-run');
 const LIVE = process.argv.includes('--live');
 const BUILD_ONLY = process.argv.includes('--build-only');
 const MODE = BUILD_ONLY ? 'release' : 'publish';
+const ABORT_IF_EXISTS = process.env.RELEASE_ABORT_IF_EXISTS === '1';
 
 // [ filename, release label ] — the published set, in display order.
 const ASSETS = [
@@ -106,6 +108,9 @@ function releaseExists() {
 function publishRelease(present) {
   const assets = present.map(assetArg);
   if (releaseExists()) {
+    if (ABORT_IF_EXISTS) {
+      die('release ' + TAG + ' already exists; refusing to update it');
+    }
     console.log('release ' + TAG + ' already exists — updating it…');
     const edit = ['release', 'edit', TAG, '--title', 'Twellie ' + TAG, '--notes', notes()];
     if (LIVE) { edit.push('--draft=false'); }           // promote a draft to published
@@ -141,7 +146,7 @@ if (DRY) {
   console.log('\nwould run (new release):\n  ' +
     create.map(function (s) { return /[\s"#]/.test(s) ? JSON.stringify(s) : s; }).join(' '));
   console.log('\n(· = not built yet; a real run builds first. If a release for ' + TAG +
-    ' already exists, publish updates it instead: gh release edit + gh release upload --clobber.)');
+    ' already exists, publish ' + (ABORT_IF_EXISTS ? 'aborts because RELEASE_ABORT_IF_EXISTS=1.' : 'updates it instead: gh release edit + gh release upload --clobber.') + ')');
   process.exit(0);
 }
 

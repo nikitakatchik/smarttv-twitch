@@ -2,14 +2,18 @@
 
 Maintainers cut releases from GitHub Actions:
 
-1. Open **Actions** -> **release** -> **Run workflow**.
-2. Enter `release_tag`, for example `4.0.0`.
+1. Update the repo version and commit it:
+   ```sh
+   npm run version:set -- 4.1.0
+   ```
+2. Open **Actions** -> **release** -> **Run workflow**.
 3. Enter the full 40-character `commit_sha` to ship.
 4. Run the workflow.
 
-The workflow validates the inputs, checks out that exact commit, runs the shared
-CI workflow, builds the release host installers, and only then publishes the tag
-and GitHub Release.
+The workflow checks out that exact commit, reads the release tag from
+`package.json`, verifies the Tizen manifest has the same version, aborts if that
+GitHub Release already exists, runs the shared CI workflow, builds the release
+host installers, and only then publishes the tag and GitHub Release.
 
 Release assets come from the existing build scripts:
 
@@ -39,4 +43,4 @@ npm run release:publish -- --live
 - `twellie-orsay.zip` (raw App-Sync widget; advanced, not the normal installer)
 
 If a workflow rerun finds the tag already exists, it must point at the same
-commit SHA. The release step then updates the GitHub Release assets in place.
+commit SHA. A rerun still aborts if the GitHub Release already exists.

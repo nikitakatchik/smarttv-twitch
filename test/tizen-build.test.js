@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const pkg = require('../package.json');
 
 const { build } = require('../tools/build');
 
@@ -29,8 +30,16 @@ test('tizen config.xml declares the app id + AVPlay privilege', () => {
   withBuild((out) => {
     const cfg = fs.readFileSync(path.join(out, 'config.xml'), 'utf8');
     assert.ok(/tizen:application\s+id=/.test(cfg), 'no tizen:application id');
+    assert.ok(cfg.includes('version="' + pkg.version + '"'), 'config.xml version should match package.json');
     assert.ok(cfg.includes('developer.samsung.com/privilege/avplay'), 'no avplay privilege');
     assert.ok(cfg.includes('tizen.org/privilege/internet'), 'no internet privilege');
+  });
+});
+
+test('tizen build injects package version into runtime core', () => {
+  withBuild((out) => {
+    const util = fs.readFileSync(path.join(out, 'core', 'util.js'), 'utf8');
+    assert.ok(util.includes('TW.version = ' + JSON.stringify(pkg.version) + ';'));
   });
 });
 
