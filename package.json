@@ -1,6 +1,6 @@
 {
   "name": "twellie",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "private": true,
   "description": "Twellie — an unofficial viewer for Twitch on Samsung Smart TVs. One ES5 core; targets: Orsay (2013–2014), Tizen (2015+) as a native .wgt (Apps2Samsung) or TizenBrew module, and a desktop browser harness.",
   "keywords": [
