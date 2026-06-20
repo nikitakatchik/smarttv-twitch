@@ -1,9 +1,8 @@
 <p align="center">
-  <img src="docs/media/logo.png" alt="Twellie" width="200" />
+  <img src="./docs/hero.png" alt="Project hero banner" width="100%" />
 </p>
 
-<h1 align="center">Twellie</h1>
-
+<h3 align="center">Twellie</h1>
 <p align="center">
   <b>An unofficial viewer for Twitch on any Samsung Smart TV — from a 2013 Orsay set to a modern Tizen panel.</b> <br />
   Not affiliated with Twitch, Samsung, or Tizen.
@@ -43,12 +42,12 @@ Full matrix, engines, and caveats: [docs/PLATFORMS.md](docs/PLATFORMS.md).
 Pick the one guide that matches your TV and computer. Each guide is written
 end-to-end with one Twellie package.
 
-| | | |
+| TV Model | Platform | Installation |
 | - | - | - |
-| **2013 F-series** | Orsay | [📦 macOS](docs/install/orsay-f-2013-macos.md) · [📦 Windows](docs/install/orsay-f-2013-windows.md) |
-| **2014 H-series** | Orsay | [📦 macOS](docs/install/orsay-h-2014-macos.md) · [📦 Windows](docs/install/orsay-h-2014-windows.md) |
-| **2015+** | Tizen | [📦 Apps2Samsung](docs/install/apps2samsung.md) |
-| **2017+** | Tizen | [📦 TizenBrew](docs/install/tizenbrew.md) |
+| **2013 F-series** | Orsay | 📦 [macOS](docs/install/orsay-f-2013-macos.md) · 📦 [Windows](docs/install/orsay-f-2013-windows.md) |
+| **2014 H-series** | Orsay | 📦 [macOS](docs/install/orsay-h-2014-macos.md) · 📦 [Windows](docs/install/orsay-h-2014-windows.md) |
+| **2015+ J-series and newer** | Tizen | 📦 [Apps2Samsung](docs/install/apps2samsung.md) |
+| **2017+ M-series and newer** | Tizen | 📦 [TizenBrew](docs/install/tizenbrew.md) |
 
 Older **2011-2012** **D**/**E** Orsay sets are not supported.
 

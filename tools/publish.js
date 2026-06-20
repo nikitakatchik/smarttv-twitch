@@ -67,14 +67,19 @@ function assetArg(asset) { return path.join(OUT, asset[0]) + '#' + asset[1]; }
 
 function notes() {
   return [
-    'Pick the guide for your TV and computer:',
+    '## Install on Your TV',
     '',
-    '- Pick the exact TV/computer guide from the install table:',
-    '  https://github.com/nkatchik/smarttv-twitch#install-on-your-tv',
+    'Pick the one guide that matches your TV and computer. Each guide is written',
+    'end-to-end with one Twellie package.',
     '',
-    'TizenBrew setup is documented as its own guide in the install table.',
+    '| TV Model | Platform | Installation |',
+    '| - | - | - |',
+    '| **2013 F-series** | Orsay | 📦 [macOS](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/orsay-f-2013-macos.md) · 📦 [Windows](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/orsay-f-2013-windows.md) |',
+    '| **2014 H-series** | Orsay | 📦 [macOS](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/orsay-h-2014-macos.md) · 📦 [Windows](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/orsay-h-2014-windows.md) |',
+    '| **2015+ J-series and newer** | Tizen | 📦 [Apps2Samsung](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/apps2samsung.md) |',
+    '| **2017+ M-series and newer** | Tizen | 📦 [TizenBrew](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/tizenbrew.md) |',
     '',
-    'Full guides are in the repository README.',
+    'Older **2011-2012** **D**/**E** Orsay sets are not supported.'
   ].join('\n');
 }
 
