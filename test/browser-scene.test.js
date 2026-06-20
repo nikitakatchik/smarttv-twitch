@@ -182,6 +182,23 @@ test('Following renders Live Categories before live and offline rows', () => {
   assert.equal(scene.fRows[2].items[0].kind, 'channel');
 });
 
+test('Following category section uses game rail compensation only for category rows', () => {
+  const { scene, MODE } = setup({
+    categories: [Object.assign(game('Chess'), { viewers: 5, box: 'http://img/chess.jpg' })],
+    live: [stream('a', 'A')],
+    follows: [channel('b', 'B')],
+  });
+  scene.switchMode(MODE.FOLLOWED, true);
+
+  assert.match(scene.fRows[0].el.parentNode.parentNode.className, /tw-sec-game/);
+  assert.doesNotMatch(scene.fRows[1].el.parentNode.parentNode.className, /tw-sec-game/);
+  assert.doesNotMatch(scene.fRows[2].el.parentNode.parentNode.className, /tw-sec-game/);
+
+  const css = fs.readFileSync(path.resolve(__dirname, '..', 'src/ui/styles.css'), 'utf8');
+  assert.match(css, /\.tw-sec-game\s*\{[^}]*margin-left: -5px;[^}]*margin-right: -5px;/s);
+  assert.match(css, /\.tw-sec-game \.tw-sec-head\s*\{[^}]*padding-left: 13px;[^}]*padding-right: 13px;/s);
+});
+
 test('Following sorts live categories and live channels by viewer count', () => {
   const { scene, MODE } = setup({
     categories: [

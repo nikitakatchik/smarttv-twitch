@@ -185,12 +185,16 @@ html, body {
    one is shown at a time. */
 .tw-follow { display: none; }
 .tw-sec { margin: 0 0 18px; }
+.tw-sec-game { margin-left: -5px; margin-right: -5px; }
 /* Section heading; its left padding lines the text up with the thumbnail
    artwork (5px cell padding + 3px transparent thumb border = 8px). */
 .tw-sec-head {
   font-size: 20px; line-height: 24px; font-weight: 600; color: #efeff1;
   text-align: left; padding: 4px 8px 9px;
 }
+/* Game/category tiles have 10px cell padding, so the section expands by 5px
+   per side and the heading receives the same compensation. */
+.tw-sec-game .tw-sec-head { padding-left: 13px; padding-right: 13px; }
 /* Empty pad cells keep table-layout:fixed honouring 25% columns when a section's
    last row is short, so a lone tile isn't stretched across the whole width. */
 .tw-cell-pad { background: none; }

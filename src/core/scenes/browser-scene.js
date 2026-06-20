@@ -734,7 +734,7 @@
   P.appendFollowSection = function (parent, title, items, kind) {
     var offline = (kind === 'channel');
     var cols = offline ? OFFLINE_COLUMNS : TW.config.columns;
-    var sec = dom.create('div', 'tw-sec');
+    var sec = dom.create('div', 'tw-sec' + (kind === 'game' ? ' tw-sec-game' : ''));
     var head = dom.create('div', 'tw-sec-head'); dom.text(head, title); sec.appendChild(head);
     var table = dom.create('table', offline ? 'tw-grid tw-grid-6' : 'tw-grid');
     for (var i = 0, sectionRow = 0; i < items.length; sectionRow++) {
