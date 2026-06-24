@@ -4,7 +4,7 @@
 <widget xmlns="http://www.w3.org/ns/widgets"
         xmlns:tizen="http://tizen.org/ns/widgets"
         id="https://github.com/nkatchik/smarttv-twitch"
-        version="4.0.2" viewmodes="maximized">
+        version="4.0.3" viewmodes="maximized">
   <tizen:application id="Twellie001.Twellie" package="Twellie001" required_version="2.3"/>
   <tizen:profile name="tv"/>
 

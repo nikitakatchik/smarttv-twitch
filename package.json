@@ -1,6 +1,6 @@
 {
   "name": "twellie",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "private": true,
   "description": "Twellie - independent TV client for watching Twitch streams on supported Samsung Smart TV platforms, with Orsay, Tizen, TizenBrew, and browser builds.",
   "packageType": "app",
