@@ -1,7 +1,8 @@
 # Install Twellie with TizenBrew
 
-Use this guide for Samsung Tizen TVs from 2017 and newer when you want to run
-Twellie as a TizenBrew module.
+Use this guide for supported Samsung Tizen TVs from 2017 and newer when you want
+to run Twellie as a TizenBrew module. This path depends on TizenBrew, Media
+Source Extensions, and the TV web runtime, so model-specific reports are welcome.
 
 1. Download [⬇️ Twellie TizenBrew package](https://github.com/nkatchik/smarttv-twitch/releases/latest/download/twellie-tizenbrew.zip) to your computer.
 2. Copy `twellie-tizenbrew.zip` to a USB drive.

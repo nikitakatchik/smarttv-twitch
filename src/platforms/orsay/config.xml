@@ -21,7 +21,7 @@
   <videomute>n</videomute>
   <dcont>y</dcont>
   <widgetname>Twellie</widgetname>
-  <description>Twellie — an unofficial live viewer for Twitch on pre-Tizen Samsung Smart TVs.</description>
+  <description>Twellie - independent client for watching Twitch streams on supported pre-Tizen Samsung Smart TVs.</description>
   <width>1280</width>
   <height>720</height>
   <author>

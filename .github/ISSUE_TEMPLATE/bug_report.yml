@@ -1,0 +1,77 @@
+name: Bug report
+description: Report a reproducible Twellie problem.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Do not include access tokens, account details, private chat logs, or screenshots containing private information.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+      placeholder: Twellie opens, but playback fails after selecting a channel.
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Orsay
+        - Tizen
+        - TizenBrew
+        - Browser/web preview
+        - Unknown
+    validations:
+      required: true
+  - type: input
+    id: tv_model
+    attributes:
+      label: TV model
+      description: Include the exact model number if this happened on a TV.
+      placeholder: UE55F8000 / UN55MU8000 / not applicable
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware/software version
+      placeholder: Unknown
+  - type: input
+    id: install_method
+    attributes:
+      label: Install method
+      placeholder: Apps2Samsung, TizenBrew, Orsay App Sync, GitHub Pages, npm start
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the smallest steps that reproduce the issue.
+      placeholder: |
+        1. Open Twellie.
+        2. Select Channels.
+        3. Open a live channel.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs or screenshots
+      description: Add safe logs, screenshots, or photos if they help. Remove tokens, account identifiers, and private information.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context

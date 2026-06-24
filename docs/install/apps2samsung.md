@@ -1,6 +1,8 @@
-# Install Twellie on Samsung Tizen TVs with Apps2Samsung
+# Install Twellie on Tizen with Apps2Samsung
 
-Use this guide for Samsung Tizen TVs from 2015 and newer.
+Use this guide for supported Samsung Tizen TVs from 2015 and newer when you want
+the native `.wgt` install path. Model, firmware, region, developer-mode access,
+and Apps2Samsung behavior can vary, so device reports are welcome.
 
 1. Download [⬇️ Twellie.wgt](/releases/latest/download/Twellie.wgt) to your computer.
 2. Download [⬇️ Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung/releases/latest) to your computer.

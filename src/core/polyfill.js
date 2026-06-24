@@ -4,7 +4,7 @@
  * The 2013–2014 "Orsay" TVs run an old WebKit (~535–537). Everything we ship is
  * hand-written ES5, and these few shims (JSON, a couple of Array/Function
  * helpers) defensively backfill anything an old build might miss — so the exact
- * same bundle runs on an old Orsay panel and a 2024 Tizen WebView alike. All are
+ * same bundle runs on old Orsay panels and supported Tizen WebViews alike. All are
  * no-ops where the platform already provides the feature, safe to load anywhere.
  */
 (function (global) {

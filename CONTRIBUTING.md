@@ -1,6 +1,6 @@
 # Contributing 🤝
 
-Thanks for helping keep Twitch alive on old TVs! 💜
+Thanks for helping improve Twellie on older and unsupported TV platforms.
 
 ## Ground rules
 
@@ -19,7 +19,7 @@ Thanks for helping keep Twitch alive on old TVs! 💜
 ```bash
 npm run lint      # ES5 safety
 npm test          # unit tests
-npm start         # eyeball it in the harness against live Twitch
+npm start         # check it in the browser harness
 ```
 
 ## Adding a translation 🌍

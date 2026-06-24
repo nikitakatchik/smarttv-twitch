@@ -1,0 +1,70 @@
+name: Compatibility report
+description: Share whether Twellie works on a specific TV, firmware, and install path.
+title: "[Compatibility]: "
+labels: ["compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Compatibility reports help keep the platform matrix honest. Please avoid private account details, tokens, or copyrighted stream screenshots unless you have rights to share them.
+  - type: input
+    id: tv_model
+    attributes:
+      label: TV model
+      description: Exact model number from the TV settings or back label.
+      placeholder: UE55F8000
+    validations:
+      required: true
+  - type: input
+    id: year
+    attributes:
+      label: Model year
+      placeholder: 2013 / 2017 / unknown
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Orsay
+        - Tizen
+        - TizenBrew
+        - Browser/web preview
+        - Unknown
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware/software version
+      placeholder: 2127 / T-KTM2DEUC-1400.3 / unknown
+  - type: input
+    id: install_method
+    attributes:
+      label: Install method
+      placeholder: Apps2Samsung, TizenBrew, Orsay App Sync, GitHub Pages, npm start
+    validations:
+      required: true
+  - type: textarea
+    id: works
+    attributes:
+      label: What works?
+      placeholder: Browse opens, chat connects, AVPlay starts, quality selection works.
+    validations:
+      required: true
+  - type: textarea
+    id: fails
+    attributes:
+      label: What fails?
+      placeholder: Login does not appear, playback errors, remote key missing, install failed.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs or screenshots
+      description: Add safe logs, screenshots, or photos if relevant. Remove tokens, account identifiers, and private information.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Include region, network constraints, repeated tests, or workarounds if relevant.

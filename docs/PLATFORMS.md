@@ -1,79 +1,81 @@
-# 📺 Supported generations
+# Platform compatibility
 
-One ES5 core, four runtime adapters, spanning **Samsung Smart TVs from 2013 on**
-— Orsay (2013–14) installs directly, and Tizen (2015+) installs for users via
-Apps2Samsung as a native `.wgt`. A TizenBrew module archive is also built for
-the TizenBrew guide. The split is dictated by Samsung's own platform history:
-the 2015 switch from the in-house *Orsay/Maple* stack to *Tizen* changed the
-player, the key codes, the packaging and the JS engine all at once.
+Twellie targets supported Samsung Smart TV platforms where the install path,
+JavaScript engine, player API, and network stack can handle the current app. This
+page is a compatibility guide, not a guarantee that every TV in a model year or
+region works.
 
-| Year | Series | Platform | Player | Engine | Reaches Twitch via | Status |
-| ---- | ------ | -------- | ------ | ------ | ------------------ | ------ |
-| 2013 | F | Orsay | `INFOLINK` / SEF | WebKit ~535 | direct | ✅ best-effort, anonymous-only |
-| 2014 | H | Orsay | `INFOLINK` | WebKit 537 | direct | ✅ best-effort, anonymous-only |
-| 2015–16 | J/K | Tizen 2.3–2.4 | AVPlay (`.wgt`) | Chromium WebView | Apps2Samsung | ✅ (TizenBrew shaky: draft MSE) |
-| 2017 | M | Tizen 3.0 | AVPlay (`.wgt`) · hls.js | Chromium M47 | Apps2Samsung; TizenBrew when hosted | ✅ |
-| 2018 | N | Tizen 4.0 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung; TizenBrew when hosted | ✅ |
-| 2019–2022 | R/T/A/B | Tizen 5–6.5 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung; TizenBrew when hosted | ✅ |
-| 2023+ | C/D/F/H/… | Tizen 7–10 | AVPlay (`.wgt`) · hls.js | Chromium | Apps2Samsung; TizenBrew when hosted | ✅ |
-| any | — | **Hosted web preview** | Twitch embed · `<video>` | Chrome/FF/Safari | Twitch embed | 🧪 demo |
-| any | — | **Browser harness** | hls.js | Chrome/FF/Safari | dev CORS proxy | 🧪 dev/test |
+Community test reports are useful. Please include the TV model, model year if
+known, platform, firmware/software version, install method, what works, and what
+fails.
 
-> **Dropped: 2011–2012 (D/E).** The D-series runs MAPLE (Gecko 1.8.1, no native
-> `JSON`) and both D/E have TLS stacks too old to ever reach modern Twitch — the
-> weakest, least reliable targets. Support now starts at 2013 (F).
+## Compatibility buckets
+
+| Bucket | Platforms | Notes |
+| --- | --- | --- |
+| Confirmed/tested | Orsay 2013 F-series and 2014 H-series App Sync flows; generated Tizen `.wgt`; generated TizenBrew module; browser harness | Orsay is anonymous-only. Tizen device coverage still depends on TV firmware, developer-mode access, and install tooling. |
+| Likely but untested | Many 2015+ Tizen TVs through Apps2Samsung; many 2017+ Tizen TVs through TizenBrew | Expected from the platform APIs, but model and firmware reports are still needed. |
+| Unsupported | 2011-2012 D/E Orsay; TVs that cannot negotiate modern HTTPS/TLS to Twitch endpoints; devices without developer-mode or sideload-style installation | Twellie does not bypass platform security, authentication, subscriptions, geoblocks, or other access controls. |
+| Unknown | Regional firmware variants, newer platform changes, non-Samsung TV browsers, and undocumented TizenBrew configurations | Try the browser harness first, then report device results if you test on hardware. |
+
+## Platform matrix
+
+| Year | Series | Platform | Player | Install / run path | Current status |
+| --- | --- | --- | --- | --- | --- |
+| 2013 | F | Orsay | `INFOLINK` / SEF | App Sync installer | Best-effort, anonymous-only |
+| 2014 | H | Orsay | `INFOLINK` | App Sync installer | Best-effort, anonymous-only |
+| 2015-2016 | J/K | Tizen 2.3-2.4 | AVPlay (`.wgt`) | Apps2Samsung | Supported path, reports welcome |
+| 2017 | M | Tizen 3.0 | AVPlay (`.wgt`) or hls.js | Apps2Samsung; TizenBrew where available | Supported path, reports welcome |
+| 2018 | N | Tizen 4.0 | AVPlay (`.wgt`) or hls.js | Apps2Samsung; TizenBrew where available | Likely, reports welcome |
+| 2019-2022 | R/T/A/B | Tizen 5-6.5 | AVPlay (`.wgt`) or hls.js | Apps2Samsung; TizenBrew where available | Likely, reports welcome |
+| 2023+ | C/D/F/H and newer | Tizen 7+ | AVPlay (`.wgt`) or hls.js | Apps2Samsung; TizenBrew where available | Unknown to likely, reports welcome |
+| any desktop | - | Hosted web preview | Twitch embed and `<video>` | GitHub Pages | Demo/preview |
+| any desktop | - | Browser harness | hls.js | `npm start` dev server | Development and test harness |
+
+Older 2011-2012 D/E Orsay sets are not supported. Their engines and TLS stacks
+are too old for the current app and modern Twitch endpoints.
 
 ## Reaching Twitch
 
-Modern Twitch is HTTPS-only with current TLS 1.2 ciphers. A 2013–2014 Orsay
-panel's TLS is borderline — **most firmware reaches `gql.twitch.tv` /
-`usher.ttvnw.net` directly, but the oldest may not**. The app connects directly;
-a set whose TLS can't isn't supported. Orsay also disables login/following; those
-authenticated `id.twitch.tv` and Helix paths are too fragile on the old WebKit
-runtime.
+Modern Twitch playback and browse endpoints require current HTTPS/TLS behavior.
+The app does not include a production backend service, proxy, or access-control
+bypass. Each TV build either connects directly from the app/runtime or delegates
+media loading to the platform player.
 
-On Tizen there is one end-user install path today:
+On Orsay, the app connects directly and stays anonymous-only. Login and followed
+channels are hidden because those authenticated paths are too fragile on the old
+WebKit runtime. A TV whose firmware cannot negotiate current TLS to the required
+hosts is unsupported.
 
-- **Apps2Samsung** (2015+, recommended) installs a native `.wgt` that plays via the
-  privileged **AVPlay** — no browser `Origin`, modern TLS, reaches Twitch directly.
-  Browse/auth/chat still run in the Tizen WebView, so the package declares both
-  the `internet` privilege and `<access origin="*" subdomains="true">` in
-  `config.xml` for Twitch and dynamically selected CDN hosts.
-  Apps2Samsung mints a per-TV Samsung cert and re-signs the package for you (see
-  [install/apps2samsung.md](install/apps2samsung.md)); AVPlay needs no MSE, so it
-  works on older sets too. 2023+ Tizen 7 and newer sets can require Samsung
-  account authorization inside Apps2Samsung while it creates the install
-  certificate.
+On Tizen, the primary install path is **Apps2Samsung** with `Twellie.wgt`.
+Apps2Samsung re-signs the package for the target TV before install. Playback goes
+through AVPlay; browse, chat, login, and thumbnails still run in the web runtime.
+The package declares the `internet` privilege and broad widget access because
+thumbnail, API, and selected media hosts are dynamic.
 
-The TizenBrew build target is separate. TizenBrew (2017+) loads a hosted web
-module that plays via **hls.js**. No `.wgt`, but hls.js needs MSE (reliable
-2017+; 2015–16 draft MSE is best-effort), and it fetches Twitch under
-TizenBrew's `<access origin="*">` privilege. The end-user guide installs the
-local `twellie-tizenbrew.zip` module package attached to GitHub Releases.
+The TizenBrew build target is separate. TizenBrew loads Twellie as a module and
+uses hls.js for playback. It is most realistic on 2017+ TVs with Media Source
+Extensions support; older 2015-2016 sets are best-effort at most.
 
-Only the **browser harness** is hard CORS-bound: desktop browsers enforce CORS
-that the TV WebViews relax, and Twitch's usher/playlist hosts send no
-`Access-Control-Allow-Origin`, so `npm start` routes HLS playback through a small
-**dev-only CORS proxy** in the dev server (`tools/lib/dev-proxy.js`). GitHub
-Pages cannot host that endpoint, so the hosted preview uses Twitch's official
-embed for live/VOD playback and direct `<video>` for signed clip MP4s. Orsay and
-native Tizen play direct; the TizenBrew module plays through the TizenBrew
-WebView.
+The hosted web preview is not the same as a TV install. GitHub Pages cannot run
+the dev CORS proxy, so the preview uses an embedded player path for live/VOD
+playback and direct clip video URLs where available. The local browser harness
+(`npm start`) uses a dev-only proxy for HLS testing. That proxy is not shipped in
+TV builds.
 
-## Engine constraints (why everything is hand-written ES5)
+## Engine constraints
 
-The 2013–2014 Orsay sets run an old WebKit (~535–537, no ES6 — no
-arrow/`let`/`const`/`Promise`/`classList`). The whole codebase is ES5 and ships
-[`core/polyfill.js`](../src/core/polyfill.js) to backfill stragglers defensively;
-`npm run lint` fails the build if any ES6 sneaks into the TV-targeted trees. The
-exact same bundle then runs unmodified on a 2024 Tizen WebView.
+The 2013-2014 Orsay sets run old WebKit builds with no ES6. TV-targeted code is
+plain ES5 and ships [`core/polyfill.js`](../src/core/polyfill.js) for small
+runtime gaps. `npm run lint` fails if unsupported JavaScript syntax reaches the
+TV-targeted trees.
 
 ## What each adapter supplies
 
 A platform adapter is the only TV-specific surface (`src/platforms/<name>/`):
 
-- **player** — `load / stop / setDisplayArea / getQualities / selectQuality`
-- **keys** — native keyCode → canonical key (`UP`, `RED`, `ENTER`, …)
-- **system** — screensaver, volume, exit
+- **player** - `load / stop / setDisplayArea / getQualities / selectQuality`
+- **keys** - native keyCode to canonical key (`UP`, `RED`, `ENTER`, ...)
+- **system** - screensaver, volume, exit
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design.

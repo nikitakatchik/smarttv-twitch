@@ -65,7 +65,7 @@ function startHost(widgetFiles, opts) {
     '<rsp stat="ok"><list><widget id="Twellie">' +
     '<title>Twellie</title>' +
     '<compression size="' + zipBuf.length + '" type="zip"/>' +
-    '<description>Twellie — a viewer for Twitch</description>' +
+    '<description>Twellie - independent client for watching Twitch streams</description>' +
     '<download>' + BASE + '/Twellie.zip</download>' +
     '</widget></list></rsp>';
 

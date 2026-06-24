@@ -31,7 +31,7 @@ const RUNTIME_VERSION_ASSIGNMENT = "TW.version = global.TW_VERSION || '';";
 const MODULE_PKG = {
   name: 'twellie-tizenbrew',
   version: pkg.version,
-  description: 'Twellie — an unofficial Twitch viewer for Samsung TVs, as a TizenBrew app module (HTML5 video + hls.js).',
+  description: 'Twellie - independent client for watching Twitch streams on supported Samsung TV platforms, packaged as a TizenBrew module.',
   license: pkg.license,
   homepage: pkg.homepage,
   repository: pkg.repository,

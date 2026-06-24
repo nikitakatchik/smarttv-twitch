@@ -9,7 +9,7 @@
   <tizen:profile name="tv"/>
 
   <name>Twellie</name>
-  <description>Twellie — an unofficial live viewer for Twitch on Samsung Tizen TVs.</description>
+  <description>Twellie - independent client for watching Twitch streams on supported Samsung Tizen TVs.</description>
   <author href="https://github.com/nkatchik">Nikita Katchik</author>
   <content src="index.html"/>
   <icon src="assets/icon/icon.png"/>

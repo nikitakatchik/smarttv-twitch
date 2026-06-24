@@ -17,12 +17,11 @@
                        Apps2Samsung   TizenBrew
 ```
 
-The core is **platform-agnostic ES5** and talks to exactly one abstraction —
-the **adapter** — so the browser harness, a 2013 Orsay TV and a 2024 Tizen TV
-(native `.wgt` via Apps2Samsung, or a TizenBrew module) all run byte-for-byte the
-same `core/`. The two Tizen adapters differ only in the player: the native `.wgt`
-gets privileged **AVPlay**; the TizenBrew module uses **hls.js** (TizenBrew
-doesn't expose `webapis`/AVPlay to module pages).
+The core is **platform-agnostic ES5** and talks to exactly one abstraction -
+the **adapter** - so the browser harness, Orsay builds, and Tizen builds all run
+the same `core/`. The two Tizen adapters differ only in the player: the native
+`.wgt` gets privileged **AVPlay**; the TizenBrew module uses **hls.js**
+(TizenBrew doesn't expose `webapis`/AVPlay to module pages).
 
 ## Module loading
 
