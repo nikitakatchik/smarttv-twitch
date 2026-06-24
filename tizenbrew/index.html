@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, user-scalable=no">
+  <base href="../src/">
+  <title>Twellie</title>
+  <link rel="stylesheet" href="ui/styles.css">
+  <style>
+    /*
+     * CDN entrypoint for TizenBrew's explicit GitHub module add:
+     * gh/nkatchik/smarttv-twitch. The base href points at src/ so the same
+     * source files and runtime-relative assets resolve through TizenBrew's
+     * jsDelivr proxy without committing a built dist tree.
+     */
+    html, body { width: 1920px; height: 1080px; margin: 0; overflow: hidden; background: #000; }
+    #tw-video { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #000; z-index: 0; }
+    #app { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform: scale(1.5); transform-origin: 0 0; z-index: 1; }
+  </style>
+</head>
+<body>
+  <video id="tw-video" playsinline></video>
+  <div id="app"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+
+  <script src="core/polyfill.js"></script>
+  <script src="core/util.js"></script>
+  <script src="core/dom.js"></script>
+  <script src="core/qrcode.js"></script>
+  <script src="core/keys.js"></script>
+  <script src="core/config.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/http.js"></script>
+  <script src="core/storage.js"></script>
+  <script src="core/net.js"></script>
+  <script src="lang/en.js"></script>
+  <script src="lang/de.js"></script>
+  <script src="lang/es.js"></script>
+  <script src="lang/fr.js"></script>
+  <script src="lang/it.js"></script>
+  <script src="lang/nl.js"></script>
+  <script src="lang/pl.js"></script>
+  <script src="lang/pt-br.js"></script>
+  <script src="lang/ru.js"></script>
+  <script src="lang/sv.js"></script>
+  <script src="lang/tr.js"></script>
+  <script src="lang/uk.js"></script>
+  <script src="core/twitch/playlist.js"></script>
+  <script src="core/twitch/usher.js"></script>
+  <script src="core/twitch/gql.js"></script>
+  <script src="core/twitch/chat.js"></script>
+  <script src="core/twitch/helix.js"></script>
+  <script src="core/twitch/auth.js"></script>
+  <script src="core/twitch/api.js"></script>
+  <script src="core/scene-manager.js"></script>
+  <script src="core/scenes/browser-scene.js"></script>
+  <script src="core/scenes/channel-page-scene.js"></script>
+  <script src="core/scenes/channel-scene.js"></script>
+  <script src="core/scenes/channel-page-scene.js"></script>
+  <script src="core/scenes/login-scene.js"></script>
+  <script src="core/app.js"></script>
+
+  <script src="platforms/tizenbrew/player.js"></script>
+  <script src="platforms/tizenbrew/keys.js"></script>
+  <script src="platforms/tizenbrew/system.js"></script>
+  <script src="platforms/tizenbrew/boot.js"></script>
+</body>
+</html>

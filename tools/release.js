@@ -8,7 +8,8 @@
  *     -> dist/release/Twellie.wgt          Tizen native package for Apps2Samsung
  *
  * This is the internal base packager used by `npm run release`. The public npm
- * target also builds the host installers and TizenBrew module archive.
+ * target also builds the host installers. TizenBrew uses the GitHub module path
+ * `gh/nkatchik/smarttv-twitch`, not a release archive.
  *
  * The .wgt is signed with a throwaway, self-made GENERIC author profile (no
  * Samsung account, no DUID) — just enough to be a valid Tizen package. It is NOT

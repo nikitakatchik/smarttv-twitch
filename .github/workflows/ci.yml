@@ -57,6 +57,8 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Unit tests
         run: npm test
+      - name: TizenBrew GitHub module manifest
+        run: npm run tizenbrew:check
 
   build:
     runs-on: ubuntu-latest

@@ -50,6 +50,7 @@ jobs:
 
           version="$(node tools/version.js --print)"
           node tools/version.js --check
+          npm run tizenbrew:check
           release_tag="$version"
           if ! git check-ref-format "refs/tags/$release_tag"; then
             echo "::error::package version $version does not produce a valid Git tag name"
@@ -152,3 +153,5 @@ jobs:
           RELEASE_ABORT_IF_EXISTS: "1"
           GH_TARGET: ${{ needs.preflight.outputs.commit_sha }}
         run: npm run release:publish -- --live
+      - name: Refresh TizenBrew GitHub module CDN
+        run: node tools/tizenbrew-module.js --purge-cdn

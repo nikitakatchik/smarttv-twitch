@@ -31,8 +31,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const pkg = require('../package.json');
-const { buildTizenbrew, ROOT } = require('./build');
-const { zipDir } = require('./lib/zip');
+const { ROOT } = require('./build');
 
 const OUT = path.join(ROOT, 'dist', 'release');
 // Tag: <version> by default; RELEASE_TAG lets CI pin it to the deduced tag.
@@ -50,7 +49,6 @@ const ASSETS = [
   ['twellie-orsay-host-macos-x64.zip', 'Orsay — macOS installer (Intel)'],
   ['twellie-orsay-host-macos-arm64.zip', 'Orsay — macOS installer (Apple Silicon)'],
   ['Twellie.wgt', 'Tizen — Apps2Samsung package (.wgt)'],
-  ['twellie-tizenbrew.zip', 'TizenBrew — module archive'],
   ['twellie-orsay.zip', 'Orsay — raw App-Sync widget (advanced, not installer)'],
 ];
 const HOST_ZIPS = ASSETS.map(function (a) { return a[0]; }).filter(function (n) { return n.indexOf('-host-') !== -1; });
@@ -77,7 +75,7 @@ function notes() {
     '| **2013 F-series** | Orsay | 📦 [macOS](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/orsay-f-2013-macos.md) · 📦 [Windows](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/orsay-f-2013-windows.md) |',
     '| **2014 H-series** | Orsay | 📦 [macOS](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/orsay-h-2014-macos.md) · 📦 [Windows](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/orsay-h-2014-windows.md) |',
     '| **2015+ J-series and newer** | Tizen | 📦 [Apps2Samsung](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/apps2samsung.md) |',
-    '| **2017+ M-series and newer** | Tizen | 📦 [TizenBrew](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/tizenbrew.md) |',
+    '| **2017+ M-series and newer** | Tizen | 📦 [TizenBrew GitHub module](https://github.com/nkatchik/smarttv-twitch/blob/' + TAG + '/docs/install/tizenbrew.md) |',
     '',
     'Older **2011-2012** **D**/**E** Orsay sets are not supported.'
   ].join('\n');
@@ -90,6 +88,7 @@ function buildAssets() {
     if (reuseHost && HOST_ZIPS.indexOf(a[0]) !== -1) { return; }
     removeAsset(a[0]);
   });
+  removeAsset('twellie-tizenbrew.zip');
   step('Orsay/web zips + Twellie.wgt', function () { run('node', [path.join(__dirname, 'release.js')]); });
   // Reuse host installers ONLY when a CI matrix just gathered fresh ones; locally
   // always rebuild, since stale zips from a previous run would otherwise ship.
@@ -98,10 +97,6 @@ function buildAssets() {
   } else {
     step('Orsay host installers', function () { run('node', [path.join(__dirname, 'bin.js'), '--all']); });
   }
-  step('TizenBrew module zip', function () {
-    fs.writeFileSync(path.join(OUT, 'twellie-tizenbrew.zip'), zipDir(buildTizenbrew()));
-    console.log('  twellie-tizenbrew.zip');
-  });
 }
 
 function releaseExists() {

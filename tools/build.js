@@ -24,25 +24,27 @@ const DIST = path.join(ROOT, 'dist');
 const ALL = ['orsay', 'tizen', 'web', 'tizenbrew'];
 const PLATFORM_FILES = new Set(['index.html', 'config.xml', 'widget.info']);
 const RUNTIME_VERSION_ASSIGNMENT = "TW.version = global.TW_VERSION || '';";
+const TIZENBREW_KEYS = [
+  'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow',
+  'ChannelUp', 'ChannelDown', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop',
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+];
 
-// The TizenBrew module manifest (emitted at dist/tizenbrew/package.json). This
-// is NOT the repo's package.json — it tells TizenBrew how to load the module:
-// packageType 'app', the entry html, and the remote keys to registerKey for us.
+// The release-zip TizenBrew manifest emitted at dist/tizenbrew/package.json.
+// The root package.json also carries TizenBrew fields so users can add
+// gh/nkatchik/smarttv-twitch explicitly from TizenBrew's Module Manager.
 const MODULE_PKG = {
   name: 'twellie-tizenbrew',
   version: pkg.version,
   description: 'Twellie - independent client for watching Twitch streams on supported Samsung TV platforms, packaged as a TizenBrew module.',
+  keywords: pkg.keywords,
   license: pkg.license,
   homepage: pkg.homepage,
   repository: pkg.repository,
   packageType: 'app',
   appName: 'Twellie',
   appPath: 'app/index.html',
-  keys: [
-    'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow',
-    'ChannelUp', 'ChannelDown', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop',
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-  ],
+  keys: TIZENBREW_KEYS,
 };
 
 function copyDir(src, dst) {

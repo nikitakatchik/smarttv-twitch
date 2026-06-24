@@ -7,6 +7,7 @@ const os = require('os');
 const path = require('path');
 
 const { buildTizenbrew, MODULE_PKG } = require('../tools/build');
+const rootPkg = require('../package.json');
 
 function withBuild(fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'twellie-tb-'));
@@ -57,4 +58,22 @@ test('tizenbrew module pkg matches the exported MODULE_PKG', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(out, 'package.json'), 'utf8'));
     assert.deepEqual(pkg, MODULE_PKG);
   });
+});
+
+test('root package is explicitly addable as a TizenBrew GitHub module', () => {
+  assert.equal(rootPkg.packageType, 'app');
+  assert.equal(rootPkg.appName, 'Twellie');
+  assert.equal(rootPkg.appPath, 'tizenbrew/index.html');
+  assert.ok(rootPkg.keywords.includes('twellie'));
+  assert.ok(rootPkg.keywords.includes('tizenbrew'));
+  assert.deepEqual(rootPkg.keys, MODULE_PKG.keys);
+  assert.ok(fs.existsSync(path.join(__dirname, '..', rootPkg.appPath)));
+});
+
+test('explicit TizenBrew GitHub entrypoint resolves source-tree assets', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', rootPkg.appPath), 'utf8');
+  assert.ok(html.includes('<base href="../src/">'));
+  assert.ok(html.includes('src="core/app.js"'));
+  assert.ok(html.includes('src="platforms/tizenbrew/boot.js"'));
+  assert.ok(!html.includes('src="platform/boot.js"'));
 });

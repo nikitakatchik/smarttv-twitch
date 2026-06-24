@@ -92,12 +92,13 @@ of through the debugger to skip it. Clicking **OK** simply continues into
 **B. Hosted TizenBrew module (2017+, hls.js).**
 
 ```bash
+npm run tizenbrew:check     # verifies gh/nkatchik/smarttv-twitch manifest + entrypoint
 npm run build:tizenbrew      # -> dist/tizenbrew/{package.json, app/}
-npm run release              # -> dist/release/twellie-tizenbrew.zip and dist/tizenbrew/
 ```
 
-- **Real panel:** install TizenBrew and import the local
-  `twellie-tizenbrew.zip` package. hls.js + MSE: reliable 2017+ / solid 2019+.
+- **Real panel:** install TizenBrew and add
+  `gh/nkatchik/smarttv-twitch`, which reads the root `package.json` and launches
+  `tizenbrew/index.html` through TizenBrew's jsDelivr proxy.
 - **Boot check on a laptop (no TV):** statically serve `dist/tizenbrew/app/` and open
   `index.html` — it boots the `tizenbrew` adapter and renders the live browse grid via
   GraphQL (console logs `starting on platform "tizenbrew"`, no errors). Remote nav uses

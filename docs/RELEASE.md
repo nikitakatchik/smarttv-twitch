@@ -11,9 +11,12 @@ Maintainers cut releases from GitHub Actions:
 4. Run the workflow.
 
 The workflow checks out that exact commit, reads the release tag from
-`package.json`, verifies the Tizen manifest has the same version, aborts if that
-GitHub Release already exists, runs the shared CI workflow, builds the release
-host installers, and only then publishes the tag and GitHub Release.
+`package.json`, verifies the Tizen manifest has the same version, verifies the
+TizenBrew GitHub module manifest for `gh/nkatchik/smarttv-twitch`, aborts if
+that GitHub Release already exists, runs the shared CI workflow, builds the
+release host installers, and only then publishes the tag and GitHub Release.
+After publishing, it purges the jsDelivr paths used by TizenBrew so the explicit
+GitHub module add sees the fresh release.
 
 Release assets come from the existing build scripts:
 
@@ -39,8 +42,11 @@ npm run release:publish -- --live
 - `twellie-orsay-host-macos-x64.zip`
 - `twellie-orsay-host-windows-x64.zip`
 - `twellie-orsay-host-windows-x86.zip`
-- `twellie-tizenbrew.zip` (TizenBrew module archive)
 - `twellie-orsay.zip` (raw App-Sync widget; advanced, not the normal installer)
+
+TizenBrew is published through the GitHub module path
+`gh/nkatchik/smarttv-twitch`; it is checked during release preflight and its
+jsDelivr paths are purged after publishing.
 
 If a workflow rerun finds the tag already exists, it must point at the same
 commit SHA. A rerun still aborts if the GitHub Release already exists.
