@@ -35,10 +35,10 @@ Pick the guide that matches your TV generation and preferred install method. TV 
 
 | TV Model | Platform | Installation |
 | - | - | - |
-| **2013 F-series** | Orsay | 📦 [macOS](docs/install/orsay-f-2013-macos.md) · 📦 [Windows](docs/install/orsay-f-2013-windows.md) |
-| **2014 H-series** | Orsay | 📦 [macOS](docs/install/orsay-h-2014-macos.md) · 📦 [Windows](docs/install/orsay-h-2014-windows.md) |
-| **2015+ J-series and newer** | Tizen | 📦 [Apps2Samsung](docs/install/apps2samsung.md) |
-| **2017+ M-series and newer** | Tizen | 📦 [TizenBrew GitHub module](docs/install/tizenbrew.md) |
+| **2013 F-series** | Orsay | [macOS](docs/install/orsay-f-2013-macos.md) · [Windows](docs/install/orsay-f-2013-windows.md) |
+| **2014 H-series** | Orsay | [macOS](docs/install/orsay-h-2014-macos.md) · [Windows](docs/install/orsay-h-2014-windows.md) |
+| **2015+ J-series and newer** | Tizen | [Apps2Samsung](docs/install/apps2samsung.md) |
+| **2017+ M-series and newer** | Tizen | [TizenBrew](docs/install/tizenbrew.md) |
 
 Older 2011-2012 D/E Orsay sets are not supported. See [docs/PLATFORMS.md](docs/PLATFORMS.md) for engine details, playback paths, and current caveats.
 
