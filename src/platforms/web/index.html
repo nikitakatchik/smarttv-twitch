@@ -60,6 +60,10 @@
     .remote .y { color: #c0a05e; }
     .remote .r, .remote .g, .remote .y { font-weight: 700; }
     .remote-button-row { font-size: 0; line-height: 0; }
+    .remote-spacer {
+      display: inline-block; width: 40px; height: 40px; margin: 3px;
+      box-sizing: border-box; vertical-align: top;
+    }
     .remote-row-spaced { margin-top: 8px; }
     .keyboard-legend { margin-top: 12px; color: #9d9da9; font-size: 12px; }
     .legend-separator {
@@ -93,13 +97,25 @@
       .repo-logo { margin-right: 6px; }
       .repo-arrow { margin-left: 4px; }
       .remote {
-        width: 100%; max-width: 360px; margin-left: 0; font-size: 12px;
+        width: 100%; max-width: none; margin-left: 0; font-size: 13px;
         -webkit-box-flex: 0; flex: 0 0 auto;
       }
-      .remote button {
-        width: 36px; height: 36px; margin: 2px; line-height: 34px; font-size: 12px;
+      .remote-button-row {
+        display: -webkit-box; display: flex; -webkit-box-pack: center; justify-content: center;
+        gap: 8px; margin-top: 8px;
       }
-      .remote-row-spaced { margin-top: 4px; }
+      .remote-button-row:first-child { margin-top: 0; }
+      .remote button {
+        display: -webkit-inline-box; display: inline-flex; -webkit-box-align: center; align-items: center;
+        -webkit-box-pack: center; justify-content: center; width: calc((100% - 16px) / 3);
+        aspect-ratio: 1 / 1; height: auto; margin: 0; line-height: 1; font-size: 14px;
+      }
+      .remote-spacer {
+        display: block; width: calc((100% - 16px) / 3);
+        aspect-ratio: 1 / 1; height: auto; margin: 0;
+      }
+      .remote-row-spaced { margin-top: 12px; }
+      .remote-color-row { display: none; }
       .keyboard-legend { display: none; }
     }
   </style>
@@ -123,7 +139,9 @@
 
     <div class="remote" id="tw-remote">
       <div class="remote-button-row">
+        <button data-tvkey="BACK">Back</button>
         <button data-tvkey="UP">▲</button>
+        <span class="remote-spacer" aria-hidden="true"></span>
       </div>
       <div class="remote-button-row">
         <button data-tvkey="LEFT">◀</button>
@@ -131,15 +149,14 @@
         <button data-tvkey="RIGHT">▶</button>
       </div>
       <div class="remote-button-row">
+        <span class="remote-spacer" aria-hidden="true"></span>
         <button data-tvkey="DOWN">▼</button>
+        <span class="remote-spacer" aria-hidden="true"></span>
       </div>
-      <div class="remote-button-row remote-row-spaced">
+      <div class="remote-button-row remote-row-spaced remote-color-row">
         <button data-tvkey="RED" class="r">A</button>
         <button data-tvkey="GREEN" class="g">B</button>
         <button data-tvkey="YELLOW" class="y">C</button>
-      </div>
-      <div class="remote-button-row remote-row-spaced">
-        <button data-tvkey="BACK">Back</button>
       </div>
       <div class="keyboard-legend">
         <div class="legend-separator"></div>
@@ -211,6 +228,7 @@
         var viewportWidth = Math.max(rawViewportWidth, minPageWidth);
         var viewportHeight = Math.max(rawViewportHeight, minPageHeight);
         remote.style.display = '';
+        remote.style.width = '';
         remote.style.marginTop = compact ? '14px' : '0';
         var remoteWidth = compact ? 0 : remote.offsetWidth;
         var titleHeight = title ? title.offsetHeight : 0;
@@ -252,7 +270,10 @@
         wrap.style.WebkitBoxAlign = 'center';
         wrap.style.alignItems = 'center';
         remote.style.marginLeft = space + 'px';
-        if (compact) { remote.style.marginLeft = '0'; }
+        if (compact) {
+          remote.style.marginLeft = '0';
+          remote.style.width = frameWidth + 'px';
+        }
         frame.style.width = frameWidth + 'px';
         frame.style.height = frameHeight + 'px';
         video.style.left = surfaceInset + 'px';

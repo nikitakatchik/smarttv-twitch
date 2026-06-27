@@ -90,9 +90,15 @@ test('web preview keeps desktop remote beside the stage and adapts on phones', (
     assert.ok(html.includes('width: 138px; margin: 0 0 0 16px'), 'remote should stay compact beside the stage');
     assert.ok(html.includes('width: 40px; height: 40px'), 'remote buttons should be square');
     assert.ok(html.includes('box-sizing: border-box; line-height: 38px'), 'remote buttons should not overflow their rows');
+    assert.ok(html.includes('width: 100%; max-width: none; margin-left: 0; font-size: 13px'), 'phone remote should use the full frame width');
+    assert.ok(html.includes('width: calc((100% - 16px) / 3);'), 'phone remote buttons should fill the three-column row width');
+    assert.ok(html.includes('aspect-ratio: 1 / 1; height: auto; margin: 0; line-height: 1; font-size: 14px'), 'phone remote buttons should stay square');
     assert.ok(html.includes('.remote .r, .remote .g, .remote .y { font-weight: 700; }'), 'ABC buttons should be bold');
     assert.ok(html.includes('.remote-button-row { font-size: 0; line-height: 0; }'), 'button row whitespace should not wrap buttons');
-    assert.ok(html.includes('class="remote-button-row remote-row-spaced"'), 'spaced button rows should still suppress whitespace');
+    assert.ok(html.includes('.remote-spacer'), 'remote grid should keep directional buttons aligned');
+    assert.ok(html.indexOf('data-tvkey="BACK"') < html.indexOf('data-tvkey="UP"'), 'Back should sit in the top-left D-pad corner');
+    assert.ok(html.includes('class="remote-button-row remote-row-spaced remote-color-row"'), 'ABC row should be separately targetable');
+    assert.ok(html.includes('.remote-color-row { display: none; }'), 'phone preview should hide ABC buttons');
     assert.ok(html.includes('class="legend-separator"'), 'legend should use a separator instead of a heading');
     assert.ok(html.includes('margin: 0 auto 15px'), 'separator should have balanced visual spacing');
     assert.ok(!html.includes('class="legend-title"'), 'legend heading should be omitted');
@@ -115,7 +121,8 @@ test('web preview keeps desktop remote beside the stage and adapts on phones', (
     assert.ok(html.includes("wrap.style.padding = compact"), 'fit should use separate desktop and phone wrapper padding');
     assert.ok(html.includes(": minSpace + 'px ' + space + 'px'"), 'desktop horizontal margins should use the same spacing as the gap');
     assert.ok(html.includes('remote.style.marginLeft = space'), 'screen-to-remote gap should match outer margins');
-    assert.ok(html.includes("if (compact) { remote.style.marginLeft = '0'; }"), 'phone remote should stack below the stage');
+    assert.ok(html.includes('if (compact) {') && html.includes("remote.style.marginLeft = '0';"), 'phone remote should stack below the stage');
+    assert.ok(html.includes("remote.style.width = frameWidth + 'px'"), 'phone remote width should match the fitted stage width');
     assert.ok(html.includes("wrap.style.flexDirection = compact ? 'column' : 'row';"), 'phone layout should stack vertically while desktop stays row-based');
     assert.ok(html.indexOf('class="tv-frame"') < html.indexOf('class="remote"'), 'remote should follow the screen');
     assert.ok(!html.includes('Virtual remote'), 'remote heading should be omitted');
