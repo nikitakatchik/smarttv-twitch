@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Twellie — Web Preview</title>
   <link rel="icon" href="assets/icon/favicon.ico" sizes="any">
   <link rel="icon" href="assets/icon/favicon-32.png" type="image/png" sizes="32x32">
@@ -16,7 +16,7 @@
     .page-title {
       position: absolute; left: 0; right: 0; top: 14px; z-index: 3;
       color: #efeff1; font: 700 18px/22px "Helvetica Neue", Arial, sans-serif;
-      text-align: center; letter-spacing: 0;
+      text-align: center; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .repo-button {
       position: absolute; top: 10px; right: 10px; z-index: 4; display: -webkit-box; display: flex;
@@ -81,6 +81,26 @@
     .legend-action {
       position: absolute; left: 50%; top: 1px; margin-left: 6px;
       text-align: left; white-space: nowrap;
+    }
+    @media (max-width: 700px) {
+      html, body {
+        height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto;
+        scrollbar-width: none;
+      }
+      html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; }
+      .page-title { font-size: 16px; line-height: 20px; text-align: left; }
+      .repo-button { width: 98px; padding: 0 8px; }
+      .repo-logo { margin-right: 6px; }
+      .repo-arrow { margin-left: 4px; }
+      .remote {
+        width: 100%; max-width: 360px; margin-left: 0; font-size: 12px;
+        -webkit-box-flex: 0; flex: 0 0 auto;
+      }
+      .remote button {
+        width: 36px; height: 36px; margin: 2px; line-height: 34px; font-size: 12px;
+      }
+      .remote-row-spaced { margin-top: 4px; }
+      .keyboard-legend { display: none; }
     }
   </style>
 </head>
@@ -150,6 +170,24 @@
         el.style.transformOrigin = 'left top';
       }
 
+      function readSafeAreaTop() {
+        var probe = global.document.getElementById('tw-safe-area-probe');
+        if (!probe) {
+          probe = global.document.createElement('div');
+          probe.id = 'tw-safe-area-probe';
+          probe.style.position = 'absolute';
+          probe.style.visibility = 'hidden';
+          probe.style.pointerEvents = 'none';
+          probe.style.width = '0';
+          probe.style.height = '0';
+          probe.style.overflow = 'hidden';
+          probe.style.paddingTop = 'env(safe-area-inset-top, 0px)';
+          global.document.body.appendChild(probe);
+        }
+        var value = parseFloat(global.getComputedStyle(probe).paddingTop);
+        return isNaN(value) ? 0 : value;
+      }
+
       function fitWebPreview() {
         var wrap = global.document.getElementById('tw-stage-wrap');
         var frame = global.document.getElementById('tw-frame');
@@ -161,40 +199,92 @@
         var app = global.document.getElementById('app');
         if (!wrap || !frame || !remote) { return; }
 
-        var minSpace = 16;
-        var minPageWidth = 960;
-        var minPageHeight = 500;
-        var viewportWidth = Math.max(global.innerWidth || 1280, minPageWidth);
-        var viewportHeight = Math.max(global.innerHeight || 720, minPageHeight);
-        var remoteWidth = remote.offsetWidth;
+        var rawViewportWidth = global.innerWidth || 1280;
+        var rawViewportHeight = global.innerHeight || 720;
+        var compact = rawViewportWidth <= 700;
+        var minSpace = compact ? 6 : 16;
+        var surfaceInset = compact ? 10 : 0;
+        var safeAreaTop = compact ? readSafeAreaTop() : 0;
+        var compactTitleTop = compact ? Math.max(28, safeAreaTop + 10) : 14;
+        var minPageWidth = compact ? 320 : 960;
+        var minPageHeight = compact ? 420 : 500;
+        var viewportWidth = Math.max(rawViewportWidth, minPageWidth);
+        var viewportHeight = Math.max(rawViewportHeight, minPageHeight);
+        remote.style.display = '';
+        remote.style.marginTop = compact ? '14px' : '0';
+        var remoteWidth = compact ? 0 : remote.offsetWidth;
         var titleHeight = title ? title.offsetHeight : 0;
         var repoHeight = repo ? repo.offsetHeight : 0;
         var hasTitleRow = title || repo;
         var titleGap = hasTitleRow ? 8 : 0;
         var titleBand = hasTitleRow ? Math.max(titleHeight, repoHeight) + (titleGap * 2) : minSpace;
-        var widthScale = (viewportWidth - remoteWidth - (minSpace * 3)) / 1280;
-        var heightScale = (viewportHeight - (titleBand * 2)) / 720;
+        if (compact && hasTitleRow) {
+          titleBand = compactTitleTop + Math.max(titleHeight, repoHeight) + 18;
+        }
+        var widthScale = compact
+          ? (viewportWidth - (minSpace * 2) - (surfaceInset * 2)) / 1280
+          : (viewportWidth - remoteWidth - (minSpace * 3)) / 1280;
+        var heightScale = compact
+          ? (viewportHeight - titleBand - minSpace) / 720
+          : (viewportHeight - (titleBand * 2)) / 720;
         var scale = Math.min(1, widthScale, heightScale);
         if (scale < 0.05) { scale = 0.05; }
 
-        var frameWidth = Math.round(1280 * scale);
-        var frameHeight = Math.round(720 * scale);
-        var space = Math.floor((viewportWidth - frameWidth - remoteWidth) / 3);
+        var surfaceWidth = Math.round(1280 * scale);
+        var surfaceHeight = Math.round(720 * scale);
+        var frameWidth = surfaceWidth + (surfaceInset * 2);
+        var frameHeight = surfaceHeight + (surfaceInset * 2);
+        var space = compact ? minSpace : Math.floor((viewportWidth - frameWidth - remoteWidth) / 3);
         if (space < minSpace) { space = minSpace; }
 
         wrap.style.width = viewportWidth + 'px';
-        wrap.style.height = viewportHeight + 'px';
-        wrap.style.padding = minSpace + 'px ' + space + 'px';
+        wrap.style.height = compact ? 'auto' : viewportHeight + 'px';
+        wrap.style.minHeight = compact ? viewportHeight + 'px' : '';
+        wrap.style.overflow = compact ? 'visible' : 'hidden';
+        wrap.style.padding = compact
+          ? titleBand + 'px ' + minSpace + 'px ' + minSpace + 'px'
+          : minSpace + 'px ' + space + 'px';
+        wrap.style.WebkitBoxOrient = compact ? 'vertical' : 'horizontal';
+        wrap.style.WebkitBoxDirection = 'normal';
+        wrap.style.flexDirection = compact ? 'column' : 'row';
+        wrap.style.WebkitBoxPack = compact ? 'start' : 'center';
+        wrap.style.justifyContent = compact ? 'flex-start' : 'center';
+        wrap.style.WebkitBoxAlign = 'center';
+        wrap.style.alignItems = 'center';
         remote.style.marginLeft = space + 'px';
+        if (compact) { remote.style.marginLeft = '0'; }
         frame.style.width = frameWidth + 'px';
         frame.style.height = frameHeight + 'px';
+        video.style.left = surfaceInset + 'px';
+        video.style.top = surfaceInset + 'px';
+        embed.style.left = surfaceInset + 'px';
+        embed.style.top = surfaceInset + 'px';
+        app.style.left = surfaceInset + 'px';
+        app.style.top = surfaceInset + 'px';
         setScale(video, scale);
         setScale(embed, scale);
         setScale(app, scale);
 
         if (hasTitleRow) {
+          if (compact) {
+            if (title) {
+              title.style.left = minSpace + 'px';
+              title.style.right = (repo ? (repo.offsetWidth + minSpace + 10) : minSpace) + 'px';
+              title.style.top = compactTitleTop + 'px';
+              title.style.textAlign = 'left';
+            }
+            if (repo) {
+              repo.style.top = (compactTitleTop - 4) + 'px';
+              repo.style.right = minSpace + 'px';
+              repo.style.left = '';
+            }
+            return;
+          }
           var frameRect = frame.getBoundingClientRect();
           if (title) {
+            title.style.left = '0';
+            title.style.right = '0';
+            title.style.textAlign = 'center';
             title.style.top = Math.max(0, (frameRect.top - title.offsetHeight) / 2) + 'px';
           }
           if (repo) {
