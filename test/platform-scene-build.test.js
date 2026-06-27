@@ -37,7 +37,7 @@ test('all platform builds include the channel page scene before app startup', ()
   });
 });
 
-test('web preview keeps the remote beside the fixed Twellie stage', () => {
+test('web preview keeps desktop remote beside the stage and adapts on phones', () => {
   withTemp((dir) => {
     const out = build('web', path.join(dir, 'web'));
     const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
@@ -47,6 +47,7 @@ test('web preview keeps the remote beside the fixed Twellie stage', () => {
       .join('');
 
     assert.ok(html.includes('overflow: hidden; background: #3a3a42'), 'page should not scroll');
+    assert.ok(html.includes('<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'), 'web preview should opt into iPhone safe-area sizing');
     assert.ok(html.includes('<title>Twellie \u2014 Web Preview</title>'), 'browser title should name the web preview');
     assert.ok(html.includes('<link rel="icon" href="assets/icon/favicon.ico" sizes="any">'), 'web preview should expose an ico favicon');
     assert.ok(html.includes('<link rel="icon" href="assets/icon/favicon-32.png" type="image/png" sizes="32x32">'), 'web preview should expose a chrome png favicon');
@@ -98,17 +99,24 @@ test('web preview keeps the remote beside the fixed Twellie stage', () => {
     assert.ok(!html.includes('>Keyboard<'), 'legend should not render Keyboard text');
     assert.ok(html.includes('function fitWebPreview()'), 'tight web preview should fit the stage dynamically');
     assert.ok(html.includes('id="tw-stage-wrap"'), 'fit should control the web preview wrapper spacing');
-    assert.ok(html.includes('var minSpace = 16;'), 'fit should keep a shared minimum margin');
-    assert.ok(html.includes('var minPageWidth = 960;'), 'fit should have a minimum page width');
-    assert.ok(html.includes('var minPageHeight = 500;'), 'fit should have a minimum page height');
-    assert.ok(html.includes('Math.max(global.innerWidth || 1280, minPageWidth)'), 'fit should clamp the page width');
-    assert.ok(html.includes('Math.max(global.innerHeight || 720, minPageHeight)'), 'fit should clamp the page height');
+    assert.ok(html.includes('var compact = rawViewportWidth <= 700;'), 'fit should switch to compact phone layout by viewport width');
+    assert.ok(html.includes('var minSpace = compact ? 6 : 16;'), 'fit should keep a shared desktop margin and tighter phone margin');
+    assert.ok(html.includes('var surfaceInset = compact ? 10 : 0;'), 'phone preview should inset the TV surface inside the frame');
+    assert.ok(html.includes('var safeAreaTop = compact ? readSafeAreaTop() : 0;'), 'phone preview should read the iPhone top safe area');
+    assert.ok(html.includes('Math.max(28, safeAreaTop + 10)'), 'phone preview should sit below Dynamic Island safe area');
+    assert.ok(html.includes('var minPageWidth = compact ? 320 : 960;'), 'fit should have desktop and compact minimum widths');
+    assert.ok(html.includes('var minPageHeight = compact ? 420 : 500;'), 'fit should have desktop and compact minimum heights');
+    assert.ok(html.includes('Math.max(rawViewportWidth, minPageWidth)'), 'fit should clamp the page width');
+    assert.ok(html.includes('Math.max(rawViewportHeight, minPageHeight)'), 'fit should clamp the page height');
     assert.ok(html.includes('var heightScale ='), 'fit should reduce the stage when height is tight');
     assert.ok(html.includes('var titleBand ='), 'fit should reserve room for the centered title');
     assert.ok(html.includes("wrap.style.width = viewportWidth + 'px'"), 'fit should apply the minimum layout width');
-    assert.ok(html.includes("wrap.style.height = viewportHeight + 'px'"), 'fit should apply the minimum layout height');
-    assert.ok(html.includes("wrap.style.padding = minSpace + 'px ' + space + 'px'"), 'horizontal margins should use the same spacing as the gap');
+    assert.ok(html.includes("wrap.style.height = compact ? 'auto' : viewportHeight + 'px'"), 'fit should keep fixed desktop height and allow phone flow');
+    assert.ok(html.includes("wrap.style.padding = compact"), 'fit should use separate desktop and phone wrapper padding');
+    assert.ok(html.includes(": minSpace + 'px ' + space + 'px'"), 'desktop horizontal margins should use the same spacing as the gap');
     assert.ok(html.includes('remote.style.marginLeft = space'), 'screen-to-remote gap should match outer margins');
+    assert.ok(html.includes("if (compact) { remote.style.marginLeft = '0'; }"), 'phone remote should stack below the stage');
+    assert.ok(html.includes("wrap.style.flexDirection = compact ? 'column' : 'row';"), 'phone layout should stack vertically while desktop stays row-based');
     assert.ok(html.indexOf('class="tv-frame"') < html.indexOf('class="remote"'), 'remote should follow the screen');
     assert.ok(!html.includes('Virtual remote'), 'remote heading should be omitted');
     assert.ok(!html.includes('A ' + dot + ' Channels'), 'ABC buttons should not include hints');
